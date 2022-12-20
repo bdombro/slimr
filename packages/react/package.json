@@ -1,0 +1,15 @@
+{
+  "name": "@styled-components-lite/react",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "peerDependencies": {
+    "@types/react": ">=18",
+    "@types/react-dom": ">=18",
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}

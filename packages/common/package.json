@@ -1,0 +1,9 @@
+{
+  "name": "@styled-components-lite/common",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  }
+}

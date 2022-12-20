@@ -1,34 +1,61 @@
 {
-	"name": "styled-components-lite",
-	"version": "0.0.1",
-	"type": "module",
-	"author": "Brian Dombrowski",
-	"license": "MIT",
-	"keywords": [
-		"styled-components",
-		"preact",
-		"react"
-	],
-	"scripts": {
-		"build": "tsc"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/bdombro/styled-components-lite.git"
-	},
-	"files": [
-		"dist",
-		"src",
-		"README.md",
-		"tsconfig.json"
-	],
-	"source": "./src/styled.ts",
-	"main": "./dist/styled.js",
-	"types": "./dist/styled.d.ts",
-	"peerDependencies": {
-		"preact": ">=10"
-	},
-	"devDependencies": {
-		"typescript": ">=4.8"
-	}
+  "name": "styled-components-lite",
+  "version": "1.0.19",
+  "type": "module",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "keywords": [
+    "styled-components",
+    "preact",
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdombro/styled-components-lite.git"
+  },
+  "files": [
+    "demo",
+    "packages",
+    "README.md",
+    "tsconfig.json"
+  ],
+  "workspaces": [
+    "demo/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc -b",
+    "clean": "tsc -b --clean",
+    "preact": "npm run -w demo/preact-demo dev",
+    "react": "npm run -w demo/react-demo dev"
+  },
+  "exports": {
+    "./common": {
+      "import": "./packages/common/src/*",
+      "types": "./packages/common/src/index.d.ts"
+    },
+    "./react": {
+      "dev": "./packages/react/src/*",
+      "import": "./packages/react/src/index.js",
+      "types": "./packages/react/src/index.d.ts"
+    },
+    "./preact": {
+      "dev": "./packages/preact/src/*",
+      "import": "./packages/preact/src/index.js",
+      "types": "./packages/preact/src/index.d.ts"
+    }
+  },
+  "//typesVersions": "are used iff consumer's type!=module or TS < 4.6. I couldn't figure out how to get it export specific though",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./packages/preact/src/index.d.ts",
+        "./packages/react/src/index.d.ts"
+      ]
+    }
+  },
+  "devDependencies": {
+    "prettier": "^2.8.1",
+    "typescript": "next"
+  }
 }

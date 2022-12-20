@@ -22,4 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-example2
+package-lock.json
+*.d.ts
+*.js
+*.js.map
+*.tsbuildinfo

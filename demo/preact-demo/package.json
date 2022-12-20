@@ -1,0 +1,21 @@
+{
+  "name": "@styled-components-lite/preact-demo",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "clean": "rm -rf dist node_modules",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "preact": "^10.11.3",
+    "styled-components-lite": "^0.0.16"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.4.0",
+    "typescript": "^4.9.3",
+    "vite": "^4.0.0"
+  }
+}
