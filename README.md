@@ -43,25 +43,25 @@ tss`
 `
 
 css`
-  body {
-    color: lightgray;
-  }
+	body {
+		color: lightgray;
+	}
 `
 
 let renderCount = 0
 
 // TODO: fluid font
 export function App() {
-  const on = useOn()
-  const [ref, width] = useWidth()
+	const on = useOn()
+	const [ref, width] = useWidth()
 
-  const Div = styled.div`
-    :root {
-      color: #55f;
-    }
-  `
+	const Div = styled.div`
+		:root {
+			color: #55f;
+		}
+	`
 
-  const P = tstyled.a`
+	const P = tstyled.a`
     :root
       color: ${on ? 'white' : 'red'}
     @container (width > 400px) and (width > 800px)
@@ -69,22 +69,48 @@ export function App() {
         color: ${on ? 'white' : 'pink'}
   `
 
-  let expectedColor = ''
-  if (width > 400 && width > 800) {
-    expectedColor = on ? 'white' : 'pink'
-  } else {
-    expectedColor = on ? 'white' : 'red'
-  }
+	let expectedColor = ''
+	if (width > 400 && width > 800) {
+		expectedColor = on ? 'white' : 'pink'
+	} else {
+		expectedColor = on ? 'white' : 'red'
+	}
 
-  return (
-    <Container forwardRef={ref as any}>
-      <Div>THIS SHOULD BE Blue</Div>
-      <h3>THIS SHOULD BE WHITE</h3>
-      <P>THIS SHOULD BE {expectedColor.toUpperCase()}</P>
-      <p>RenderCount: {renderCount++}</p>
-      <p>Container Width: {width}</p>
-      <p>Transpile Count: 7 &lt;= {transpileAndAddToDom.count}</p>
-    </Container>
-  )
+	return (
+		<Container forwardRef={ref as any}>
+			<Div>THIS SHOULD BE Blue</Div>
+			<h3>THIS SHOULD BE WHITE</h3>
+			<P>THIS SHOULD BE {expectedColor.toUpperCase()}</P>
+			<p>RenderCount: {renderCount++}</p>
+			<p>Container Width: {width}</p>
+			<p>Transpile Count: 7 &lt;= {transpileAndAddToDom.count}</p>
+		</Container>
+	)
 }
 ```
+
+### Comparisons
+
+#### [Styled-Components](https://github.com/styled-components/styled-components)
+
+- A popular css-in-js lib that this lib is based on
+
+Pros
+
+- Very feature rich
+
+Cons
+
+- Is massive (~12kb), plus has dependency on emotion (~11kb)
+
+#### [Goober](https://github.com/cristianbote/goober)
+
+- another tiny 1kb styled-components like css-in-js
+
+Pros:
+
+- supports nested css selector syntax (wip for this repo)
+
+Cons:
+
+- Does not support in-component declaring
