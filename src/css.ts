@@ -1,5 +1,6 @@
 import {normalizeIndent} from './strings'
 import {TemplateStringProps, templateStrPropsToStr} from './strings'
+import {tssToCss} from './tss'
 
 /**
  * A lightweight alternative to emotion
@@ -65,7 +66,7 @@ export function transpileAndAddToDom(css: string) {
 }
 transpileAndAddToDom.count = 0
 transpileAndAddToDom.history = new Map<string, string>()
-transpileAndAddToDom.transpilers = [normalizeIndent]
+transpileAndAddToDom.transpilers = [tssToCss]
 
 export function classJoin(...classes: any[]) {
 	return classes.filter((c) => c && typeof c === 'string').join(' ')

@@ -1,19 +1,20 @@
 {
-  "name": "styled-components-lite-example",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "preact": "^10.11.3"
-  },
-  "devDependencies": {
-    "@preact/preset-vite": "^2.4.0",
-    "typescript": "^4.9.3",
-    "vite": "^4.0.0"
-  }
+	"name": "styled-components-lite-example",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"preact": "^10.11.3",
+		"styled-components-lite": "^0.0.0"
+	},
+	"devDependencies": {
+		"@preact/preset-vite": "^2.4.0",
+		"typescript": "^4.9.3",
+		"vite": "^4.0.0"
+	}
 }

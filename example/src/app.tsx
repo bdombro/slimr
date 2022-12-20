@@ -1,9 +1,7 @@
 import {useEffect, useRef, useState} from 'preact/hooks'
-import styled, {css} from '../../src/styled'
-import tstyled, {Container, tss} from '../../src/tstyled'
-import {transpileAndAddToDom} from '../../src/css'
+import styled, {Container, css} from 'styled-components-lite'
 
-tss`
+css`
 	body {/* body comment */}
 		background: black
 	@media (width > 500px)
@@ -11,7 +9,7 @@ tss`
 			background: #333
 `
 
-tss`
+css`
 	{/* Now for some ugly code!! */}
 	
 	h1,
@@ -26,6 +24,7 @@ tss`
 	
 `
 
+// Also works with vanilla css
 css`
 	body {
 		color: lightgray;
@@ -45,7 +44,7 @@ export function App() {
 		}
 	`
 
-	const P = tstyled.a`
+	const P = styled.a`
 		:root
 			color: ${on ? 'white' : 'red'}
 		@container (width > 400px) and (width > 800px)
@@ -67,7 +66,6 @@ export function App() {
 			<P>THIS SHOULD BE {expectedColor.toUpperCase()}</P>
 			<p>RenderCount: {renderCount++}</p>
 			<p>Container Width: {width}</p>
-			<p>Transpile Count: 7 &lt;= {transpileAndAddToDom.count}</p>
 		</Container>
 	)
 }

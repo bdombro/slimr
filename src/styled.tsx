@@ -2,7 +2,7 @@ import {FunctionalComponent, h} from 'preact'
 import {classJoin, css} from './css'
 import {TemplateStringProps} from './strings'
 
-export {css}
+export {classJoin, css}
 
 /**
  * A lightweight alternative to styled-components

@@ -1,15 +1,4 @@
 import {normalizeIndent} from './strings'
-import {transpileAndAddToDom} from './css'
-import styled, {Container, css} from './styled'
-
-transpileAndAddToDom.transpilers.push(tssToCss)
-
-// Rename css and styled bc VSCode gets confused thinking they are
-// from the styled-components npm package
-const tss = css
-const tstyled = styled
-export default tstyled
-export {Container, tss}
 
 /**
  * Converts a css shorthand (aka tss) to real css

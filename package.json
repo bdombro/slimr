@@ -1,14 +1,13 @@
 {
 	"name": "styled-components-lite",
 	"private": false,
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"type": "module",
 	"author": "Brian Dombrowski",
 	"license": "MIT",
 	"keywords": [],
 	"scripts": {
-		"build": "microbundle",
-		"dev": "microbundle watch"
+		"build": "tsc"
 	},
 	"repository": {
 		"type": "git",
@@ -20,22 +19,13 @@
 		"README.md",
 		"tsconfig.json"
 	],
-	"source": "src/index.ts",
-	"exports": {
-		"require": "./dist/index.cjs",
-		"default": "./dist/index.modern.js"
-	},
-	"module": "dist/index.js",
-	"main": "dist/index.cjs",
-	"umd:main": "dist/index.umd.js",
+	"source": "./src/styled.ts",
+	"main": "./dist/styled.js",
+	"types": "./dist/styled.d.ts",
 	"peerDependencies": {
 		"preact": ">=10"
 	},
-	"types": "dist/index.d.ts",
 	"devDependencies": {
-		"typescript": "^4.9.3"
-	},
-	"dependencies": {
-		"microbundle": "^0.15.1"
+		"typescript": ">=4.8"
 	}
 }
