@@ -1,8 +1,8 @@
 {
 	"name": "styled-components-lite-example",
-	"private": true,
 	"version": "0.0.0",
 	"type": "module",
+	"private": true,
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc && vite build",
@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"preact": "^10.11.3",
-		"styled-components-lite": "^0.0.0"
+		"styled-components-lite": "^0.0.1"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "^2.4.0",

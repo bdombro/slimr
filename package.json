@@ -1,11 +1,14 @@
 {
 	"name": "styled-components-lite",
-	"private": false,
 	"version": "0.0.1",
 	"type": "module",
 	"author": "Brian Dombrowski",
 	"license": "MIT",
-	"keywords": [],
+	"keywords": [
+		"styled-components",
+		"preact",
+		"react"
+	],
 	"scripts": {
 		"build": "tsc"
 	},

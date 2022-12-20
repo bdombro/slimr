@@ -1,4 +1,4 @@
-import {FunctionalComponent, h} from 'preact'
+import {FunctionalComponent, h, JSX} from 'preact'
 import {classJoin, css} from './css'
 import {TemplateStringProps} from './strings'
 
@@ -25,7 +25,7 @@ function styled<C extends FunctionalComponent<any>>(Component: C) {
  *
  */
 type Ref<T> = {current: T}
-type Props<T extends HTMLElement> = h.JSX.HTMLAttributes<T> & {
+type Props<T extends HTMLElement> = JSX.HTMLAttributes<T> & {
 	forwardRef?: Ref<T>
 }
 
