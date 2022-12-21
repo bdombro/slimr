@@ -1,4 +1,4 @@
-import {render} from 'preact'
-import {App} from './App.js'
+import { render } from "preact";
+import { App } from "./App.js";
 
-render(<App />, document.getElementById('app') as HTMLElement)
+render(<App />, document.getElementById("app") as HTMLElement);

@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "preact": "^10.11.3",
-    "styled-components-lite": "^0.0.16"
+    "styled-components-lite": "^1.0.21"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.4.0",

@@ -1,4 +1,11 @@
-import React from "react";
+/**
+ * This file is identical to the preact version (/packages/preact/src/index.tsx) except for
+ * - imports createElement(h) and types from Preact
+ * - types are converted to preact-agnostic, generic types at the bottom
+ *
+ * The guts should be kept 1-to-1 identical, so that it's easier to maintain
+ */
+import React, { createElement as h, FC } from "react";
 import {
   classJoin,
   css,
@@ -12,15 +19,20 @@ export { classJoin, css };
  * @param function - a functional component to be styled; must accept a className prop
  * @returns a function that accepts a template string of css returns a functional component
  */
-function styled<C extends React.FC<any>>(Component: C) {
-  return (...cssProps: TemplateStringProps) =>
-    (props: Parameters<C>[0]) =>
-      (
-        <Component
-          {...props}
-          className={classJoin(css(...cssProps), props.className)}
-        />
-      );
+function styled<C extends FC<any>>(Component: C) {
+  return (...cssProps: TemplateStringProps) => {
+    const className = css(...cssProps);
+    const CStyled = React.forwardRef((props: Parameters<C>[0], ref) => {
+      const { forwardRef, ...rest } = props;
+      return h(Component, {
+        ref: ref || forwardRef,
+        ...rest,
+        className: classJoin(className, props.className),
+      });
+    });
+    CStyled.toString = () => "." + className;
+    return CStyled as unknown as C;
+  };
 }
 
 /**
@@ -32,180 +44,110 @@ function styled<C extends React.FC<any>>(Component: C) {
  *
  *
  */
-type Ref<T> = { current: T };
-type ExtraProps = {
-  forwardRef?: React.RefObject<any>;
-};
-type SProps<T extends React.DetailedHTMLProps<any, any>> = T & ExtraProps;
-type Elems = JSX.IntrinsicElements;
-
-// React.DetailedHTMLProps<React.AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>
-
 const tags = {
   /**
    * Creates an 'a' tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  a: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLAnchorElement, Elems["a"]>((p, ref) => (
-      <a {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  a: (...props: TempSProps) => styled("a" as unk as P2C<Prims["a"]>)(...props),
   /**
    * Creates an button tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  button: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLButtonElement, Elems["button"]>((p, ref) => (
-      <button
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
-  /**
-   * Creates an div tag with css styles and container-type: inline-size
-   * @param templateString css - to be transpiled and injected
-   */
-  container: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLDivElement, Elems["div"]>((p, ref) => (
-      <div
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className, "container")}
-      />
-    )),
+  button: (...props: TempSProps) =>
+    styled("button" as unk as P2C<Prims["button"]>)(...props),
   /**
    * Creates an div tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  div: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLDivElement, Elems["div"]>((p, ref) => (
-      <div {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
-  /**
-   * Creates an pre tag with css styles
-   * @param templateString css - to be transpiled and injected
-   */
-  pre: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLPreElement, Elems["pre"]>((p, ref) => (
-      <pre {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  div: (...props: TempSProps) =>
+    styled("div" as unk as P2C<Prims["div"]>)(...props),
   /**
    * Creates an img tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  img: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLImageElement, Elems["img"]>((p, ref) => (
-      <img {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  img: (...props: TempSProps) =>
+    styled("img" as unk as P2C<Prims["img"]>)(...props),
   /**
    * Creates an form tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  form: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLFormElement, Elems["form"]>((p, ref) => (
-      <form
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
+  form: (...props: TempSProps) =>
+    styled("form" as unk as P2C<Prims["form"]>)(...props),
   /**
    * Creates an input tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  input: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLInputElement, Elems["input"]>((p, ref) => (
-      <input
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
+  input: (...props: TempSProps) =>
+    styled("input" as unk as P2C<Prims["input"]>)(...props),
   /**
    * Creates an label tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  label: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLLabelElement, Elems["label"]>((p, ref) => (
-      <label
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
+  label: (...props: TempSProps) =>
+    styled("label" as unk as P2C<Prims["label"]>)(...props),
   /**
    * Creates an nav tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  nav: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLElement, Elems["nav"]>((p, ref) => (
-      <nav {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  nav: (...props: TempSProps) =>
+    styled("nav" as unk as P2C<Prims["nav"]>)(...props),
   /**
    * Creates an p tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  p: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLParagraphElement, Elems["p"]>((p, ref) => (
-      <p {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  p: (...props: TempSProps) => styled("p" as unk as P2C<Prims["p"]>)(...props),
+  /**
+   * Creates an pre tag with css styles
+   * @param templateString css - to be transpiled and injected
+   */
+  pre: (...props: TempSProps) =>
+    styled("pre" as unk as P2C<Prims["pre"]>)(...props),
   /**
    * Creates an span tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  span: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLSpanElement, Elems["span"]>((p, ref) => (
-      <span
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
+  span: (...props: TempSProps) =>
+    styled("span" as unk as P2C<Prims["span"]>)(...props),
   /**
    * Creates an table tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  table: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLTableElement, Elems["table"]>((p, ref) => (
-      <table
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
+  table: (...props: TempSProps) =>
+    styled("table" as unk as P2C<Prims["table"]>)(...props),
   /**
    * Creates an td tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  td: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLTableDataCellElement, Elems["td"]>((p, ref) => (
-      <td {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  td: (...props: TempSProps) =>
+    styled("td" as unk as P2C<Prims["td"]>)(...props),
   /**
    * Creates an tr tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  tr: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLTableRowElement, Elems["tr"]>((p, ref) => (
-      <tr {...p} ref={ref} className={classJoin(css(...props), p.className)} />
-    )),
+  tr: (...props: TempSProps) =>
+    styled("tr" as unk as P2C<Prims["tr"]>)(...props),
   /**
    * Creates an textarea tag with css styles
    * @param templateString css - to be transpiled and injected
    */
-  textarea: (...props: TemplateStringProps) =>
-    React.forwardRef<HTMLTextAreaElement, Elems["textarea"]>((p, ref) => (
-      <textarea
-        {...p}
-        ref={ref}
-        className={classJoin(css(...props), p.className)}
-      />
-    )),
+  textarea: (...props: TempSProps) =>
+    styled("textarea" as unk as P2C<Prims["textarea"]>)(...props),
 };
-/**
- * A no-frills div component with container-type: inline-size
- */
-export const Container = tags.container``;
 
 export default Object.assign(styled, tags);
+
+type Ref<T> = React.RefObject<T>;
+type PrimitiveProps<T extends React.DetailedHTMLProps<any, any>> = T & {
+  forwardRef?: Ref<any>;
+};
+/** Primitive to component */
+type P2C<T extends PrimitiveProps<any>> = (
+  props: PrimitiveProps<T>
+) => JSX.Element;
+/** Shorthand type */
+type unk = unknown;
+/** Shorthand type */
+type TempSProps = TemplateStringProps;
+
+type Prims = JSX.IntrinsicElements;

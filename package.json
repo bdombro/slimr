@@ -1,6 +1,6 @@
 {
   "name": "styled-components-lite",
-  "version": "1.0.19",
+  "version": "1.0.21",
   "type": "module",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -26,6 +26,7 @@
   "scripts": {
     "build": "npm run clean && tsc -b",
     "clean": "tsc -b --clean",
+    "format": "prettier -w .",
     "preact": "npm run -w demo/preact-demo dev",
     "react": "npm run -w demo/react-demo dev"
   },

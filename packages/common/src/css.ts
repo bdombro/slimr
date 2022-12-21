@@ -1,4 +1,8 @@
-import { TemplateStringProps, templateStrPropsToStr } from "./strings.js";
+import {
+  normalizeIndent,
+  TemplateStringProps,
+  templateStrPropsToStr,
+} from "./strings.js";
 import { tssToCss } from "./tss.js";
 
 /**
@@ -54,21 +58,26 @@ addToDom.baseCss = `
  *
  * Returns the unique class name
  */
-export function transpileAndAddToDom(css: string) {
-  let root = transpileAndAddToDom.history.get(css);
+export function transpileAndAddToDom(_css: string) {
+  let root = transpileAndAddToDom.history.get(_css);
   if (!root) {
     root = "s" + transpileAndAddToDom.count++;
-    transpileAndAddToDom.history.set(css, root);
-    css = css.replace(/:root/g, "." + root);
-    css = transpileAndAddToDom.transpilers.reduce((css, f) => f(css), css);
-    addToDom(css);
+    transpileAndAddToDom.history.set(_css, root);
+    _css = _css.replace(/:root/g, "." + root);
+    _css = transpileAndAddToDom.transpilers.reduce((css, f) => f(css), _css);
+    addToDom(_css);
   }
   return root;
 }
 transpileAndAddToDom.count = 0;
 transpileAndAddToDom.history = new Map<string, string>();
-transpileAndAddToDom.transpilers = [tssToCss];
+transpileAndAddToDom.transpilers = [normalizeIndent, tssToCss];
 
 export function classJoin(...classes: any[]) {
   return classes.filter((c) => c && typeof c === "string").join(" ");
+}
+
+// delete css comments i.e. {/* blah */}
+export function deleteComments(css: string) {
+  return css.replace(/{\/\*[\s\S]*?(?=\*\/})\*\/}/gm, "");
 }

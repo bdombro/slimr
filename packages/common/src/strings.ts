@@ -11,20 +11,24 @@ export function normalizeIndent(str: string) {
 }
 
 /**
- * Assemble a template string from a template string array and a list of placeholders.
+ * Assemble a string from a string or template string array and a list of placeholders.
  *
  * i.e.
  * myFoo(...props: TemplateStringProps) => {
  *  const inputStr = templateStrPropsToStr(...props);
  * }
+ * myFoo`hello ${name}` => 'hello world'
+ * myFoo(`hello ${name}`) => 'hello world'
  */
-export function templateStrPropsToStr(
-  strings: TemplateStringsArray,
-  ...placeHolders: string[]
-) {
-  return strings.map((s, i) => s + (placeHolders?.[i] ?? "")).join("");
+export function templateStrPropsToStr(...props: TemplateStringProps) {
+  const [strings, ...placeHolders] = props;
+  const str =
+    typeof strings === "string"
+      ? strings
+      : strings.map((s, i) => s + (placeHolders?.[i] ?? "")).join("");
+  return str;
 }
 export type TemplateStringProps = [
-  strings: TemplateStringsArray,
+  strings: TemplateStringsArray | string,
   ...placeHolders: string[]
 ];

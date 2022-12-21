@@ -1,6 +1,6 @@
 # styled-components-lite
 
-A tiny alternative to the popular styled-components library for react AND preact
+A tiny (1kb) alternative to the popular styled-components library for react AND preact
 
 Pros:
 
@@ -12,7 +12,7 @@ Pros:
 
 Cons:
 
-- Less mature or feature rich
+- No SSR support
 
 ## Setup/Install
 
@@ -27,13 +27,14 @@ Tip: Set `"moduleResolution": "NodeNext"` in tsconfig.json to get the best types
 Preview below. For full code, see demo folder
 
 ```tsx
+// Add some global styles
 css`
   body {
     color: lightgray;
   }
 `
 
-// Also supports tab-based closures
+// Also works with tab syntax (tss)
 css`
  body
   background: black
@@ -42,41 +43,67 @@ css`
    background: #333
 `
 
-let renderCount = 0
-
-// TODO: fluid font
 export function App() {
   const on = useOn()
   const [ref, width] = useWidth()
 
+  let pColor = ''
+  if (width > 400 && width > 800) {
+    pColor = on ? 'white' : 'pink'
+  } else {
+    pColor = on ? 'white' : 'red'
+  }
+
+  // Feel free to declare styled components inside components!
+
+  // A basic div with css template string
   const Div = styled.div`
     :root {
       color: #55f;
     }
   `
 
-  const P = styled.a`
+  // A basic div with tss string and nested component
+  const Container = styled.div(`
     :root
-    color: ${on ? 'white' : 'red'}
-    @container (width > 400px) and (width > 800px)
-    :root
-      color: ${on ? 'white' : 'pink'}
-  `
+      container-type: inline-size
+      max-width: 500px
+    :root ${Div}
+      background: white
+  `)
 
-  let expectedColor = ''
-  if (width > 400 && width > 800) {
-    expectedColor = on ? 'white' : 'pink'
-  } else {
-    expectedColor = on ? 'white' : 'red'
-  }
+  // A basic div with tab syntax (tss) template string and dynamic color
+  const Div2 = styled.div`
+  :root
+   color: ${pColor}
+  @container (width > 400px) and (width > 800px)
+   :root
+    color: ${pColor}
+ `
+
+  // An extension of Div2 with tss template string
+  const Div3 = styled(Div2)`
+    :root
+      background: black
+      padding: 10px
+  `
+  // An extension of Div3 with css string
+  const Div4 = styled(Div3)(':root { font-size: 30px; }')
 
   return (
     <Container forwardRef={ref as any}>
-      <Div>THIS SHOULD BE Blue</Div>
+      <Div>This should be blue font with white background</Div>
       <h3>THIS SHOULD BE WHITE</h3>
-      <P>THIS SHOULD BE {expectedColor.toUpperCase()}</P>
-      <p>RenderCount: {renderCount++}</p>
-      <p>Container Width: {width}</p>
+      <Div4 style={{textTransform: 'uppercase'}}>
+        This should be
+        <ul>
+          <li>uppercase</li>
+          <li>font-size 30</li>
+          <li>padding: 10</li>
+          <li>background: black</li>
+          <li>font color: {pColor}</li>
+        </ul>
+      </Div4>
     </Container>
   )
 }

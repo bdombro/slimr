@@ -1,3 +1,4 @@
+import { deleteComments } from "./css.js";
 import { normalizeIndent } from "./strings.js";
 
 /**
@@ -22,21 +23,18 @@ import { normalizeIndent } from "./strings.js";
  *	 }
  * `
  */
-export function tssToCss(_tss: string) {
-  _tss = normalizeIndent(_tss);
+export function tssToCss(tss: string) {
+  const isTss = !tss.match(/{[^\/]/); // match '{' without a /* (i.e. not a comment)
+  if (!isTss) return tss;
 
-  const istss = !_tss.match(/{[^\/]/); // match '{' without a /* (i.e. not a comment)
-  if (!istss) return _tss;
+  let css = tss;
+
+  css = deleteComments(css);
+  css = normalizeIndent(css);
 
   let lastIndent = 0;
 
-  // delete css comments i.e. {/* blah */}
-  _tss = _tss.replace(/{\/\*[\s\S]*?(?=\*\/})\*\/}/gm, "");
-
-  let lines = _tss.split("\n");
-
-  // trim end whitespace
-  lines = lines.map((l) => l.trimEnd());
+  let lines = css.split("\n");
 
   // delete empty lines
   lines = lines.filter(
@@ -44,32 +42,44 @@ export function tssToCss(_tss: string) {
   );
 
   // convert indentation to { and }
-  lines.forEach((line, lineIndex) => {
+  lines.forEach((line, iLine) => {
     let currentIndent = 0;
     for (const char of line) {
       if (char === "\t") currentIndent++;
       else break;
     }
 
-    if (lineIndex <= 1) {
+    if (iLine <= 1) {
       // ignore first two lines
     } else if (currentIndent === lastIndent) {
-      if (!lines[lineIndex - 1].endsWith(",") && !line.endsWith(","))
-        lines[lineIndex] += ";";
       // ignore if indent unchanged
     } else if (currentIndent > lastIndent) {
-      lines[lineIndex - 1] = lines[lineIndex - 1] + "{";
+      lines[iLine - 1] = lines[iLine - 1] + "{";
     } else if (currentIndent < lastIndent) {
-      lines[lineIndex - 1] = lines[lineIndex - 1] + ";";
       let closeCount = lastIndent - currentIndent;
-      for (let ci = 0; ci < closeCount; ci++) {
-        lines[lineIndex - 1] += `\n${"\t".repeat(closeCount - ci - 1)}}`;
+      for (let iC = 0; iC < closeCount; iC++) {
+        lines[iLine - 1] += `\n${"\t".repeat(closeCount - iC - 1)}}`;
       }
     }
     lastIndent = currentIndent;
   });
 
-  _tss = lines.join("\n");
+  lines = lines.flatMap((l) => l.split("\n"));
 
-  return _tss;
+  lines.forEach((line, iLine) => {
+    if (
+      line.trim() &&
+      !line.endsWith("{") &&
+      !line.endsWith("}") &&
+      !line.endsWith(",")
+    ) {
+      lines[iLine] += ";";
+    }
+  });
+
+  // add ; to end of declarations
+
+  css = lines.join("\n");
+
+  return css;
 }
