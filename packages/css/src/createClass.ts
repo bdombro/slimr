@@ -29,7 +29,7 @@ export default function createClass(...props: util.TemplateStringProps) {
       _css = tss.toCss(_css);
     } else {
       _css = util.normalizeIndent(_css);
-      _css = util.closeUnclosed(_css);
+      util.checkUnclosed(_css);
     }
     createClass.addToDom(_css);
   }

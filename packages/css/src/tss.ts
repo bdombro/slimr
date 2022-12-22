@@ -83,7 +83,11 @@ export function toCss(tss: string) {
 
   css = lines.join("\n");
 
-  css = util.closeUnclosed(css);
+  try {
+    util.checkUnclosed(css);
+  } catch (e) {
+    throw new Error(`TSS tabs are malformed: ${css}`);
+  }
 
   return css;
 }

@@ -4,19 +4,11 @@ export function classJoin(...classes: any[]) {
 }
 
 /** Ensure the number of open '{' equals the number of closed '}' */
-export function closeUnclosed(css: string) {
-  const opens = css.split("{").length - 1;
-  let closes = css.split("}").length - 1;
-
-  if (opens === closes) return css;
-
-  // if there are more '{' than '}' then add the missing '}' to the end
-  let fixed = css;
-  while (opens > closes) {
-    fixed += "}";
-    closes++;
+export function checkUnclosed(css: string) {
+  if (css.split("{").length !== css.split("}").length) {
+    throw new Error(`Unclosed '{' in css: ${css}`);
   }
-  return fixed;
+  return true;
 }
 
 // delete css comments i.e. {/* blah */}
