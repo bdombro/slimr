@@ -50,7 +50,7 @@ addToDom.baseCss = `
 /**
  * Injects css/tss to the page if they don't already exist and creates unique class names
  *
- * @param tss - css or tss to be transpiled and injected. :root is replaced by a unique class
+ * @param tss - css or tss to be transpiled and injected. :self is replaced by a unique class
  * @returns a unique class name
  *
  * tss is a superset of css
@@ -63,7 +63,8 @@ export function transpileAndAddToDom(_css: string) {
   if (!root) {
     root = "s" + transpileAndAddToDom.count++;
     transpileAndAddToDom.history.set(_css, root);
-    _css = _css.replace(/:root/g, "." + root);
+    _css = _css.replace(/:self/g, "." + root);
+    _css = _css.replace(/:self/g, "." + root);
     _css = transpileAndAddToDom.transpilers.reduce((css, f) => f(css), _css);
     addToDom(_css);
   }
