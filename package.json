@@ -1,6 +1,6 @@
 {
   "name": "styled-components-lite",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "type": "module",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -24,6 +24,7 @@
     "packages/*"
   ],
   "scripts": {
+    "prepublish": "npm run build && ",
     "build": "npm run clean && tsc -b",
     "clean": "tsc -b --clean",
     "format": "prettier -w .",
