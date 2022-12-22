@@ -1,5 +1,5 @@
 {
-  "name": "@styled-components-lite/common",
+  "name": "@styled-components-lite/css",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

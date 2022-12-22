@@ -20,7 +20,7 @@
   "references": [
     { "path": "./demo/preact-demo" },
     { "path": "./demo/react-demo" },
-    { "path": "./packages/common" },
+    { "path": "./packages/css" },
     { "path": "./packages/preact" },
     { "path": "./packages/react" }
   ]

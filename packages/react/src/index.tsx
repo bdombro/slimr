@@ -6,11 +6,10 @@
  * The guts should be kept 1-to-1 identical, so that it's easier to maintain
  */
 import React, { createElement as h, FC } from "react";
-import {
+import css, {
   classJoin,
-  css,
   TemplateStringProps,
-} from "@styled-components-lite/common";
+} from "@styled-components-lite/css";
 
 export { classJoin, css };
 

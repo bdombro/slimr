@@ -1,5 +1,10 @@
-import { deleteComments } from "./css.js";
-import { normalizeIndent } from "./strings.js";
+import * as util from "./util.js";
+
+/** A naive check whether a str is tss */
+export function isTss(maybeTss: string) {
+  // match '{' without a /* (i.e. not a comment)
+  return !maybeTss.match(/{[^\/]/);
+}
 
 /**
  * Converts a css shorthand (aka tss) to real css
@@ -23,14 +28,13 @@ import { normalizeIndent } from "./strings.js";
  *	 }
  * `
  */
-export function tssToCss(tss: string) {
-  const isTss = !tss.match(/{[^\/]/); // match '{' without a /* (i.e. not a comment)
-  if (!isTss) return tss;
+export function toCss(tss: string) {
+  if (!isTss(tss)) return tss;
 
   let css = tss;
 
-  css = deleteComments(css);
-  css = normalizeIndent(css);
+  css = util.deleteComments(css);
+  css = util.normalizeIndent(css);
 
   let lastIndent = 0;
 
@@ -77,9 +81,9 @@ export function tssToCss(tss: string) {
     }
   });
 
-  // add ; to end of declarations
-
   css = lines.join("\n");
+
+  css = util.closeUnclosed(css);
 
   return css;
 }
