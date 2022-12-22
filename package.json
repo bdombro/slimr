@@ -24,7 +24,8 @@
     "packages/*"
   ],
   "scripts": {
-    "prepublish": "npm run build && ",
+    "prepublishOnly": "npm run build & npm version patch",
+    "postpublish": "npm run clean",
     "build": "npm run clean && tsc -b",
     "clean": "tsc -b --clean",
     "format": "prettier -w .",
