@@ -1,6 +1,6 @@
 {
   "name": "styled-components-lite",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "type": "module",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -30,8 +30,7 @@
     "preact": "npm run -w demo/preact-demo dev",
     "react": "npm run -w demo/react-demo dev",
     "prepare": "husky install",
-    "prepack": "npm run build",
-    "prepublishOnly": "npm version patch",
+    "prepack": "npm run build && npm version patch",
     "postpublish": "npm run clean"
   },
   "exports": {
