@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import styled, { css } from '@styled-components-lite/react'
+import styled, { css } from '@chakra-lite/styled'
 
 // Add some global styles
 css`
@@ -97,7 +97,7 @@ export function App() {
       </Div4>
       <p>RenderCount: {renderCount++}</p>
       <p>Container Width: {width as any}</p>
-      <p>CSS Classes: {document.getElementById('styled-components-lite')?.innerHTML.match(/\.s/g)?.length ?? 0}</p>
+      <p>CSS Classes: {document.getElementById('chakra-lite')?.innerHTML.match(/\.s/g)?.length ?? 0}</p>
     </Container>
   )
 }

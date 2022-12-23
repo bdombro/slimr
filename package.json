@@ -1,26 +1,11 @@
 {
-  "name": "styled-components-lite",
-  "version": "2.0.13",
+  "name": "chakra-lite",
+  "version": "3.0.13",
   "type": "module",
   "author": "Brian Dombrowski",
   "license": "ISC",
-  "keywords": [
-    "styled-components",
-    "preact",
-    "react"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bdombro/styled-components-lite.git"
-  },
-  "files": [
-    "demo",
-    "packages",
-    "README.md",
-    "tsconfig.json"
-  ],
+  "private": true,
   "workspaces": [
-    "demo/*",
     "packages/*"
   ],
   "scripts": {
@@ -30,33 +15,7 @@
     "preact": "npm run -w demo/preact-demo dev",
     "react": "npm run -w demo/react-demo dev",
     "prepare": "husky install",
-    "prepack": "npm run build && npm version patch",
-    "postpublish": "npm run clean"
-  },
-  "exports": {
-    "./css": {
-      "import": "./packages/css/src/*",
-      "types": "./packages/css/src/index.d.ts"
-    },
-    "./react": {
-      "dev": "./packages/react/src/*",
-      "import": "./packages/react/src/index.js",
-      "types": "./packages/react/src/index.d.ts"
-    },
-    "./preact": {
-      "dev": "./packages/preact/src/*",
-      "import": "./packages/preact/src/index.js",
-      "types": "./packages/preact/src/index.d.ts"
-    }
-  },
-  "//typesVersions": "are used iff consumer's type!=module or TS < 4.6. I couldn't figure out how to get it export specific though",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./packages/preact/src/index.d.ts",
-        "./packages/react/src/index.d.ts"
-      ]
-    }
+    "publish": "tsc -b && npm publish --access public --workspaces && git add -A && git commit -m 'Pre-tag' && npm version patch && tsc -b --clean"
   },
   "devDependencies": {
     "prettier": "2.8.1",

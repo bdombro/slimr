@@ -47,10 +47,10 @@ createClass.addToDom = (_css: string) => {
     if (createClass.queue.size) {
       const css = [...createClass.queue].join('\n')
       createClass.queue.clear()
-      let style = document.getElementById('styled-components-lite') as HTMLStyleElement
+      let style = document.getElementById('chakra-lite') as HTMLStyleElement
       if (!style) {
         style = document.createElement('style')
-        style.id = 'styled-components-lite'
+        style.id = 'chakra-lite'
         style.innerHTML = createClass.baseCss + css
         document.head.appendChild(style)
       } else {

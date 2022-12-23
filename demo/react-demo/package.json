@@ -1,5 +1,5 @@
 {
-  "name": "@styled-components-lite/react-demo",
+  "name": "@chakra-lite/react-demo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chakra-light/chakra": "*",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "styled-components-lite": "^2.0.11"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",

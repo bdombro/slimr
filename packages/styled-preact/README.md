@@ -1,6 +1,43 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
-import styled, { css } from '@chakra-lite/styled-preact'
+# @chakra-lite/styled and @chakra-lite/styled-preact
 
+A tiny (1kb) alternative to the popular styled-components library for react AND preact
+
+Sister packages:
+
+- @chakra-lite/css
+- @chakra-lite/react
+
+Pros:
+
+- Much less bundle size and runtime sluggishness
+- Less is more: less bugs, no breaking changes
+- Compatible with preact and react
+- Supports declaring styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
+- Supports css AND tss - a tab based css
+
+Cons:
+
+- No SSR support
+
+## Setup/Install
+
+```bash
+npm i @chakra-lite/styled
+```
+
+or for preact
+
+```bash
+npm i @chakra-lite/styled-preact
+```
+
+Tip: Set `"moduleResolution": "NodeNext"` in tsconfig.json to get the best typescript experience
+
+## Usage
+
+Preview below. For full code, see demo folder
+
+```tsx
 // Add some global styles
 css`
   body {
@@ -10,35 +47,18 @@ css`
 
 // Also works with tab syntax (tss)
 css`
-	body
-		background: black
-	@media (width > 500px)
-		body
-			background: #333
+ body
+  background: black
+ @media (width > 500px)
+  body
+   background: #333
 `
-
-css`
-	{/* Now for some ugly code!! */}
-	
-	h1,
-	{/* multi-line
-			comment 
-	*/}
-	h2,
-	h3,h4,
-	h5
-
-		color: white
-	
-`
-
-let renderCount = 0
 
 export function App() {
   const on = useOn()
   const [ref, width] = useWidth()
 
-  let pColor = 'white'
+  let pColor = ''
   if (width > 400 && width > 800) {
     pColor = on ? 'white' : 'pink'
   } else {
@@ -65,12 +85,12 @@ export function App() {
 
   // A basic div with tab syntax (tss) template string and dynamic color
   const Div2 = styled.div`
-		:self
-			color: ${pColor}
-		@container (width > 400px) and (width > 800px)
-			:self
-				color: ${pColor}
-	`
+  :self
+   color: ${pColor}
+  @container (width > 400px) and (width > 800px)
+   :self
+    color: ${pColor}
+ `
 
   // An extension of Div2 with tss template string
   const Div3 = styled(Div2)`
@@ -95,39 +115,33 @@ export function App() {
           <li>font color: {pColor}</li>
         </ul>
       </Div4>
-      <p>RenderCount: {renderCount++}</p>
-      <p>Container Width: {width}</p>
-      <p>CSS Classes: {document.getElementById('chakra-lite')?.innerHTML.match(/\.s/g)?.length ?? 0}</p>
     </Container>
   )
 }
+```
 
-/** A hook that just return a boolean that oscilates on/off */
-function useOn() {
-  const [on, setOn] = useState(false)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOn((on) => !on)
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
+### Comparisons
 
-  return on
-}
+#### [Styled-Components](https://github.com/styled-components/styled-components)
 
-function useWidth() {
-  const ref = useRef<HTMLElement>()
-  const getWidth = () => ref.current?.clientWidth ?? 0
-  const [width, setWidth] = useState(getWidth())
+- A popular css-in-js lib that this lib is based on
 
-  useEffect(() => {
-    const upsertWidth = () => {
-      const newWidth = getWidth()
-      if (newWidth !== width) setWidth(getWidth())
-    }
-    const int = setInterval(upsertWidth, 500)
-    return () => clearInterval(int)
-  }, [])
+Pros
 
-  return [ref, width]
-}
+- Very feature rich
+
+Cons
+
+- Is massive (~12kb), plus has dependency on emotion (~11kb)
+
+#### [Goober](https://github.com/cristianbote/goober)
+
+- another tiny 1kb styled-components like css-in-js
+
+Pros:
+
+- supports nested css selector syntax (wip for this repo)
+
+Cons:
+
+- Does not support in-component declaring

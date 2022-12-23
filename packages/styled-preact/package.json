@@ -1,5 +1,5 @@
 {
-  "name": "@chakra-lite/react",
+  "name": "@chakra-lite/styled-preact",
   "version": "3.0.13",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -9,8 +9,6 @@
   "types": "src/index.ts",
   "keywords": [
     "chakra",
-    "chakra-ui",
-    "emotion",
     "styled-components",
     "preact",
     "react"
@@ -27,15 +25,12 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "prepack": "npm version patch"
+    "prepack": "cp ../styled/README.md . && npm version patch"
   },
   "dependencies": {
-    "@chakra-lite/react": ">=3"
+    "@chakra-lite/css": ">=3"
   },
   "peerDependencies": {
-    "@types/react": ">=18",
-    "@types/react-dom": ">=18",
-    "react": ">=18",
-    "react-dom": ">=18"
+    "preact": ">=10.0.0"
   }
 }

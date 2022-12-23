@@ -1,5 +1,5 @@
 {
-  "name": "@chakra-lite/react",
+  "name": "@chakra-lite/styled",
   "version": "3.0.13",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -30,7 +30,7 @@
     "prepack": "npm version patch"
   },
   "dependencies": {
-    "@chakra-lite/react": ">=3"
+    "@chakra-lite/css": ">=3"
   },
   "peerDependencies": {
     "@types/react": ">=18",

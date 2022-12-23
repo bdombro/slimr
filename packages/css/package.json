@@ -1,9 +1,32 @@
 {
-  "name": "@styled-components-lite/css",
+  "name": "@chakra-lite/css",
+  "version": "3.0.13",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
   "type": "module",
   "main": "src/index.ts",
+  "types": "src/index.ts",
+  "keywords": [
+    "chakra",
+    "chakra-ui",
+    "emotion",
+    "styled-components",
+    "preact",
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdombro/chakra-lite.git"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "tsconfig.json"
+  ],
   "scripts": {
     "build": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "prepack": "npm version patch"
   }
 }

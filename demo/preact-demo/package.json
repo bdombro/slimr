@@ -1,5 +1,5 @@
 {
-  "name": "@styled-components-lite/preact-demo",
+  "name": "@chakra-lite/preact-demo",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "preact": "^10.11.3",
-    "styled-components-lite": "^2.0.11"
+    "@chakra-light/chakra": "*",
+    "preact": "^10.11.3"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.4.0",

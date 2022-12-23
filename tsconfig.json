@@ -21,7 +21,8 @@
     { "path": "./demo/preact-demo" },
     { "path": "./demo/react-demo" },
     { "path": "./packages/css" },
-    { "path": "./packages/preact" },
-    { "path": "./packages/react" }
+    { "path": "./packages/react" },
+    { "path": "./packages/styled" },
+    { "path": "./packages/styled-preact" }
   ]
 }

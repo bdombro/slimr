@@ -1,12 +1,12 @@
 /**
- * This file is identical to the react version (/packages/react/src/index.tsx) except for
+ * This file is identical to the react version (/packages/styled/src/index.tsx) except for
  * - imports createElement(h) and types from React
  * - types are converted to react-agnostic, generic types at the bottom
  *
  * The guts should be kept 1-to-1 identical, so that it's easier to maintain
  */
 import { FunctionalComponent as FC, h, JSX } from 'preact'
-import css, { classJoin, TemplateStringProps } from '@styled-components-lite/css'
+import css, { classJoin, TemplateStringProps } from '@chakra-lite/css'
 
 export { classJoin, css }
 
