@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "preact": "^10.11.3",
-    "styled-components-lite": "^1.0.22"
+    "styled-components-lite": "^2.0.11"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.4.0",
-    "typescript": "^4.9.3",
+    "typescript": "*",
     "vite": "^4.0.0"
   }
 }

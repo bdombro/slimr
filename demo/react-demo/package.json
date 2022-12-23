@@ -12,13 +12,13 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "styled-components-lite": "^1.0.22"
+    "styled-components-lite": "^2.0.11"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.9",
     "@vitejs/plugin-react": "^3.0.0",
-    "typescript": "next",
+    "typescript": "*",
     "vite": "^4.0.0"
   }
 }
