@@ -30,8 +30,7 @@
     "preact": "npm run -w demo/preact-demo dev",
     "react": "npm run -w demo/react-demo dev",
     "prepare": "husky install",
-    "prepublishOnly": "npm run build & npm version patch",
-    "postpublish": "npm run clean"
+    "prepublishOnly": "npm run build & npm version patch"
   },
   "exports": {
     "./css": {
