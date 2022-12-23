@@ -6,10 +6,7 @@
  * The guts should be kept 1-to-1 identical, so that it's easier to maintain
  */
 import { FunctionalComponent as FC, h, JSX } from "preact";
-import css, {
-  classJoin,
-  TemplateStringProps,
-} from "@styled-components-lite/css";
+import css, { classJoin, TemplateStringProps } from "../../css/src/index.js";
 
 export { classJoin, css };
 
