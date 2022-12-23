@@ -24,7 +24,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run clean && tsc -b",
+    "build": "tsc -b",
     "clean": "tsc -b --clean",
     "format": "prettier -w .",
     "preact": "npm run -w demo/preact-demo dev",
