@@ -2,6 +2,7 @@
   "name": "@styled-components-lite/react",
   "type": "module",
   "main": "src/index.tsx",
+  "private": true,
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean"
