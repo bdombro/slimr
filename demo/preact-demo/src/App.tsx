@@ -38,7 +38,7 @@ export function App() {
   const on = useOn();
   const [ref, width] = useWidth();
 
-  let pColor = "";
+  let pColor = "white";
   if (width > 400 && width > 800) {
     pColor = on ? "white" : "pink";
   } else {

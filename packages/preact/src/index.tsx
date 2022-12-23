@@ -43,7 +43,7 @@ function styled<C extends FC>(Component: C) {
  *
  *
  */
-const tags = {
+export const tags = {
   /**
    * Creates an 'a' tag with css styles
    * @param css - a string or templateString to be transpiled and injected
