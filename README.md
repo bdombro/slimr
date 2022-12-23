@@ -32,7 +32,7 @@ css`
   body {
     color: lightgray;
   }
-`;
+`
 
 // Also works with tab syntax (tss)
 css`
@@ -41,17 +41,17 @@ css`
  @media (width > 500px)
   body
    background: #333
-`;
+`
 
 export function App() {
-  const on = useOn();
-  const [ref, width] = useWidth();
+  const on = useOn()
+  const [ref, width] = useWidth()
 
-  let pColor = "";
+  let pColor = ''
   if (width > 400 && width > 800) {
-    pColor = on ? "white" : "pink";
+    pColor = on ? 'white' : 'pink'
   } else {
-    pColor = on ? "white" : "red";
+    pColor = on ? 'white' : 'red'
   }
 
   // Feel free to declare styled components inside components!
@@ -61,7 +61,7 @@ export function App() {
     :self {
       color: #55f;
     }
-  `;
+  `
 
   // A basic div with tss string and nested component
   const Container = styled.div(`
@@ -70,7 +70,7 @@ export function App() {
       max-width: 500px
     :self ${Div}
       background: white
-  `);
+  `)
 
   // A basic div with tab syntax (tss) template string and dynamic color
   const Div2 = styled.div`
@@ -79,22 +79,22 @@ export function App() {
   @container (width > 400px) and (width > 800px)
    :self
     color: ${pColor}
- `;
+ `
 
   // An extension of Div2 with tss template string
   const Div3 = styled(Div2)`
     :self
       background: black
       padding: 10px
-  `;
+  `
   // An extension of Div3 with css string
-  const Div4 = styled(Div3)(":self { font-size: 30px; }");
+  const Div4 = styled(Div3)(':self { font-size: 30px; }')
 
   return (
     <Container forwardRef={ref as any}>
       <Div>This should be blue font with white background</Div>
       <h3>THIS SHOULD BE WHITE</h3>
-      <Div4 style={{ textTransform: "uppercase" }}>
+      <Div4 style={{ textTransform: 'uppercase' }}>
         This should be
         <ul>
           <li>uppercase</li>
@@ -105,7 +105,7 @@ export function App() {
         </ul>
       </Div4>
     </Container>
-  );
+  )
 }
 ```
 
