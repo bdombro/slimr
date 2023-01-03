@@ -1,3 +1,6 @@
+/** Breakpoints like chakra */
+const breakPoints = ['30em', '48em', '62em', '80em', '96em']
+
 /** Joins class names and filters out blanks */
 export function classJoin(...classes: any[]) {
   return classes.filter((c) => c && typeof c === 'string').join(' ')
@@ -8,7 +11,6 @@ function deleteComments(css: string) {
   return css.replace(/{\/\*[\s\S]*?(?=\*\/})\*\/}/gm, '')
 }
 
-const breakPoints = ['30em', '48em', '62em', '80em', '96em']
 /**
  * Expands array values into media queries
  *
@@ -19,7 +21,7 @@ function expandArrayValues(css: string) {
   return css
     .split('\n')
     .map((l) => {
-      const [_, prop, vals] = [...l.matchAll(/([A-Za-z]*):[ ]*\[([^\]]+)\]/g)]?.[0] ?? []
+      const [_, prop, vals] = [...l.matchAll(/([A-Za-z\-]*):[ ]*\[([^\]]+)\]/g)]?.[0] ?? []
       if (vals) {
         return vals
           .split(',')
@@ -39,8 +41,14 @@ function expandArrayValues(css: string) {
 }
 
 export interface ShorthandProps {
+  ai?: string
+  bg?: string
+  c?: string
   d?: string
+  f?: string
+  fd?: string
   h?: number | string
+  jc?: string
   m?: number | string
   ml?: number | string
   mr?: number | string
@@ -59,12 +67,19 @@ export interface ShorthandProps {
   pb?: number | string
   py?: number | string
   px?: number | string
+  pos?: number | string
   w?: number | string
   z?: number | string
 }
 const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 'py'>, string> = {
+  ai: 'align-items',
+  bg: 'background',
+  c: 'color',
   d: 'display',
+  f: 'flex',
+  fd: 'flex-direction',
   h: 'height',
+  jc: 'justify-content',
   m: 'margin',
   ml: 'margin-left',
   mr: 'margin-right',
@@ -79,6 +94,7 @@ const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 
   pe: 'padding-inline-end',
   pt: 'padding-top',
   pb: 'padding-bottom',
+  pos: 'position',
   w: 'width',
   z: 'z-index',
 }
@@ -128,12 +144,7 @@ function findQueries(css: string) {
   return queries
 }
 
-/** Ensure the number of open '{' equals the number of closed '}' */
-function hasUnclosed(css: string) {
-  return css.split('{').length !== css.split('}').length
-}
-
-/** Trims whitespace */
+/** Trims whitespace for every line */
 function trim(css: string) {
   return css
     .split('\n')
@@ -163,25 +174,17 @@ export type TemplateStringProps = [strings: TemplateStringsArray | string, ...pl
 /**
  * Injects css to the page
  *
- * - Skips if already added
  * - Batches adds for performance
  *
  * @param css - css to be injected
  * @returns void
  */
-function addCssWithOptions(css: string, skipHistory = false) {
-  if (!skipHistory) {
-    if (addCssWithOptions.history.has(css)) return
-    addCssWithOptions.history.add(css)
-  }
-  if (hasUnclosed(css)) {
-    return console.error(`Error: Unclosed css: "\n${css}\n"`)
-  }
-  addCssWithOptions.que.add(css)
+export function addCss(css: string) {
+  addCss.que.add(css)
   setTimeout(() => {
-    const css = [...addCssWithOptions.que].join('\n')
+    const css = [...addCss.que].join('\n')
     if (css) {
-      addCssWithOptions.que.clear()
+      addCss.que.clear()
       let s = document.getElementById('ustyle') as HTMLStyleElement
       if (!s) {
         s = document.createElement('style')
@@ -194,22 +197,7 @@ function addCssWithOptions(css: string, skipHistory = false) {
     }
   }, 0)
 }
-addCssWithOptions.count = 0
-addCssWithOptions.history = new Set<string>()
-addCssWithOptions.que = new Set<string>()
-
-/**
- * Injects css to the page
- *
- * - Skips if already added
- * - Batches adds for performance
- *
- * @param css - css as string or template string to be injected
- * @returns void
- */
-export function addCss(...p: TemplateStringProps) {
-  return addCssWithOptions(t2s(...p))
-}
+addCss.que = new Set<string>()
 
 /**
  * Injects css and creates unique class names
@@ -250,7 +238,7 @@ export default function createClass(...p: TemplateStringProps) {
 
     css = trim(css) + '\n\n'
 
-    addCssWithOptions(css, true)
+    addCss(css)
   }
   return className
 }

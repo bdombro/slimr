@@ -6,16 +6,15 @@
   "license": "ISC",
   "private": true,
   "workspaces": [
-    "demo/*",
     "packages/*"
   ],
   "scripts": {
     "build": "npm run --workspaces build",
     "clean": "npm run --workspaces clean",
     "format": "prettier -w .",
-    "preact": "npm run -w demo/preact-demo dev",
-    "react": "npm run -w demo/react-demo dev",
-    "prepare": "husky install"
+    "demo": "npm run -w packages/demo dev",
+    "prepare": "husky install",
+    "publish": "npm publish --workspaces --access public"
   },
   "devDependencies": {
     "husky": "^8.0.0",

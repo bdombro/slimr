@@ -14,16 +14,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
+    "noEmit": true
   },
   "include": [],
-  "references": [
-    { "path": "./demo/preact-demo" },
-    { "path": "./demo/react-demo" },
-    { "path": "./packages/css" },
-    { "path": "./packages/styled-preact" },
-    { "path": "./packages/styled-react" },
-    { "path": "./packages/props-react" }
-  ]
+  "references": [{ "path": "./packages/css" }, { "path": "./packages/demo" }, { "path": "./packages/styled" }]
 }
