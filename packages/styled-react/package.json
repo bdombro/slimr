@@ -1,5 +1,5 @@
 {
-  "name": "@ustyle/styled-preact",
+  "name": "@ustyle/styled-react",
   "version": "1.0.10",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -44,6 +44,10 @@
     "postpublish": "npm run clean"
   },
   "peerDependencies": {
-    "preact": "^10"
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "preact": "^10",
+    "react": "^18",
+    "react-dom": "^18"
   }
 }

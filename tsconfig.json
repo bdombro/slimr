@@ -13,16 +13,17 @@
     "moduleResolution": "NodeNext", // switch to bundler soon: https://github.com/microsoft/TypeScript/pull/51669
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "sourceMap": true,
-    "declaration": true
+    "declaration": true,
+    "noEmit": true,
+    "jsx": "react-jsx"
   },
   "include": [],
   "references": [
     { "path": "./demo/preact-demo" },
     { "path": "./demo/react-demo" },
     { "path": "./packages/css" },
-    { "path": "./packages/react" },
-    { "path": "./packages/styled" },
-    { "path": "./packages/styled-preact" }
+    { "path": "./packages/styled-preact" },
+    { "path": "./packages/styled-react" },
+    { "path": "./packages/props-react" }
   ]
 }

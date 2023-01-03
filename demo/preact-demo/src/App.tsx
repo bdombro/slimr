@@ -1,109 +1,80 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
-import styled, { css } from '@chakra-lite/styled-preact'
+import { useEffect, useState } from 'react'
+import css, { addCss } from '@ustyle/css'
+import styled from '@ustyle/styled/p'
+import { Li } from '@ustyle/props/p'
 
-// Add some global styles
-css`
-  body {
+addCss`
+	body {
+		background: black;
     color: lightgray;
   }
-`
-
-// Also works with tab syntax (tss)
-css`
-	body
-		background: black
-	@media (width > 500px)
-		body
-			background: #333
-`
-
-css`
-	{/* Now for some ugly code!! */}
-	
-	h1,
-	{/* multi-line
-			comment 
-	*/}
-	h2,
-	h3,h4,
-	h5
-
-		color: white
-	
 `
 
 let renderCount = 0
 
 export function App() {
-  const on = useOn()
-  const [ref, width] = useWidth()
+  const on = useOscillator()
+  const pColor = on ? 'gray' : 'red'
 
-  let pColor = 'white'
-  if (width > 400 && width > 800) {
-    pColor = on ? 'white' : 'pink'
-  } else {
-    pColor = on ? 'white' : 'red'
-  }
-
-  // Feel free to declare styled components inside components!
-
-  // A basic div with css template string
-  const Div = styled.div`
-    :self {
-      color: #55f;
+  const D = styled.div`
+    background: white;
+    &:hover {
+      font-weight: bold;
+    }
+    @media (width > 500px) {
+      font-size: 20px;
     }
   `
-
-  // A basic div with tss string and nested component
-  const Container = styled.div(`
-    :self
-      container-type: inline-size
-      max-width: 500px
-    :self ${Div}
-      background: white
-  `)
-
-  // A basic div with tab syntax (tss) template string and dynamic color
-  const Div2 = styled.div`
-		:self
-			color: ${pColor}
-		@container (width > 400px) and (width > 800px)
-			:self
-				color: ${pColor}
-	`
-
-  // An extension of Div2 with tss template string
-  const Div3 = styled(Div2)`
-    :self
-      background: black
-      padding: 10px
+  const D2 = styled(D)`
+    color: ${pColor};
   `
-  // An extension of Div3 with css string
-  const Div4 = styled(Div3)(':self { font-size: 30px; }')
+
+  const body = (
+    <>
+      This should be
+      <ul>
+        <li>font-size: inherit when lt 500, 20px when gt</li>
+        <li>font-weight bold on hover</li>
+        <li>background: white</li>
+        <li>font color: {pColor}</li>
+        <Li
+          color="blue"
+          css={`
+            font-size: 24px;
+          `}
+        >
+          font: blue @ 24px
+        </Li>
+      </ul>
+    </>
+  )
 
   return (
-    <Container forwardRef={ref as any}>
-      <Div>This should be blue font with white background</Div>
-      <h3>THIS SHOULD BE WHITE</h3>
-      <Div4 style={{ textTransform: 'uppercase' }}>
-        This should be
-        <ul>
-          <li>uppercase</li>
-          <li>font-size 30</li>
-          <li>padding: 10</li>
-          <li>background: black</li>
-          <li>font color: {pColor}</li>
-        </ul>
-      </Div4>
+    <>
+      <h3>This font should be gray with black background</h3>
+      <div
+        className={css`
+          background: white;
+          color: ${pColor};
+          &:hover {
+            font-weight: bold;
+          }
+          @media (width > 500px) {
+            font-size: 20px;
+          }
+        `}
+      >
+        {body}
+      </div>
+      <D2>{body}</D2>
       <p>RenderCount: {renderCount++}</p>
-      <p>Container Width: {width}</p>
-      <p>CSS Classes: {document.getElementById('chakra-lite')?.innerHTML.match(/\.s/g)?.length ?? 0}</p>
-    </Container>
+      <p>CSS Classes: {document.getElementById('ustyle')?.innerHTML.match(/\.s/g)?.length ?? 0}</p>
+    </>
   )
 }
 
 /** A hook that just return a boolean that oscilates on/off */
-function useOn() {
+function useOscillator() {
   const [on, setOn] = useState(false)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,21 +84,4 @@ function useOn() {
   }, [])
 
   return on
-}
-
-function useWidth() {
-  const ref = useRef<HTMLElement>()
-  const getWidth = () => ref.current?.clientWidth ?? 0
-  const [width, setWidth] = useState(getWidth())
-
-  useEffect(() => {
-    const upsertWidth = () => {
-      const newWidth = getWidth()
-      if (newWidth !== width) setWidth(getWidth())
-    }
-    const int = setInterval(upsertWidth, 500)
-    return () => clearInterval(int)
-  }, [])
-
-  return [ref, width]
 }

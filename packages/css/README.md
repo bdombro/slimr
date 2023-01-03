@@ -1,19 +1,16 @@
-# @chakra-lite/css
+# @ustyle/css
 
-A tiny (1kb) alternative to the popular emotion library for react AND preact
+A tiny (1.3kb) alternative to the popular emotion library for react AND preact
 
-Sister packages:
+Sister libs:
 
-- @chakra-lite/styled
-- @chakra-lite/react
+- @ustyle/styled
+- @ustyle/react
 
 Pros:
 
-- Much less bundle size and runtime sluggishness
-- Less is more: less bugs, no breaking changes
-- Compatible with preact and react
-- Supports declaring css inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
-- Supports css AND tss - a tab based css
+- Much less bundle size
+- Less is more: faster, less bugs, no breaking changes
 
 Cons:
 
@@ -22,10 +19,8 @@ Cons:
 ## Setup/Install
 
 ```bash
-npm i @chakra-lite/css
+npm i @ustyle/css
 ```
-
-Tip: Set `"moduleResolution": "NodeNext"` in tsconfig.json to get the best typescript experience
 
 ## Usage
 
@@ -33,32 +28,31 @@ Preview below. For full code, see demo folder
 
 ```tsx
 // Add some global styles
-css`
+css.addCss`
   body {
     color: lightgray;
   }
 `
 
-// Also works with tab syntax (tss)
-css`
- body
-  background: black
- @media (width > 500px)
-  body
-   background: #333
-`
-
 export function App() {
   const on = useOn()
 
-  // Feel free to declare css inside components!
-  const fontWeight = on ? 'bold' : 'initial'
-
-  css`
-    body
-      font-weight: ${fontWeight}
-  `
-  return <div>This should be black or gray background, lightgray font, {fontWeight} weight</div>
+  return (
+    <div
+      className={css`
+        background: white;
+        color: ${on ? 'red' : 'initial'};
+        &:hover {
+          font-weight: bold;
+        }
+        @media (width > 500px) {
+          font-size: 20px;
+        }
+      `}
+    >
+      Helo css!
+    </div>
+  )
 }
 ```
 
@@ -70,8 +64,8 @@ export function App() {
 
 Pros
 
-- Very feature rich
+- More mature and feature rich, like SSR support
 
 Cons
 
-- Is large (~11kb)
+- Is large (~8kb)

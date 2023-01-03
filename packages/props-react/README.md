@@ -1,11 +1,11 @@
-# @chakra-lite/react and @chakra-lite/preact
+# @ustyle/react and @ustyle/preact
 
-A tiny (1kb) alternative to the popular chakra-ui library for react AND preact
+A tiny (1kb) alternative to the popular ustylera-ui library for react AND preact
 
-Sister packages:
+Sister libs:
 
-- @chakra-lite/css
-- @chakra-lite/styled
+- @ustyle/css
+- @ustyle/styled
 
 Pros:
 
@@ -22,13 +22,13 @@ Cons:
 ## Setup/Install
 
 ```bash
-npm i @chakra-lite/react
+npm i @ustyle/react
 ```
 
 or for preact
 
 ```bash
-npm i @chakra-lite/react
+npm i @ustyle/react
 ```
 
 Tip: Set `"moduleResolution": "NodeNext"` in tsconfig.json to get the best typescript experience
@@ -43,7 +43,7 @@ Preview below. For full code, see demo folder
 
 ### Comparisons
 
-#### [Chakra-UI](#)
+#### [ustylera-UI](#)
 
 - A popular UI component framework
 

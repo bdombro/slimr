@@ -1,11 +1,12 @@
-# @chakra-lite/styled and @chakra-lite/styled-preact
+# @ustyle/styled-react
 
 A tiny (1kb) alternative to the popular styled-components library for react AND preact
 
-Sister packages:
+Sister libs:
 
-- @chakra-lite/css
-- @chakra-lite/react
+- @ustyle/css
+- @ustyle/styled-preact
+- @ustyle/react
 
 Pros:
 
@@ -13,7 +14,7 @@ Pros:
 - Less is more: less bugs, no breaking changes
 - Compatible with preact and react
 - Supports declaring styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
-- Supports css AND tss - a tab based css
+- Supports css
 
 Cons:
 
@@ -22,16 +23,14 @@ Cons:
 ## Setup/Install
 
 ```bash
-npm i @chakra-lite/styled
+npm i @ustyle/styled-react
 ```
 
 or for preact
 
 ```bash
-npm i @chakra-lite/styled-preact
+npm i @ustyle/styled-preact
 ```
-
-Tip: Set `"moduleResolution": "NodeNext"` in tsconfig.json to get the best typescript experience
 
 ## Usage
 

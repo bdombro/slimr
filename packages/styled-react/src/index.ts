@@ -1,5 +1,5 @@
 /**
- * This file is identical to the react version (../react/index.ts)
+ * This file is identical to the preact version (../preact/htmlTags.ts)
  * Should be kept 1-to-1 identical, so that it's easier to maintain
  */
 import styled from './styled.js'

@@ -1,6 +1,6 @@
 {
-  "name": "@ustyle/styled-preact",
-  "version": "1.0.10",
+  "name": "@ustyle/props-react",
+  "version": "1.0.6",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -27,13 +27,14 @@
       "types": "./src/index.ts"
     },
     "./base": {
-      "import": "./src/styled.js",
-      "require": "./src/styled.cjs",
-      "types": "./src/styled.ts"
+      "import": "./src/withStyleProps.js",
+      "require": "./src/withStyleProps.cjs",
+      "types": "./src/withStyleProps.ts"
     }
   },
   "files": [
     "src",
+    "shared",
     "README.md",
     "tsconfig.json"
   ],
@@ -44,6 +45,9 @@
     "postpublish": "npm run clean"
   },
   "peerDependencies": {
-    "preact": "^10"
+    "@types/react": ">=18",
+    "@types/react-dom": ">=18",
+    "react": ">=18",
+    "react-dom": ">=18"
   }
 }
