@@ -16,7 +16,7 @@ Pros:
 - Styled shortcuts like styled.div when imported from `@ustyle/styled/withHtmlTags`. Note: To get types you'll need tsconfig:moduleResolution >= `Node16`
 - Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
   - `m` --> `margin`
-  - `mx` --> `margin-inline-start` and end
+  - `mx` --> `margin-left` and right
   - `py` --> `padding-top` and bottom
   - More [here](https://github.com/bdombro/ustyle/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
 - CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):

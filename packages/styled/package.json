@@ -1,6 +1,6 @@
 {
   "name": "@ustyle/styled",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -50,6 +50,6 @@
     "react-dom": "^18"
   },
   "dependencies": {
-    "@ustyle/css": "^1.0.28"
+    "@ustyle/css": "^1.0.29"
   }
 }

@@ -67,17 +67,13 @@ export interface ShorthandProps {
   ml?: number | string
   /** shorthand for css:margin-right */
   mr?: number | string
-  /** shorthand for css:margin-inline-start */
-  ms?: number | string
-  /** shorthand for css:margin-inline-end */
-  me?: number | string
   /** shorthand for css:margin-top */
   mt?: number | string
   /** shorthand for css:margin-bottom */
   mb?: number | string
   /** shorthand for css:margin-top & margin-bottom */
   my?: number | string
-  /** shorthand for css:margin-inline-start & margin-inline-end */
+  /** shorthand for css:margin-left & margin-right */
   mx?: number | string
   /** shorthand for css:max-width */
   maxW?: number | string
@@ -89,17 +85,13 @@ export interface ShorthandProps {
   pl?: number | string
   /** shorthand for css:padding-right */
   pr?: number | string
-  /** shorthand for css:padding-inline-start */
-  ps?: number | string
-  /** shorthand for css:padding-inline-end */
-  pe?: number | string
   /** shorthand for css:padding-top */
   pt?: number | string
   /** shorthand for css:padding-bottom */
   pb?: number | string
   /** shorthand for css:padding-top & padding-bottom */
   py?: number | string
-  /** shorthand for css:padding-inline-start & padding-inline-end */
+  /** shorthand for css:padding-left & padding-right */
   px?: number | string
   /** shorthand for css:position */
   pos?: number | string
@@ -108,7 +100,7 @@ export interface ShorthandProps {
   /** shorthand for css:z-index */
   z?: number | string
 }
-const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 'py'>, string> = {
+export const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 'py'>, string> = {
   ai: 'align-items',
   b: 'border',
   br: 'border-radius',
@@ -122,8 +114,6 @@ const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 
   m: 'margin',
   ml: 'margin-left',
   mr: 'margin-right',
-  ms: 'margin-inline-start',
-  me: 'margin-inline-end',
   mt: 'margin-top',
   mb: 'margin-bottom',
   maxW: 'max-width',
@@ -131,8 +121,6 @@ const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 
   p: 'padding',
   pl: 'padding-left',
   pr: 'padding-right',
-  ps: 'padding-inline-start',
-  pe: 'padding-inline-end',
   pt: 'padding-top',
   pb: 'padding-bottom',
   pos: 'position',
@@ -145,7 +133,7 @@ export const shorthandProps = [...Object.keys(shorthandPropsMap), 'mx', 'my', 'p
 function expandProps(css: string) {
   css = '\n' + css // inject a newline to make the regex easier
   // Handle 'mx', 'my', 'px', 'py'
-  css = css.replace(/([mp])x:([^;]*);/g, '$1s:$2;$1e:$2').replace(/([mp])y:([^;]*);/g, '$1s:$2;$1e:$2')
+  css = css.replace(/([mp])x:([^;]*);/g, '$1l:$2;$1r:$2').replace(/([mp])y:([^;]*);/g, '$1t:$2;$1b:$2')
   Object.entries(shorthandPropsMap).forEach(([k, v]) => {
     css = css.replace(new RegExp(`([ \n\t;])${k}:`, 'g'), `$1${v}:`)
   })
