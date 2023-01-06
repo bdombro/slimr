@@ -14,7 +14,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
   "include": [],
   "references": [{ "path": "./packages/css" }, { "path": "./packages/demo" }, { "path": "./packages/styled" }]

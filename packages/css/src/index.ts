@@ -41,34 +41,67 @@ function expandArrayValues(css: string) {
 }
 
 export interface ShorthandProps {
+  /** shorthand for css:align-items */
   ai?: string
+  /** shorthand for css:background */
   bg?: string
+  /** shorthand for css:color */
   c?: string
+  /** shorthand for css:display */
   d?: string
+  /** shorthand for css:flex */
   f?: string
+  /** shorthand for css:flex-direction */
   fd?: string
+  /** shorthand for css:height */
   h?: number | string
+  /** shorthand for css:justify-content */
   jc?: string
+  /** shorthand for css:margin */
   m?: number | string
+  /** shorthand for css:margin-left */
   ml?: number | string
+  /** shorthand for css:margin-right */
   mr?: number | string
+  /** shorthand for css:margin-inline-start */
   ms?: number | string
+  /** shorthand for css:margin-inline-end */
   me?: number | string
+  /** shorthand for css:margin-top */
   mt?: number | string
+  /** shorthand for css:margin-bottom */
   mb?: number | string
+  /** shorthand for css:margin-top & margin-bottom */
   my?: number | string
+  /** shorthand for css:margin-inline-start & margin-inline-end */
   mx?: number | string
+  /** shorthand for css:max-width */
+  maxW?: number | string
+  /** shorthand for css:min-width */
+  minW?: number | string
+  /** shorthand for css:padding */
   p?: number | string
+  /** shorthand for css:padding-left */
   pl?: number | string
+  /** shorthand for css:padding-right */
   pr?: number | string
+  /** shorthand for css:padding-inline-start */
   ps?: number | string
+  /** shorthand for css:padding-inline-end */
   pe?: number | string
+  /** shorthand for css:padding-top */
   pt?: number | string
+  /** shorthand for css:padding-bottom */
   pb?: number | string
+  /** shorthand for css:padding-top & padding-bottom */
   py?: number | string
+  /** shorthand for css:padding-inline-start & padding-inline-end */
   px?: number | string
+  /** shorthand for css:position */
   pos?: number | string
+  /** shorthand for css:width */
   w?: number | string
+  /** shorthand for css:z-index */
   z?: number | string
 }
 const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 'py'>, string> = {
@@ -87,6 +120,8 @@ const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 
   me: 'margin-inline-end',
   mt: 'margin-top',
   mb: 'margin-bottom',
+  maxW: 'max-width',
+  minW: 'min-width',
   p: 'padding',
   pl: 'padding-left',
   pr: 'padding-right',
@@ -98,15 +133,18 @@ const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 
   w: 'width',
   z: 'z-index',
 }
+export const shorthandProps = [...Object.keys(shorthandPropsMap), 'mx', 'my', 'px', 'py']
 
 /** Expand short-hand css props to full */
 function expandProps(css: string) {
   css = '\n' + css // inject a newline to make the regex easier
-  // Handle 'mx', 'my', 'px', 'py'
-  css = css.replace(/([mp])x:([^;]*);/g, '$1s:$2;$1e:$2')
-  css = css.replace(/([mp])y:([^;]*);/g, '$1s:$2;$1e:$2')
+  // Handle 'm', 'mx', 'my', 'px', 'py'
+  css = css
+    .replace(/([ \n\t;])m:([^;]*);/g, '$1ms:$2;me:$2;mt:$2;mb:$2;')
+    .replace(/([mp])x:([^;]*);/g, '$1s:$2;$1e:$2')
+    .replace(/([mp])y:([^;]*);/g, '$1s:$2;$1e:$2')
   Object.entries(shorthandPropsMap).forEach(([k, v]) => {
-    css = css.replace(new RegExp(`([ \n\t])${k}:`, 'g'), `$1${v}:`)
+    css = css.replace(new RegExp(`([ \n\t;])${k}:`, 'g'), `$1${v}:`)
   })
   return css.trim()
 }

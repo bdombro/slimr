@@ -1,5 +1,5 @@
 import { createElement, CSSProperties, FC, forwardRef, HTMLAttributes } from 'react'
-import css, { classJoin, ShorthandProps, TemplateStringProps } from '@ustyle/css'
+import css, { classJoin, ShorthandProps, shorthandProps, TemplateStringProps } from '@ustyle/css'
 
 export { css }
 export * from '@ustyle/css'
@@ -8,7 +8,7 @@ export * from '@ustyle/css'
 export interface ZxProps extends CSSProperties, ShorthandProps {}
 type ZxP = ZxProps
 
-export interface SCProps {
+export interface SCProps extends ShorthandProps {
   /** A string of css or classname to be added to the component */
   css?: string
   /**
@@ -45,9 +45,16 @@ export default function styled<C extends FC<any>>(Component: C) {
   return (...cssProps: TemplateStringProps) => {
     const className = css(...cssProps)
     const CStyled = forwardRef((props: any, ref) => {
-      const { css: _css, forwardRef, zx, ...rest } = props
+      const { css: _css, forwardRef, zx = {}, ...rest } = props
 
-      const zxClass = zx
+      shorthandProps.forEach((k) => {
+        if (k in props) {
+          zx[k] = props[k]
+          delete rest[k]
+        }
+      })
+
+      const zxClass = Object.values(zx).filter((p) => p).length
         ? css(
             Object.entries(zx)
               .map(([k, v]) => {

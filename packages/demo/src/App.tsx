@@ -41,6 +41,7 @@ export function App() {
         --font-weight: [bold, null, initial];
       `}
       id="my-button"
+      m={30}
       zx={{
         fontWeight: 'var(--font-weight)',
         textTransform: on ? 'uppercase' : 'inherit',

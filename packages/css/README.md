@@ -12,6 +12,7 @@ Pros:
 
 - Much less bundle size
 - Less is more: faster, less bugs, no breaking changes
+- Is progressive -- lazy loads styles along with component if component is lazy
 - Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
   - `m` --> `margin`
   - `mx` --> `margin-inline-start` and end
@@ -85,3 +86,22 @@ Cons
 - Is huge (>10kb)
 - Many features require addons, which make bundle even larger
 - Does not support zx prop or css shorthand props
+
+#### [Astroturf](https://astroturfcss.github.io/astroturf/)
+
+- A popular css-in-js lib similar to Emotion but compiles out the css into css stylesheets
+
+Pros
+
+- More performant (zero kbs, no need for caching or Map lookups)
+- Support for all the PostCSS magic you may desire
+
+Cons
+
+- Requires babel/bundler config
+- Does not support zx prop or css shorthand props
+- Is not progressive -- all styles for all components is loaded and blocks initial page paint
+
+#### [Linaria](https://linaria.dev/)
+
+- Pretty much identical to Astroturf, but maybe better Vite support
