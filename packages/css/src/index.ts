@@ -43,6 +43,10 @@ function expandArrayValues(css: string) {
 export interface ShorthandProps {
   /** shorthand for css:align-items */
   ai?: string
+  /** shorthand for css:border */
+  b?: string | number
+  /** shorthand for css:border-radius */
+  br?: string | number
   /** shorthand for css:background */
   bg?: string
   /** shorthand for css:color */
@@ -106,6 +110,8 @@ export interface ShorthandProps {
 }
 const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 'py'>, string> = {
   ai: 'align-items',
+  b: 'border',
+  br: 'border-radius',
   bg: 'background',
   c: 'color',
   d: 'display',
