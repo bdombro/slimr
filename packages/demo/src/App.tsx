@@ -41,10 +41,10 @@ export function App() {
         --font-weight: [bold, null, initial];
       `}
       id="my-button"
-      m={[30, null, 0]}
+      mx={[30, null, 0]}
       zx={{
         fontWeight: 'var(--font-weight)',
-        textTransform: on ? 'uppercase' : 'inherit',
+        textTransform: on ? 'uppercase' : 'uppercase',
       }}
     >
       Render Count: {renderCount++}

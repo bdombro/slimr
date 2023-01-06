@@ -133,10 +133,11 @@ export const shorthandProps = [...Object.keys(shorthandPropsMap), 'mx', 'my', 'p
 function expandProps(css: string) {
   css = '\n' + css // inject a newline to make the regex easier
   // Handle 'mx', 'my', 'px', 'py'
-  css = css.replace(/([mp])x:([^;]*);/g, '$1l:$2;$1r:$2').replace(/([mp])y:([^;]*);/g, '$1t:$2;$1b:$2')
+  css = css.replace(/([mp])x:([^;]*)/g, '$1l:$2;\n$1r:$2').replace(/([mp])y:([^;]*);/g, '$1t:$2;\n$1b:$2')
   Object.entries(shorthandPropsMap).forEach(([k, v]) => {
     css = css.replace(new RegExp(`([ \n\t;])${k}:`, 'g'), `$1${v}:`)
   })
+  console.log(css)
   return css.trim()
 }
 
