@@ -137,7 +137,6 @@ function expandProps(css: string) {
   Object.entries(shorthandPropsMap).forEach(([k, v]) => {
     css = css.replace(new RegExp(`([ \n\t;])${k}:`, 'g'), `$1${v}:`)
   })
-  console.log(css)
   return css.trim()
 }
 
