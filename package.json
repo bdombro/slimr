@@ -13,6 +13,7 @@
     "clean": "npm run --workspaces clean",
     "format": "prettier -w .",
     "start": "npm run -w packages/demo start",
+    "test": "npm run -w packages/demo test",
     "prepare": "husky install",
     "publish": "npm publish --workspaces --access public"
   },
