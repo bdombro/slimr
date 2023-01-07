@@ -44,8 +44,12 @@ export interface SCProps extends ScShorthandProps {
 /** Styled Component: Like FunctionalComponent but adds SCProps */
 export type SC<T extends { className: HTMLAttributes<any>['className'] }> = FC<T & SCProps>
 
-export function toHyphenCase(str: string) {
+function toKebabCase(str: string) {
   return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+function toCamelCase(str: string) {
+  return str.replace(/-./g, (x) => x[1].toUpperCase())
 }
 
 /**
@@ -75,7 +79,7 @@ export default function styled<C extends FC<any>>(Component: C) {
           Object.entries(zx)
             .map(([k, v]) => {
               if (!v) return ''
-              k = toHyphenCase(k)
+              k = toKebabCase(k)
               if (typeof v === 'number') v = v + 'px'
               if (Array.isArray(v)) {
                 v = '[' + v.map((v) => (typeof v === 'number' ? v + 'px' : v)).join(',') + ']'
@@ -100,7 +104,7 @@ export default function styled<C extends FC<any>>(Component: C) {
             acc.paddingTop = v
             acc.paddingBottom = v
           } else if (k in shorthandPropsMap) {
-            acc[shorthandPropsMap[k as keyof typeof shorthandPropsMap]] = v
+            acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
           } else {
             acc[k] = v
           }
