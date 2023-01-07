@@ -214,19 +214,15 @@ export function addCss(css: string) {
     const css = [...addCss.que].join('\n')
     if (css) {
       addCss.que.clear()
-      let s = document.getElementById('ustyle') as HTMLStyleElement
-      if (!s) {
-        s = document.createElement('style')
-        s.id = 'ustyle'
-        s.innerHTML = css
-        document.head.appendChild(s)
-      } else {
-        s.innerHTML += css
-      }
+      const s = document.createElement('style')
+      s.id = `u${addCss.count++}`
+      s.innerHTML = css
+      document.head.appendChild(s)
     }
   }, 0)
 }
 addCss.que = new Set<string>()
+addCss.count = 0
 
 /**
  * Injects css and creates unique class names

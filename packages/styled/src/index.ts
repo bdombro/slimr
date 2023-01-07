@@ -57,7 +57,7 @@ export default function styled<C extends FC<any>>(Component: C) {
   return (...cssProps: TemplateStringProps) => {
     const className = css(...cssProps)
     const CStyled = forwardRef((props: any, ref) => {
-      let { css: _css, forwardRef, zx = {}, ...rest } = props
+      let { css: _css, zx = {}, ...rest } = props
 
       // Pluck out shorthand props
       shorthandProps.forEach((k) => {

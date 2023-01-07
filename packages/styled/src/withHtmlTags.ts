@@ -2,6 +2,8 @@ import { FC } from 'react'
 import { TemplateStringProps } from '@ustyle/css'
 import styled from './index.js'
 
+export * from './index.js'
+
 /** Shorthand type */
 type unk = unknown
 /** Shorthand type */

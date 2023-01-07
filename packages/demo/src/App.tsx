@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import styled, { addCss } from '@ustyle/styled'
+import styled, { addCss } from '@ustyle/styled/withHtmlTags'
 
 // Can add arbitrary css to the document head
 addCss(`
@@ -30,25 +30,29 @@ const ButtonP = styled(Button)`
   w: [100%, null, inherit];
 `
 
-let renderCount = 0
+const Box = styled.div`
+  pos: relative;
+`
 
 export function App() {
   const on = useOscillator()
 
   return (
-    <ButtonP
-      css={`
-        --font-weight: [bold, null, initial];
-      `}
-      id="my-button"
-      mx={[30, null, 0]}
-      zx={{
-        fontWeight: 'var(--font-weight)',
-        textTransform: on ? 'uppercase' : 'uppercase',
-      }}
-    >
-      Render Count: {renderCount++}
-    </ButtonP>
+    <Box>
+      <ButtonP
+        css={`
+          --font-weight: [bold, null, initial];
+        `}
+        id="my-button"
+        mx={[30, null, 0]}
+        zx={{
+          fontWeight: 'var(--font-weight)',
+          textTransform: on ? 'uppercase' : 'uppercase',
+        }}
+      >
+        Click Me
+      </ButtonP>
+    </Box>
   )
 }
 

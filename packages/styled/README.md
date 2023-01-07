@@ -12,9 +12,10 @@ Pros:
 
 - Much less bundle size and runtime sluggishness
 - Less is more: less bugs, no breaking changes
-- Supports declaring styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
+- Supports declaring css and styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
 - Styled shortcuts like styled.div when imported from `@ustyle/styled/withHtmlTags`. Note: To get types you'll need tsconfig:moduleResolution >= `Node16`
-- Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
+- Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
+  - Pass shorthand props or zx props to styled components. This lib will create css classes if complex, passthrough as styles otherwise.
   - `m` --> `margin`
   - `mx` --> `margin-left` and right
   - `py` --> `padding-top` and bottom
