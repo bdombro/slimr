@@ -1,5 +1,4 @@
 {
-  "//comment": "This config doesn't seem to work when building from ../../",
   "compilerOptions": {
     "composite": true,
     "module": "ESNext",
