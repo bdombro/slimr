@@ -45,6 +45,7 @@ export function App() {
         `}
         id="my-button"
         mx={[30, null, 0]}
+        py={20}
         zx={{
           fontWeight: 'var(--font-weight)',
           textTransform: on ? 'uppercase' : 'uppercase',
