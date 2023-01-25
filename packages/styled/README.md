@@ -49,6 +49,10 @@ Preview below. For full code, see demos
 
 ```tsx
 // Create primitive components if you like
+const Box = styled.div`
+  pos: relative;
+`
+
 interface ButtonProps extends Omit<HtmlTagProps['button'], 'id'> {
   id: HtmlTagProps['button']['id'] // make required
 }
@@ -73,18 +77,25 @@ export function App() {
   const on = useOscillator()
 
   return (
-    <ButtonP
-      css={`
-        --font-weight: [bold, null, initial];
-      `}
-      id="my-button"
-      zx={{
-        fontWeight: 'var(--font-weight)',
-        textTransform: on ? 'uppercase' : 'inherit',
-      }}
+    <Box
+      // enjoy chakra-ui like shorthand syntax
+      bg={['lightblue', null, 'lightred']}
     >
-      Click me!
-    </ButtonP>
+      <ButtonP
+        // use css if you'd like, which gets converted into a css class and attached to this element
+        css={`
+          --font-weight: [bold, null, initial];
+        `}
+        id="my-button"
+        // use zx, kinda like style but is implemented as a css class
+        zx={{
+          fontWeight: 'var(--font-weight)',
+          textTransform: on ? 'uppercase' : 'inherit',
+        }}
+      >
+        Click me!
+      </ButtonP>
+    </Box>
   )
 }
 ```
@@ -102,7 +113,7 @@ Pros
 
 Cons
 
-- Is crazy large bundle impact
+- Is crazy large bundle impact (80+kb)
 
 #### [Styled-Components](https://github.com/styled-components/styled-components)
 
