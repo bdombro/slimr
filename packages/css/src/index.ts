@@ -95,6 +95,8 @@ export interface ShorthandProps {
   px?: number | string
   /** shorthand for css:position */
   pos?: number | string
+  /** shorthand for css:text-align */
+  ta?: string
   /** shorthand for css:width */
   w?: number | string
   /** shorthand for css:z-index */
@@ -124,6 +126,7 @@ export const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 
   pt: 'padding-top',
   pb: 'padding-bottom',
   pos: 'position',
+  ta: 'text-align',
   w: 'width',
   z: 'z-index',
 }

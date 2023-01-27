@@ -28,7 +28,6 @@ export default Object.assign(styled, {
   audio: (...p: TSP) => styled('audio' as unk as FC<HTP['audio']>)(...p),
   /** creates a 'b' component with css applied */
   b: (...p: TSP) => styled('b' as unk as FC<HTP['b']>)(...p),
-  /** creates a 'base' component with css applied */
   /** creates a 'big' component with css applied */
   big: (...p: TSP) => styled('big' as unk as FC<HTP['big']>)(...p),
   /** creates a 'blockquote' component with css applied */

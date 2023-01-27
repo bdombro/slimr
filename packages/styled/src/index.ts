@@ -42,7 +42,7 @@ export interface SCProps extends ScShorthandProps {
 }
 
 /** Styled Component: Like FunctionalComponent but adds SCProps */
-export type SC<T extends { className: HTMLAttributes<any>['className'] }> = FC<T & SCProps>
+export type SC<T extends { className?: HTMLAttributes<any>['className'] }> = FC<T & SCProps>
 
 function toKebabCase(str: string) {
   return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
