@@ -59,6 +59,8 @@ export interface ShorthandProps {
   fd?: string
   /** shorthand for css:height */
   h?: number | string
+  /** shorthand for css:inset */
+  i?: number | string
   /** shorthand for css:justify-content */
   jc?: string
   /** shorthand for css:margin */
@@ -111,6 +113,7 @@ export const shorthandPropsMap: Record<keyof Omit<ShorthandProps, 'mx' | 'my' | 
   d: 'display',
   f: 'flex',
   fd: 'flex-direction',
+  i: 'inset',
   h: 'height',
   jc: 'justify-content',
   m: 'margin',

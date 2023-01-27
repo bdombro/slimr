@@ -50,6 +50,9 @@ export function App() {
           fontWeight: 'var(--font-weight)',
           textTransform: on ? 'uppercase' : 'uppercase',
         }}
+        _hover={{
+          bg: 'lightblue',
+        }}
       >
         Click Me
       </ButtonP>

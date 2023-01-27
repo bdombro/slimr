@@ -28,13 +28,13 @@ export default Object.assign(styled, {
   audio: (...p: TSP) => styled('audio' as unk as FC<HTP['audio']>)(...p),
   /** creates a 'b' component with css applied */
   b: (...p: TSP) => styled('b' as unk as FC<HTP['b']>)(...p),
-  /** creates a 'big' component with css applied */
-  big: (...p: TSP) => styled('big' as unk as FC<HTP['big']>)(...p),
+  /** creates a 'big' component with css applied; Deprecated so left out */
+  // big: (...p: TSP) => styled('big' as unk as FC<HTP['big']>)(...p),
   /** creates a 'blockquote' component with css applied */
   blockquote: (...p: TSP) => styled('blockquote' as unk as FC<HTP['blockquote']>)(...p),
-  /** creates a 'body' component with css applied */
-  body: (...p: TSP) => styled('body' as unk as FC<HTP['body']>)(...p),
-  /** creates a 'br' component with css applied */
+  /** creates a 'body' component with css applied; omitted bc doesnt seem useful */
+  // body: (...p: TSP) => styled('body' as unk as FC<HTP['body']>)(...p),
+  /** creates a 'br' component with css applied; omitted bc doesnt seem useful */
   br: (...p: TSP) => styled('br' as unk as FC<HTP['br']>)(...p),
   /** creates a 'button' component with css applied */
   button: (...p: TSP) => styled('button' as unk as FC<HTP['button']>)(...p),

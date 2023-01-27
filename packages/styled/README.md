@@ -92,6 +92,9 @@ export function App() {
           fontWeight: 'var(--font-weight)',
           textTransform: on ? 'uppercase' : 'inherit',
         }}
+        _hover={{
+          bg: 'lightblue',
+        }}
       >
         Click me!
       </ButtonP>

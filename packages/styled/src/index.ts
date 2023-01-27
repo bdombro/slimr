@@ -20,25 +20,34 @@ type ScShorthandProps = {
     | [ShP[k], ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k]]
 }
 
+type Zx = {
+  [k in keyof ZxP]:
+    | ZxP[k]
+    | [ZxP[k] | null, ZxP[k]]
+    | [ZxP[k] | null, ZxP[k] | null, ZxP[k]]
+    | [ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
+    | [ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
+    | [ZxP[k], ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
+    | [ZxP[k], ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
+}
+
 export interface SCProps extends ScShorthandProps {
+  /** Like zx prop, but applies only on active */
+  active?: Zx
+  className?: string
   /** A string of css or classname to be added to the component */
   css?: string
+  /** Like zx prop, but applies only on hover */
+  _hover?: Zx
+  id?: string
+  style?: CSSProperties
   /**
    * Like style prop, but enhanced with features like chakra
    *  - Array values are converted to media query breakpoints
    *  - Numbers are converted to px
    *  - Shorthand props are supported
    */
-  zx?: {
-    [k in keyof ZxP]:
-      | ZxP[k]
-      | [ZxP[k] | null, ZxP[k]]
-      | [ZxP[k] | null, ZxP[k] | null, ZxP[k]]
-      | [ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
-      | [ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
-      | [ZxP[k], ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
-      | [ZxP[k], ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
-  }
+  zx?: Zx
 }
 
 /** Styled Component: Like FunctionalComponent but adds SCProps */
@@ -52,6 +61,43 @@ function toCamelCase(str: string) {
   return str.replace(/-./g, (x) => x[1].toUpperCase())
 }
 
+function expandShorthandProps(zx: Record<string, string | number>) {
+  return Object.entries(zx).reduce((acc, [k, v]) => {
+    if (k === 'mx') {
+      acc.marginLeft = v
+      acc.marginRight = v
+    } else if (k === 'my') {
+      acc.marginTop = v
+      acc.marginBottom = v
+    } else if (k === 'px') {
+      acc.paddingLeft = v
+      acc.paddingRight = v
+    } else if (k === 'py') {
+      acc.paddingTop = v
+      acc.paddingBottom = v
+    } else if (k in shorthandPropsMap) {
+      acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
+    } else {
+      acc[k] = v
+    }
+    return acc
+  }, {} as any)
+}
+
+function zxToCss(zx: Record<string, string | number>) {
+  return Object.entries(zx)
+    .map(([k, v]) => {
+      if (!v) return ''
+      k = toKebabCase(k)
+      if (typeof v === 'number') v = v + 'px'
+      if (Array.isArray(v)) {
+        v = '[' + v.map((v) => (typeof v === 'number' ? v + 'px' : v)).join(',') + ']'
+      }
+      return k + ':' + v + ';'
+    })
+    .join('\n')
+}
+
 /**
  * A lightweight alternative to styled-components
  * @param function - a functional component to be styled; must accept a className prop
@@ -61,7 +107,7 @@ export default function styled<C extends FC<any>>(Component: C) {
   return (...cssProps: TemplateStringProps) => {
     const className = css(...cssProps)
     const CStyled = forwardRef((props: any, ref) => {
-      let { css: _css, zx = {}, ...rest } = props
+      let { _active, css: _css, _hover, zx = {}, ...rest } = props
 
       // Pluck out shorthand props
       shorthandProps.forEach((k) => {
@@ -75,43 +121,27 @@ export default function styled<C extends FC<any>>(Component: C) {
       let zxClass = ''
       // If has media query styles, use css class. Otherwise favor inline styles
       if (hasMediaQuery) {
-        zxClass = css(
-          Object.entries(zx)
-            .map(([k, v]) => {
-              if (!v) return ''
-              k = toKebabCase(k)
-              if (typeof v === 'number') v = v + 'px'
-              if (Array.isArray(v)) {
-                v = '[' + v.map((v) => (typeof v === 'number' ? v + 'px' : v)).join(',') + ']'
-              }
-              return k + ':' + v + ';'
-            })
-            .join('\n')
-        )
+        zxClass = css(zxToCss(zx))
       } else {
-        // expand shorthand props
-        zx = Object.entries(zx).reduce((acc, [k, v]) => {
-          if (k === 'mx') {
-            acc.marginLeft = v
-            acc.marginRight = v
-          } else if (k === 'my') {
-            acc.marginTop = v
-            acc.marginBottom = v
-          } else if (k === 'px') {
-            acc.paddingLeft = v
-            acc.paddingRight = v
-          } else if (k === 'py') {
-            acc.paddingTop = v
-            acc.paddingBottom = v
-          } else if (k in shorthandPropsMap) {
-            acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
-          } else {
-            acc[k] = v
-          }
-          return acc
-        }, {} as any)
+        zx = expandShorthandProps(zx)
         rest.style = { ...rest.style, ...zx }
       }
+
+      const activeClass = _active
+        ? css(`
+        &:active {
+        ${zxToCss(_active)}
+        }
+      `)
+        : ''
+
+      const hoverClass = _hover
+        ? css(`
+        &:hover {
+        ${zxToCss(_hover)}
+        }
+      `)
+        : ''
 
       return createElement(Component, {
         ref,
@@ -120,6 +150,8 @@ export default function styled<C extends FC<any>>(Component: C) {
           className,
           _css ? (_css.includes(':') ? css(_css) : _css) : undefined,
           zxClass,
+          activeClass,
+          hoverClass,
           props.className
         ),
       })
