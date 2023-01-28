@@ -27,36 +27,27 @@ function Button(props: ButtonProps) {
 const ButtonP = styled(Button)`
   bg: red;
   c: white;
-  w: [100%, null, inherit];
-`
-
-const Box = styled.div`
-  pos: relative;
 `
 
 export function App() {
   const on = useOscillator()
 
   return (
-    <Box>
-      <ButtonP
-        css={`
-          --font-weight: [bold, null, initial];
-        `}
-        id="my-button"
-        zx={{
-          fontWeight: 'var(--font-weight)',
-          mx: [30, null, 0],
-          textTransform: on ? 'uppercase' : 'uppercase',
-          py: 20,
-        }}
-        _hover={{
-          bg: 'lightblue',
-        }}
-      >
-        Click Me
-      </ButtonP>
-    </Box>
+    <ButtonP
+      css={`
+        --font-weight: [bold, null, initial];
+      `}
+      id="my-button"
+      _fontWeight="var(--font-weight)"
+      _mx={[30, null, 0]}
+      _textTransform={on ? 'uppercase' : 'uppercase'}
+      _py={20}
+      _hover={{
+        bg: 'lightblue',
+      }}
+    >
+      Click Me
+    </ButtonP>
   )
 }
 

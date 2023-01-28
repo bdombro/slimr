@@ -87,11 +87,12 @@ export function App() {
           --font-weight: [bold, null, initial];
         `}
         id="my-button"
-        // use zx, kinda like style but is implemented as a css class
+        // use zx, kinda like style but accepts shorthand syntax
         zx={{
-          fontWeight: 'var(--font-weight)',
           textTransform: on ? 'uppercase' : 'inherit',
         }}
+        // Any attr with '_' prefix will be passed to zx
+        _fontWeight="var(--font-weight)"
         _hover={{
           bg: 'lightblue',
         }}

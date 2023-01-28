@@ -19,7 +19,11 @@ type Zx = {
     | [ZxP[k], ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
 }
 
-export interface SCProps {
+type _Props = {
+  [k in keyof Zx as `_${k}`]?: Zx[k]
+}
+
+export interface SCProps extends _Props {
   /** Like zx prop, but applies only on active */
   _active?: Zx
   className?: string
@@ -95,8 +99,21 @@ function zxToCss(zx: Zx): string {
 export default function styled<C extends FC<any>>(Component: C) {
   return (...cssProps: TemplateStringProps) => {
     const className = css(...cssProps)
+    /**
+     * A functional component that accepts Styled Props
+     */
     const CStyled = forwardRef((props: SCProps, ref) => {
       let { _active, css: _css, _hover, zx = {}, ...rest } = props
+
+      // Pluck out $ prefixed props
+      Object.entries(props).forEach(([k, v]) => {
+        if (k.startsWith('_')) {
+          // @ts-ignore
+          zx[k.slice(1)] = v
+          // @ts-ignore
+          delete rest[k]
+        }
+      })
 
       const hasMediaQuery = Object.values(zx).some((v) => Array.isArray(v))
       let zxClass = ''
