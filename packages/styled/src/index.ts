@@ -6,19 +6,7 @@ export * from '@ustyle/css'
 
 /** A type that represents all the css properties + shorthand props */
 export interface ZxProps extends CSSProperties, ShorthandProps {}
-type ShP = ShorthandProps
 type ZxP = ZxProps
-
-type ScShorthandProps = {
-  [k in keyof ShP]:
-    | ShP[k]
-    | [ShP[k] | null, ShP[k]]
-    | [ShP[k] | null, ShP[k] | null, ShP[k]]
-    | [ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k]]
-    | [ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k]]
-    | [ShP[k], ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k]]
-    | [ShP[k], ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k] | null, ShP[k]]
-}
 
 type Zx = {
   [k in keyof ZxP]:
@@ -31,9 +19,9 @@ type Zx = {
     | [ZxP[k], ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k] | null, ZxP[k]]
 }
 
-export interface SCProps extends ScShorthandProps {
+export interface SCProps {
   /** Like zx prop, but applies only on active */
-  active?: Zx
+  _active?: Zx
   className?: string
   /** A string of css or classname to be added to the component */
   css?: string
@@ -61,7 +49,7 @@ function toCamelCase(str: string) {
   return str.replace(/-./g, (x) => x[1].toUpperCase())
 }
 
-function expandShorthandProps(zx: Record<string, string | number>) {
+function expandShorthandProps(zx: Zx) {
   return Object.entries(zx).reduce((acc, [k, v]) => {
     if (k === 'mx') {
       acc.marginLeft = v
@@ -84,13 +72,14 @@ function expandShorthandProps(zx: Record<string, string | number>) {
   }, {} as any)
 }
 
-function zxToCss(zx: Record<string, string | number>) {
+function zxToCss(zx: Zx): string {
   return Object.entries(zx)
     .map(([k, v]) => {
       if (!v) return ''
       k = toKebabCase(k)
       if (typeof v === 'number') v = v + 'px'
       if (Array.isArray(v)) {
+        // @ts-ignore
         v = '[' + v.map((v) => (typeof v === 'number' ? v + 'px' : v)).join(',') + ']'
       }
       return k + ':' + v + ';'
@@ -106,16 +95,8 @@ function zxToCss(zx: Record<string, string | number>) {
 export default function styled<C extends FC<any>>(Component: C) {
   return (...cssProps: TemplateStringProps) => {
     const className = css(...cssProps)
-    const CStyled = forwardRef((props: any, ref) => {
+    const CStyled = forwardRef((props: SCProps, ref) => {
       let { _active, css: _css, _hover, zx = {}, ...rest } = props
-
-      // Pluck out shorthand props
-      shorthandProps.forEach((k) => {
-        if (k in props) {
-          zx[k] = props[k]
-          delete rest[k]
-        }
-      })
 
       const hasMediaQuery = Object.values(zx).some((v) => Array.isArray(v))
       let zxClass = ''
@@ -124,7 +105,7 @@ export default function styled<C extends FC<any>>(Component: C) {
         zxClass = css(zxToCss(zx))
       } else {
         zx = expandShorthandProps(zx)
-        rest.style = { ...rest.style, ...zx }
+        rest.style = { ...rest.style, ...zx } as CSSProperties
       }
 
       const activeClass = _active

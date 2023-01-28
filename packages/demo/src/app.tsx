@@ -44,11 +44,11 @@ export function App() {
           --font-weight: [bold, null, initial];
         `}
         id="my-button"
-        mx={[30, null, 0]}
-        py={20}
         zx={{
           fontWeight: 'var(--font-weight)',
+          mx: [30, null, 0],
           textTransform: on ? 'uppercase' : 'uppercase',
+          py: 20,
         }}
         _hover={{
           bg: 'lightblue',
