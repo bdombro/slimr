@@ -240,6 +240,7 @@ addCss.count = 0
  */
 export default function createClass(...p: TemplateStringProps) {
   let css = t2s(...p)
+  if (!css) return ''
   let className = createClass.history.get(css)
   if (!className) {
     className = 's' + createClass.count++
