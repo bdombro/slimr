@@ -34,7 +34,7 @@ export function App() {
 
   return (
     <ButtonP
-      css={`
+      _css={`
         --font-weight: [bold, null, initial];
       `}
       id="my-button"
@@ -42,6 +42,9 @@ export function App() {
       _mx={[30, null, 0]}
       _textTransform={on ? 'uppercase' : 'uppercase'}
       _py={20}
+      _dark={{
+        bg: 'darkblue',
+      }}
       _hover={{
         bg: 'lightblue',
       }}

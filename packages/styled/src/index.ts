@@ -28,10 +28,11 @@ export interface SCProps extends _Props {
   _active?: Zx
   className?: string
   /** A string of css or classname to be added to the component */
-  css?: string
+  _css?: string
+  /** Like zx prop, but applies only when user prefers dark theme */
+  _dark?: Zx
   /** Like zx prop, but applies only on hover */
   _hover?: Zx
-  id?: string
   style?: CSSProperties
   /**
    * Like style prop, but enhanced with features like chakra
@@ -39,7 +40,7 @@ export interface SCProps extends _Props {
    *  - Numbers are converted to px
    *  - Shorthand props are supported
    */
-  zx?: Zx
+  _zx?: Zx
 }
 
 /** Styled Component: Like FunctionalComponent but adds SCProps */
@@ -103,32 +104,40 @@ export default function styled<C extends FC<any>>(Component: C) {
      * A functional component that accepts Styled Props
      */
     const CStyled = forwardRef((props: SCProps, ref) => {
-      let { _active, css: _css, _hover, zx = {}, ...rest } = props
+      let { _active, _css, _dark, _hover, _zx = {}, ...rest } = props
 
       // Pluck out $ prefixed props
       Object.entries(props).forEach(([k, v]) => {
         if (k.startsWith('_')) {
           // @ts-ignore
-          zx[k.slice(1)] = v
+          _zx[k.slice(1)] = v
           // @ts-ignore
           delete rest[k]
         }
       })
 
-      const hasMediaQuery = Object.values(zx).some((v) => Array.isArray(v))
+      const hasMediaQuery = Object.values(_zx).some((v) => Array.isArray(v))
       let zxClass = ''
       // If has media query styles, use css class. Otherwise favor inline styles
       if (hasMediaQuery) {
-        zxClass = css(zxToCss(zx))
+        zxClass = css(zxToCss(_zx))
       } else {
-        zx = expandShorthandProps(zx)
-        rest.style = { ...rest.style, ...zx } as CSSProperties
+        _zx = expandShorthandProps(_zx)
+        rest.style = { ...rest.style, ..._zx } as CSSProperties
       }
 
       const activeClass = _active
         ? css(`
         &:active {
         ${zxToCss(_active)}
+        }
+      `)
+        : ''
+
+      const darkClass = _dark
+        ? css(`
+        @media (prefers-color-scheme: dark) {
+        ${zxToCss(_dark)}
         }
       `)
         : ''
@@ -149,6 +158,7 @@ export default function styled<C extends FC<any>>(Component: C) {
           _css ? (_css.includes(':') ? css(_css) : _css) : undefined,
           zxClass,
           activeClass,
+          darkClass,
           hoverClass,
           props.className
         ),
