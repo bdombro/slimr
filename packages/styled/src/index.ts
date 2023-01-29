@@ -116,39 +116,40 @@ export default function styled<C extends FC<any>>(Component: C) {
         }
       })
 
+      let cssStr = ''
+
+      if (_active) {
+        cssStr += `
+          &:active {
+          ${zxToCss(_active)}
+          }
+        `
+      }
+
+      if (_dark) {
+        cssStr += `
+          @media (prefers-color-scheme: dark) {
+          ${zxToCss(_dark)}
+          }
+        `
+      }
+
+      if (_hover) {
+        cssStr += `
+          &:hover {
+          ${zxToCss(_hover)}
+          }
+        `
+      }
+
       const hasMediaQuery = Object.values(_zx).some((v) => Array.isArray(v))
-      let zxClass = ''
       // If has media query styles, use css class. Otherwise favor inline styles
-      if (hasMediaQuery) {
-        zxClass = css(zxToCss(_zx))
+      if (hasMediaQuery || cssStr) {
+        cssStr = zxToCss(_zx) + cssStr
       } else {
         _zx = expandShorthandProps(_zx)
         rest.style = { ...rest.style, ..._zx } as CSSProperties
       }
-
-      const activeClass = _active
-        ? css(`
-        &:active {
-        ${zxToCss(_active)}
-        }
-      `)
-        : ''
-
-      const darkClass = _dark
-        ? css(`
-        @media (prefers-color-scheme: dark) {
-        ${zxToCss(_dark)}
-        }
-      `)
-        : ''
-
-      const hoverClass = _hover
-        ? css(`
-        &:hover {
-        ${zxToCss(_hover)}
-        }
-      `)
-        : ''
 
       return createElement(Component, {
         ref,
@@ -156,10 +157,7 @@ export default function styled<C extends FC<any>>(Component: C) {
         className: classJoin(
           className,
           _css ? (_css.includes(':') ? css(_css) : _css) : undefined,
-          zxClass,
-          activeClass,
-          darkClass,
-          hoverClass,
+          cssStr ? css(cssStr) : undefined,
           props.className
         ),
       })
