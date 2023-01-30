@@ -87,15 +87,18 @@ export function App() {
           --font-weight: [bold, null, initial];
         `}
         id="my-button"
-        // use zx, kinda like style but accepts shorthand syntax
-        zx={{
+        // kinda like style but accepts shorthand syntax
+        _zx={{
           textTransform: on ? 'uppercase' : 'inherit',
         }}
         // Any attr with '_' prefix will be passed to zx
         _fontWeight="var(--font-weight)"
-        _hover={{
-          bg: 'lightblue',
-        }}
+        // like _zx, but applies only on :hover
+        _hover={{ bg: 'lightblue' }}
+        // like _zx, but applies only on :active
+        _active={{ bg: 'lightblue' }}
+        // like _zx, but applies only when browser prefers dark modes
+        _dark={{ bg: 'lightblue' }}
       >
         Click me!
       </ButtonP>
