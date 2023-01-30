@@ -24,16 +24,26 @@ type _Props = {
 }
 
 export interface SCProps extends _Props {
-  /** Like zx prop, but applies only on active */
+  /** Like zx prop, but applies only on :active */
   _active?: Zx
   className?: string
   /** A string of css or classname to be added to the component */
   _css?: string
   /** Like zx prop, but applies only when user prefers dark theme */
   _dark?: Zx
-  /** Like zx prop, but applies only on hover */
+  /** Like zx prop, but applies only on :focus */
+  _focus?: Zx
+  /** Like zx prop, but applies only on :focus-visible */
+  _focusVisible?: Zx
+  /** Like zx prop, but applies only on :focus-within */
+  _focusWithin?: Zx
+  /** Like zx prop, but applies only on :hover */
   _hover?: Zx
   style?: CSSProperties
+  /** Like zx prop, but applies only on :target */
+  _target?: Zx
+  /** Like zx prop, but applies only on :visited */
+  _visited?: Zx
   /**
    * Like style prop, but enhanced with features like chakra
    *  - Array values are converted to media query breakpoints
@@ -104,7 +114,19 @@ export default function styled<C extends FC<any>>(Component: C) {
      * A functional component that accepts Styled Props
      */
     const CStyled = forwardRef((props: SCProps, ref) => {
-      let { _active, _css, _dark, _hover, _zx = {}, ...rest } = props
+      let {
+        _active,
+        _css,
+        _dark,
+        _focus,
+        _focusVisible,
+        _focusWithin,
+        _hover,
+        _target,
+        _visited,
+        _zx = {},
+        ...rest
+      } = props
 
       // Pluck out $ prefixed props
       Object.entries(props).forEach(([k, v]) => {
@@ -125,7 +147,6 @@ export default function styled<C extends FC<any>>(Component: C) {
           }
         `
       }
-
       if (_dark) {
         cssStr += `
           @media (prefers-color-scheme: dark) {
@@ -133,11 +154,45 @@ export default function styled<C extends FC<any>>(Component: C) {
           }
         `
       }
-
+      if (_focus) {
+        cssStr += `
+          &:focus {
+          ${zxToCss(_focus)}
+          }
+        `
+      }
+      if (_focusVisible) {
+        cssStr += `
+          &:focus-visible {
+          ${zxToCss(_focusVisible)}
+          }
+        `
+      }
+      if (_focusWithin) {
+        cssStr += `
+          &:focus-within {
+          ${zxToCss(_focusWithin)}
+          }
+        `
+      }
       if (_hover) {
         cssStr += `
           &:hover {
           ${zxToCss(_hover)}
+          }
+        `
+      }
+      if (_target) {
+        cssStr += `
+          &:target {
+          ${zxToCss(_target)}
+          }
+        `
+      }
+      if (_visited) {
+        cssStr += `
+          &:visited {
+          ${zxToCss(_visited)}
           }
         `
       }
