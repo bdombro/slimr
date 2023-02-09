@@ -1,4 +1,4 @@
-# @ustyle/css
+# @slimr/css
 
 A tiny alternative to the popular emotion library
 
@@ -6,7 +6,7 @@ Demos: See `./packages/demo` or [CodeSandbox](https://codesandbox.io/s/64r9px?fi
 
 Sister libs:
 
-- [@ustyle/styled](https://www.npmjs.com/package/@ustyle/styled)
+- [@slimr/styled](https://www.npmjs.com/package/@slimr/styled)
 
 Pros:
 
@@ -17,7 +17,7 @@ Pros:
   - `m` --> `margin`
   - `mx` --> `margin-left` and bottom
   - `py` --> `padding-top` and bottom
-  - More [here](https://github.com/bdombro/ustyle/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
+  - More [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
 - CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
 
   ```css
@@ -38,7 +38,7 @@ Cons:
 ## Setup/Install
 
 ```bash
-npm i @ustyle/css
+npm i @slimr/css
 ```
 
 ## Usage

@@ -1,8 +1,8 @@
 import { createElement, CSSProperties, FC, forwardRef, HTMLAttributes } from 'react'
-import css, { classJoin, ShorthandProps, shorthandProps, shorthandPropsMap, TemplateStringProps } from '@ustyle/css'
+import css, { classJoin, ShorthandProps, shorthandProps, shorthandPropsMap, TemplateStringProps } from '@slimr/css'
 
 export { css }
-export * from '@ustyle/css'
+export * from '@slimr/css'
 
 /** A type that represents all the css properties + shorthand props */
 export interface ZxProps extends CSSProperties, ShorthandProps {}

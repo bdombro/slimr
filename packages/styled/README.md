@@ -1,4 +1,4 @@
-# @ustyle/styled
+# @slimr/styled
 
 A tiny (2kb) React css-in-js library inspired by chakra-ui, emotion, and styled-components libs
 
@@ -6,20 +6,20 @@ Demos: See `./packages/demo` or [CodeSandbox](https://codesandbox.io/s/64r9px?fi
 
 Sister libs:
 
-- [@ustyle/css](https://www.npmjs.com/package/@ustyle/css)
+- [@slimr/css](https://www.npmjs.com/package/@slimr/css)
 
 Pros:
 
 - Much less bundle size and runtime sluggishness
 - Less is more: less bugs, no breaking changes
 - Supports declaring css and styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
-- Styled shortcuts like styled.div when imported from `@ustyle/styled/withHtmlTags`. Note: To get types you'll need tsconfig:moduleResolution >= `Node16`
+- Styled shortcuts like styled.div when imported from `@slimr/styled/withHtmlTags`. Note: To get types you'll need tsconfig:moduleResolution >= `Node16`
 - Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
   - Pass shorthand props or zx props to styled components. This lib will create css classes if complex, passthrough as styles otherwise.
   - `m` --> `margin`
   - `mx` --> `margin-left` and right
   - `py` --> `padding-top` and bottom
-  - More [here](https://github.com/bdombro/ustyle/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
+  - More [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
 - CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
 
   ```css
@@ -40,7 +40,7 @@ Cons:
 ## Setup/Install
 
 ```bash
-npm i @ustyle/styled
+npm i @slimr/styled
 ```
 
 ## Usage
@@ -159,5 +159,5 @@ Pros:
 
 Cons:
 
-- Many features require addons, which in sum may make the bundle larger than ustyle
+- Many features require addons, which in sum may make the bundle larger than slimr
 - Does not support zx prop or css shorthand props

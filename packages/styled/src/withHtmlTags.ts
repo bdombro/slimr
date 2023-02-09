@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { TemplateStringProps } from '@ustyle/css'
+import { TemplateStringProps } from '@slimr/css'
 import styled from './index.js'
 
 export * from './index.js'

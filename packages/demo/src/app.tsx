@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import styled, { addCss } from '@ustyle/styled/withHtmlTags'
+import styled, { addCss } from '@slimr/styled/withHtmlTags'
 
 // Can add arbitrary css to the document head
 addCss(`

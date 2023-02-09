@@ -1,6 +1,6 @@
 {
-  "name": "@ustyle/styled",
-  "version": "1.0.39",
+  "name": "@slimr/styled",
+  "version": "1.0.40",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bdombro/ustyle.git"
+    "url": "https://github.com/bdombro/slimr.git"
   },
   "type": "module",
   "main": "./src/index.cjs",
@@ -50,6 +50,6 @@
     "react-dom": "^18"
   },
   "dependencies": {
-    "@ustyle/css": "^1.0.36"
+    "@slimr/css": "^1.0.36"
   }
 }
