@@ -1,0 +1,27 @@
+{
+  "name": "@slimr/mdi-paths",
+  "version": "1.0.9",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
+  "keywords": [
+    "mdi",
+    "preact",
+    "material",
+    "design",
+    "icons"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdombro/slimr.git"
+  },
+  "scripts": {
+    "prepack": "npm run build && npm version patch",
+    "postpublish": "npm run clean",
+    "clean": "find -E . -maxdepth 1 -regex '.*(\\.js|\\.ts)' -delete",
+    "build": "npm run clean && node scripts/generate.js"
+  },
+  "devDependencies": {
+    "@mdi/svg": "7.1.96"
+  }
+}

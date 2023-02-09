@@ -1,9 +1,7 @@
 # slimr
 
-A monorepo of tiny (~2kb) alternatives to the popular style libraries for react
+`@slimr` is a set of slim React (hence '@slimr') libs:
 
-Packages:
-
-- `@slimr/css` at `./packages/css`
-- `@slimr/styled` at `./packages/styled`
-- `@slimr/demo` at `./packages/demo`
+- [@slimr/css](https://www.npmjs.com/package/@slimr/css)
+- [@slimr/mdi-paths](https://www.npmjs.com/package/@slimr/mdi-paths)
+- [@slimr/styled](https://www.npmjs.com/package/@slimr/styled)
