@@ -1,4 +1,5 @@
-import React, { createElement } from 'react'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React, {createElement, useEffect, useState} from 'react'
 
 /**
  * A component that lazily loads an icon using a cb that returns a promise.
@@ -9,12 +10,11 @@ import React, { createElement } from 'react'
  * @param pathImporter A cb that returns a promise of an object with a `default` property = string of an SVG's path `d` attribute
  * @param IconSvg props excluding `d` and `path`
  */
-export function LazyIconSvg({ pathImporter, ...props }) {
-  const isMounted = useMountedState()
+export function LazyIconSvg({pathImporter, ...props}) {
   const [svgPath, setSvgPath] = useState('')
   useEffect(() => {
-    pathImporter().then((module) => {
-      if (isMounted()) setSvgPath(module.default)
+    pathImporter().then(module => {
+      setSvgPath(module.default)
     })
   }, [])
   // return <IconSvg d={svgPath} {...props} />
@@ -57,13 +57,17 @@ export function IconSvg({
     }
   }
 
-  return createElement('svg', {
-    viewBox: '0 0 24 24',
-    width: size,
-    height: size,
-    fill: fill,
-    ...props,
-    style: style,
-    children: [path, ...(d ? [createElement('path', { d })] : [])],
-  })
+  return createElement(
+    'svg',
+    {
+      viewBox: '0 0 24 24',
+      width: size,
+      height: size,
+      fill: fill,
+      ...props,
+      style: style,
+    },
+    path,
+    d ? createElement('path', {d}) : null
+  )
 }

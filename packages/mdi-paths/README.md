@@ -40,16 +40,16 @@ Example with LazyIconSvg:
 
 ```typescript
 // icon.tsx
-import { LazyIconSvg, LazyIconSvgProps } from '@slimr/mdi-paths/react'
+import {LazyIconSvg, LazyIconSvgProps} from '@slimr/mdi-paths/react'
 
 const icons = {
   home: () => import('@slimr/mdi-paths/Home'),
 }
 
 type IconKeys = keyof typeof icons
-type IconProps = Omit<LazyIconSvgProps, 'name' | 'svgPathImport'> & { name: IconKeys }
+type IconProps = Omit<LazyIconSvgProps, 'name' | 'svgPathImport'> & {name: IconKeys}
 
-export function Icon({ name, ...props }: IconProps) {
+export function Icon({name, ...props}: IconProps) {
   return <LazyIconSvg pathImporter={icons[name]} {...props} />
 }
 ```

@@ -1,3 +1,5 @@
+/* eslint-env node */
+/* eslint-disable @typescript-eslint/no-var-requires */
 const fs = require('fs')
 const path = require('path')
 const meta = require('@mdi/svg/meta.json')
@@ -7,19 +9,23 @@ const startsWithNumberRegex = /^\d/
 
 generate()
 
+/** The entrypoint of this file, which generates a BUNCH of svg icon modules */
 async function generate() {
   const basePath = path.resolve(__dirname, '..')
   const svgFilesPath = path.resolve(basePath, '../../node_modules/@mdi/svg/svg')
   const buildPath = path.resolve(basePath, '.')
 
   console.log('Collecting components...')
-  const components = collectComponents(svgFilesPath)
+  const components = collectModules(svgFilesPath)
   console.log('Generating components...')
 
   const names = []
-  for (const [index, component] of components.entries()) {
+  for (const [, component] of components.entries()) {
     names.push(component.name)
-    fs.writeFileSync(path.resolve(buildPath, component.fileName), `export default "${component.svgPath}"`)
+    fs.writeFileSync(
+      path.resolve(buildPath, component.fileName),
+      `export default "${component.svgPath}"`
+    )
     fs.writeFileSync(
       path.resolve(buildPath, component.fileName.slice(0, -2) + 'd.ts'),
       `declare const _default: string;
@@ -36,7 +42,8 @@ ${names.join(',\n')}
   )
 }
 
-function collectComponents(svgFilesPath) {
+/** Return ALL of the icon paths */
+function collectModules(svgFilesPath) {
   const svgFiles = fs.readdirSync(svgFilesPath)
 
   const icons = []
@@ -57,7 +64,7 @@ function collectComponents(svgFilesPath) {
       svgPath,
     }
 
-    const iconMeta = meta.find((entry) => entry.name === origName)
+    const iconMeta = meta.find(entry => entry.name === origName)
     if (iconMeta) {
       icon.aliases = iconMeta.aliases
     }
@@ -78,12 +85,14 @@ function collectComponents(svgFilesPath) {
       }
 
       // check if alias duplicates top-level icon name and ignore
-      if (icons.find((icon) => icon.name.toLowerCase() === normalizedAlias.toLowerCase())) {
+      if (icons.find(icon => icon.name.toLowerCase() === normalizedAlias.toLowerCase())) {
         continue
       }
 
       // check if alias itself is duplicated
-      const duplicateAlias = aliases.find((alias2) => alias2.name.toLowerCase() === normalizedAlias.toLowerCase())
+      const duplicateAlias = aliases.find(
+        alias2 => alias2.name.toLowerCase() === normalizedAlias.toLowerCase()
+      )
       if (duplicateAlias) {
         // check if duplicate alias is on same icon
         // if not note for removal from final list
@@ -110,17 +119,18 @@ function collectComponents(svgFilesPath) {
 
   // clean up remaining alias duplicates
   for (const aliasName of removeAliases) {
-    const index = aliases.find((alias) => aliasName === alias)
+    const index = aliases.find(alias => aliasName === alias)
     aliases.splice(index, 1)
   }
 
   return [...icons, ...aliases]
 }
 
+/** Make pascal-case */
 function normalizeName(name) {
   return name
     .split(/[ -]/g)
-    .map((part) => {
+    .map(part => {
       return part.charAt(0).toUpperCase() + part.slice(1)
     })
     .join('')

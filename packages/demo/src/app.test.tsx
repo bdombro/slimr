@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
-import { render, screen } from '@testing-library/react'
-import { App } from './App.js'
+import {render, screen} from '@testing-library/react'
+
+import {App} from './app.js'
 
 it('renders', () => {
   render(<App />)

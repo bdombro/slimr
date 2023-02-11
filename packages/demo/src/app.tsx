@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import styled, { addCss } from '@slimr/styled'
+import {addCss, styled} from '@slimr/styled'
+import {useEffect, useState} from 'react'
 
 // Can add arbitrary css to the document head
 addCss(`
@@ -10,25 +10,12 @@ addCss(`
 `)
 
 // Create primitive components if you like
-interface ButtonProps extends Omit<JSX.IntrinsicElements['button'], 'id'> {
-  id: JSX.IntrinsicElements['button']['id'] // make required
-}
-function Button(props: ButtonProps) {
-  return (
-    <button
-      {...props}
-      onClick={(e) => {
-        console.log(`Button ${props.id} clicked`)
-        props.onClick?.(e)
-      }}
-    />
-  )
-}
-const ButtonP = styled(Button)`
+
+const ButtonP = styled.button`
   bg: red;
   c: white;
 `
-
+/** The main react app */
 export function App() {
   const on = useOscillator()
 
@@ -59,7 +46,7 @@ function useOscillator() {
   const [on, setOn] = useState(false)
   useEffect(() => {
     const interval = setInterval(() => {
-      setOn((on) => !on)
+      setOn(on => !on)
     }, 1000)
     return () => clearInterval(interval)
   }, [])

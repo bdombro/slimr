@@ -9,6 +9,7 @@ interface LazyIconSvgProps extends Omit<IconSvgProps, 'd' | 'path'> {
    * () => import('@iconify/icons-mdi/home')
    * ```
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pathImporter: () => Promise<any> // Like () => import('@iconify/icons-mdi/home')
 }
 

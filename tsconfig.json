@@ -19,5 +19,9 @@
     "jsxImportSource": "react"
   },
   "include": [],
-  "references": [{ "path": "./packages/css" }, { "path": "./packages/demo" }, { "path": "./packages/styled" }]
+  "references": [
+    {"path": "./packages/css"},
+    {"path": "./packages/demo"},
+    {"path": "./packages/styled"}
+  ]
 }

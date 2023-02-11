@@ -6,7 +6,7 @@ Demos: See `./packages/demo` or [CodeSandbox](https://codesandbox.io/s/64r9px?fi
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
-- [@slimr/css](https://www.npmjs.com/package/@slimr/css)
+- [@slimr/css](https://www.npmjs.com/package/@slimr/css) - an emotion-like css management lib bundled with this lib
 - [@slimr/mdi-paths](https://www.npmjs.com/package/@slimr/mdi-paths)
 - [@slimr/styled](https://www.npmjs.com/package/@slimr/styled)
 
@@ -62,7 +62,7 @@ function Button(props: ButtonProps) {
   return (
     <button
       {...props}
-      onClick={(e) => {
+      onClick={e => {
         console.log(`Button ${props.id} clicked`)
         props.onClick?.(e)
       }}
@@ -96,11 +96,11 @@ export function App() {
         // Any attr with '_' prefix will be passed to zx
         _fontWeight="var(--font-weight)"
         // like _zx, but applies only on :hover
-        _hover={{ bg: 'lightblue' }}
+        _hover={{bg: 'lightblue'}}
         // like _zx, but applies only on :active
-        _active={{ bg: 'lightblue' }}
+        _active={{bg: 'lightblue'}}
         // like _zx, but applies only when browser prefers dark modes
-        _dark={{ bg: 'lightblue' }}
+        _dark={{bg: 'lightblue'}}
       >
         Click me!
       </ButtonP>
