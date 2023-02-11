@@ -73,9 +73,9 @@ export function App() {
 }
 ```
 
-### Comparisons
+## Comparisons
 
-#### [Emotion](https://emotion.sh/docs/introduction)
+### [Emotion](https://emotion.sh/docs/introduction)
 
 - A popular css-in-js lib that inspired this lib
 
@@ -89,7 +89,7 @@ Cons
 - Many features require addons, which make bundle even larger
 - Does not support zx prop or css shorthand props
 
-#### [Astroturf](https://astroturfcss.github.io/astroturf/)
+### [Astroturf](https://astroturfcss.github.io/astroturf/)
 
 - A popular css-in-js lib similar to Emotion but compiles out the css into css stylesheets
 
@@ -104,6 +104,6 @@ Cons
 - Does not support zx prop or css shorthand props
 - Is not progressive -- all styles for all components is loaded and blocks initial page paint
 
-#### [Linaria](https://linaria.dev/)
+### [Linaria](https://linaria.dev/)
 
 - Pretty much identical to Astroturf, but maybe better Vite support

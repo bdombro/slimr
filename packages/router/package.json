@@ -1,14 +1,11 @@
 {
-  "name": "@slimr/styled",
-  "version": "2.0.3",
+  "name": "@slimr/router",
+  "version": "1.0.3",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
   "keywords": [
-    "chakra",
-    "chakra-ui",
-    "emotion",
-    "styled-components",
+    "react-router",
     "preact",
     "react"
   ],
@@ -40,11 +37,6 @@
   },
   "peerDependencies": {
     "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "react": "^18",
-    "react-dom": "^18"
-  },
-  "dependencies": {
-    "@slimr/css": "^2.0.1"
+    "@types/react-dom": "^18"
   }
 }

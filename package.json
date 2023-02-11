@@ -93,24 +93,5 @@
     ],
     "importOrderSeparation": true,
     "importOrderSortSpecifiers": true
-  },
-  "tsup": {
-    "entry": [
-      "src"
-    ],
-    "outDir": "src",
-    "format": [
-      "cjs",
-      "esm"
-    ],
-    "dts": true,
-    "minify": true,
-    "splitting": false,
-    "sourcemap": true,
-    "target": "es2019"
-  },
-  "dependencies": {
-    "i": "^0.3.7",
-    "npm": "^9.4.2"
   }
 }

@@ -109,9 +109,9 @@ export function App() {
 }
 ```
 
-### Comparisons
+## Comparisons
 
-#### [Chakra-UI](https://chakra-ui.com/)
+### [Chakra-UI](https://chakra-ui.com/)
 
 - A popular css-in-js lib that inspired this lib
 
@@ -124,7 +124,7 @@ Cons
 
 - Is crazy large bundle impact (80+kb)
 
-#### [Styled-Components](https://github.com/styled-components/styled-components)
+### [Styled-Components](https://github.com/styled-components/styled-components)
 
 - A popular css-in-js lib that inspired this lib
 
@@ -137,7 +137,7 @@ Cons
 - Is massive (~12kb), plus has dependency on emotion (~11kb)
 - Does not support zx prop or css shorthand props
 
-#### [Emotion](https://emotion.sh/docs/introduction)
+### [Emotion](https://emotion.sh/docs/introduction)
 
 - A popular css-in-js lib similar to styled-components
 
@@ -151,7 +151,7 @@ Cons
 - Many features require addons, which make bundle even larger
 - Does not support zx prop or css shorthand props
 
-#### [Goober](https://github.com/cristianbote/goober)
+### [Goober](https://github.com/cristianbote/goober)
 
 - another tiny 1kb styled-components like css-in-js
 

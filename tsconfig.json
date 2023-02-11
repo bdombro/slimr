@@ -10,7 +10,8 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "NodeNext",
-    "moduleResolution": "NodeNext", // switch to bundler soon: https://github.com/microsoft/TypeScript/pull/51669
+    "moduleResolution": "node",
+    // "moduleResolution": "NodeNext", // switch to bundler soon: https://github.com/microsoft/TypeScript/pull/51669
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
