@@ -2,10 +2,17 @@
 
 [Material Design Icon](https://materialdesignicons.com) paths for any TS/JS project, packaged as single files default export = path.
 
-- Each modules is named to match the name in [https://materialdesignicons.com](https://materialdesignicons.com), so easy to find
-- Unlike most libraries, this one includes all the aliases found in [https://materialdesignicons.com](https://materialdesignicons.com)
-- By splitting the paths into different files, lazy loading is easy and possible!
-- Version is pinned to the version of `@mdi/svg` this was generated from
+Compared to Iconify
+
+- Has all of the mdi aliases
+- Uses Lazy ESM Imports instead of fetching from CDN/internet
+- Is smaller bundle impact - icon files are smaller, React component smaller
+
+Features
+
+- Lazy ESM Imports instead of fetching from CDN/internet
+- Each icon is a seperate Javascript module, named to match the name in [https://materialdesignicons.com](https://materialdesignicons.com), so easy to find
+- For React fans, you can use LazyIconSvg or IconSvg from `@slimr/mdi-paths/react`.
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -21,97 +28,29 @@ npm install @slimr/mdi-paths
 
 ## Usage
 
-Just search for an icon on [materialdesignicons.com](https://materialdesignicons.com) and look for its name.  
+Just search for an icon on [materialdesignicons.com](https://materialdesignicons.com) and look for its name.
+
 The name translates to PascalCase in `@slimr/mdi-paths`.
 
 Also it's possible to import with an alias. You can find them on the detail page of the respective icon.
 
-Simplest Usage:
+For React, I recommend you use the bundled react components, LazyIconSvg and IconSvg.
 
-```javascript
-import HomePath from '@slimr/mdi-paths/Home'
-export function HomeIcon({ color = 'currentColor', size = 24, ...props }) {
-  const className = 'mdi-icon ' + (props.class || props.className || '')
-  return (
-    <svg {...props} class={className} width={size} height={size} fill={color} viewBox="0 0 24 24">
-      <path d={HomePath} />
-    </svg>
-  )
-}
-```
-
-With Lazy-Loading/Code-Splitting and blank placeholder:
-
-```javascript
-export function HomeIcon ({ color = 'currentColor', size = 24, ...props }) {
-  const className = 'mdi-icon ' + (props.class || props.className || '');
-  const [path, setPath] = useState('')
-  useEffect(() => {
-    import('@slimr/mdi-paths/Home'))().then((module: any) => setPath(module.default))
-  }, [])
-
-  return (
-    <svg {...props} class={className} width={size} height={size} fill={color} viewBox="0 0 24 24">
-      <path d={path} />
-    </svg>
-  );
-}
-```
-
-And here is how I use it. I made a helper component and factory to make it crazy easy to add more icons while simultaneously reducing line-count per-icon. _Notice how each icon is code-split and lazy loaded with an empty placeholder!!!!_
+Example with LazyIconSvg:
 
 ```typescript
-import { Account, Counter, Home } from '~/components/Icons'
+// icon.tsx
+import { LazyIconSvg, LazyIconSvgProps } from '@slimr/mdi-paths/react'
 
-export default function HeaderLogo() {
-  return (
-    <div>
-      <Account />
-      <Counter />
-      <Home />
-    </div>
-  )
+const icons = {
+  home: () => import('@slimr/mdi-paths/Home'),
 }
-```
 
-Source of helper `~/components/Icons`:
+type IconKeys = keyof typeof icons
+type IconProps = Omit<LazyIconSvgProps, 'name' | 'svgPathImport'> & { name: IconKeys }
 
-```typescript
-import { h } from 'preact'
-import { useEffect, useState } from 'preact/hooks'
-
-export const Account = I(() => import('mdi-paths-split/CardAccountDetailsOutline'))
-export const Counter = I(() => import('mdi-paths-split/Counter'))
-export const Home = I(() => import('mdi-paths-split/HomeOutline'))
-// ... add as many as you want
-
-function I(lazyPath: LazyPathType) {
-  // aka Icon Factory, shortened to be easier to read
-  return (props: IconProps) => <LazySvg lazyPath={lazyPath} {...props} />
-}
-type IconProps = Omit<LazySvgProps, 'lazyPath'>
-
-function LazySvg({ lazyPath, color = 'currentColor', size = 24, ...props }: LazySvgProps) {
-  const className = 'mdi-icon ' + (props.class || props.className || '')
-  const [path, setPath] = useState('')
-  useEffect(() => {
-    lazyPath().then((module: any) => setPath(module.default))
-  }, [])
-
-  return (
-    <svg {...props} class={className} width={size} height={size} fill={color} viewBox="0 0 24 24">
-      <path d={path} />
-    </svg>
-  )
-}
-type LazyPathType = () => Promise<any>
-interface LazySvgProps {
-  color?: string
-  size?: number | string
-  class?: string
-  className?: string
-  children?: never
-  lazyPath: LazyPathType
+export function Icon({ name, ...props }: IconProps) {
+  return <LazyIconSvg pathImporter={icons[name]} {...props} />
 }
 ```
 

@@ -1,5 +1,5 @@
 import { createElement, CSSProperties, FC, forwardRef, HTMLAttributes } from 'react'
-import css, { classJoin, ShorthandProps, shorthandProps, shorthandPropsMap, TemplateStringProps } from '@slimr/css'
+import css, { classJoin, ShorthandProps, shorthandPropsMap, TemplateStringProps } from '@slimr/css'
 
 export { css }
 export * from '@slimr/css'
