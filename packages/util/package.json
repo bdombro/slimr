@@ -1,0 +1,18 @@
+{
+  "name": "@slimr/util",
+  "version": "1.0.5",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdombro/slimr.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "npm run clean && tsup",
+    "clean": "find -E . -regex '.*(\\.js|\\.cjs|\\.d\\.ts|\\.map)' -delete",
+    "prepack": "npm run build && npm version patch",
+    "postpublish": "npm run clean"
+  }
+}
