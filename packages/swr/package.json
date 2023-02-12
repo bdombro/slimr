@@ -1,6 +1,6 @@
 {
   "name": "@slimr/swr",
-  "version": "2.0.2",
+  "version": "2.0.6",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -36,7 +36,7 @@
     "postpublish": "npm run clean"
   },
   "peerDependencies": {
-    "@slimr/util": "*",
+    "@slimr/util": "^1.0.8",
     "react": "*",
     "react-dom": "*"
   }

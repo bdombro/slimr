@@ -20,7 +20,7 @@ const hasOwnProperty = (o: any, ...args: string[]) =>
 const isEmptyObject = (o: any) => isObject(o) && isEmpty(o)
 const makeObjectWithoutPrototype = () => Object.create(null)
 
-export type DiffFnc = <L extends any, R extends any>(
+export type DiffFnc = <L, R>(
   lhs: L,
   rhs: R
 ) => Partial<{[K in keyof (L & R)]: (L & R)[K] | undefined}>

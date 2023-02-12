@@ -1,6 +1,6 @@
 {
   "name": "@slimr/util",
-  "version": "1.0.5",
+  "version": "1.0.9",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -14,5 +14,9 @@
     "clean": "find -E . -regex '.*(\\.js|\\.cjs|\\.d\\.ts|\\.map)' -delete",
     "prepack": "npm run build && npm version patch",
     "postpublish": "npm run clean"
+  },
+  "dependencies": {
+    "is-what": "^4.1.8",
+    "merge-anything": "^5.1.4"
   }
 }

@@ -3,10 +3,11 @@
  * useSWR: a tiny (600B) async resolver that displays a cached version (if available) of the
  * callback until the callback resolves.
  *
- * Tiny: only 600 bytes when bundled with Vite
+ * Tiny: only ~600 bytes when bundled with Vite
  *
  */
-import {mapApplyMaxSize} from '@slimr/util'
+import {mapApplyMaxSize} from '@slimr/util/map-apply-max-size'
+import {stringify} from '@slimr/util/stringify'
 import {useEffect, useState} from 'react'
 
 /** A generic promise */
@@ -47,23 +48,6 @@ interface State<T extends PromiseType> extends CacheVal<T> {
 }
 
 /**
- * A safe stringify that removes circular references
- * ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value
- */
-const stringify = (obj: any) => {
-  const seen = new WeakSet()
-  return JSON.stringify(obj, (_, value) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return
-      }
-      seen.add(value)
-    }
-    return value
-  })
-}
-
-/**
  * A cache to store prior responses and timestamps
  */
 const cache = new Map()
@@ -100,7 +84,7 @@ mapApplyMaxSize(cache, 100)
  *  }
  * ```
  */
-function useSWR<T extends PromiseType>(
+export function useSWR<T extends PromiseType>(
   /** An async callback that returns data. *Data must be JSONable* */
   fetcher: T,
   /** props to trigger refresh on change, like useEffectDeep */
@@ -117,7 +101,8 @@ function useSWR<T extends PromiseType>(
     return {...hit, refresh, loading: !!hit?.promise}
   })
 
-  const refresh = (hardRefresh = true): ReturnType<T> => {
+  /** A cb to re-run the async function and skip any cache */
+  function refresh(hardRefresh = true): ReturnType<T> {
     const hit = cache.get(cacheKey) || ({} as CacheVal<T>)
     if (hit?.promise) {
       return hit.promise
@@ -153,5 +138,3 @@ function useSWR<T extends PromiseType>(
 
   return state
 }
-
-export default useSWR
