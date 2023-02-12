@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import {Suspense, lazy, useEffect, useState} from 'react'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React, {Suspense, lazy, useEffect, useState} from 'react'
 
 /**
  * Loads a component lazily and keeps the prior component as fallback. Also calls onLoad.

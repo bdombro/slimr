@@ -9,20 +9,23 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "NodeNext",
-    "moduleResolution": "node",
-    // "moduleResolution": "NodeNext", // switch to bundler soon: https://github.com/microsoft/TypeScript/pull/51669
+    "module": "ES2020",
+    // "moduleResolution": "node",
+    "moduleResolution": "NodeNext", // switch to bundler soon: https://github.com/microsoft/TypeScript/pull/51669
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    "sourceMap": true
   },
   "include": [],
   "references": [
     {"path": "./packages/css"},
     {"path": "./packages/demo"},
-    {"path": "./packages/styled"}
+    {"path": "./packages/styled"},
+    {"path": "./packages/swr"},
+    {"path": "./packages/util"}
   ]
 }

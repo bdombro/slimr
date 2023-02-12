@@ -1,6 +1,6 @@
 {
   "name": "@slimr/swr",
-  "version": "2.0.6",
+  "version": "2.0.10",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -14,29 +14,24 @@
     "url": "https://github.com/bdombro/slimr.git"
   },
   "type": "module",
-  "main": "./src/index.cjs",
-  "module": "./src/index.js",
-  "types": "./src/index.ts",
+  "main": "./cjs/index.js",
+  "module": "./esm/index.js",
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "require": "./src/index.cjs",
-      "types": "./src/index.ts"
+      "require": "./cjs/index.js",
+      "default": "./esm/index.js"
     }
   },
-  "files": [
-    "src",
-    "README.md",
-    "tsconfig.json"
-  ],
   "scripts": {
-    "build": "npm run clean && tsup",
-    "clean": "find -E ./src -regex '.*(\\.js|\\.cjs|\\.d\\.ts|\\.map)' -delete",
-    "prepack": "npm run build && npm version patch",
-    "postpublish": "npm run clean"
+    "build": "npm-run-all clean lint --parallel build:*",
+    "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
+    "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
+    "clean": "rm -rf esm cjs",
+    "lint": "eslint .",
+    "prepack": "npm run build && npm version patch"
   },
   "peerDependencies": {
-    "@slimr/util": "^1.0.8",
+    "@slimr/util": "^1.0.19",
     "react": "*",
     "react-dom": "*"
   }

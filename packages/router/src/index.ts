@@ -1,2 +1,2 @@
-export * from './router-class'
-export {Switch} from './switch'
+export * from './router-class.js'
+export {Switch} from './switch.js'

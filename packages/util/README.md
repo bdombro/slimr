@@ -12,6 +12,7 @@ A set of slim JS polyfills
 
 ## Exports
 
+- index.ts - ALL of the utils -- shouldn't avoid in web due to bundle impact
 - copy.ts - Deeply copy any object
 - diff.ts - Returns a diff between any two objects
 - index.ts -

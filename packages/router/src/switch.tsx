@@ -1,7 +1,8 @@
-import {memo, useEffect, useMemo, useState} from 'react'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React, {memo, useEffect, useMemo, useState} from 'react'
 
-import {Lazy} from './lazy'
-import type {RouterInstance} from './router-class'
+import {Lazy} from './lazy.js'
+import type {RouterInstance} from './router-class.js'
 
 /**
  * A Switching component, which renders the first matching route

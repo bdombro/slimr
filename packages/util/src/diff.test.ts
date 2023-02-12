@@ -1,4 +1,4 @@
-import {diff} from './diff'
+import {diff} from './diff.js'
 
 it('returns the diff between two objects', () => {
   // negatives

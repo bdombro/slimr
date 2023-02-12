@@ -6,6 +6,7 @@
  */
 export function mapApplyMaxSize(map: any, maxSize: number) {
   map.max = maxSize
+  if (map._set) return
   map._set = map.set
   map._get = map.get
   map.set = (key: any, val: any) => {

@@ -6,8 +6,7 @@
  * Tiny: only ~600 bytes when bundled with Vite
  *
  */
-import {mapApplyMaxSize} from '@slimr/util/map-apply-max-size'
-import {stringify} from '@slimr/util/stringify'
+import {mapApplyMaxSize, stringify} from '@slimr/util'
 import {useEffect, useState} from 'react'
 
 /** A generic promise */
@@ -100,7 +99,6 @@ export function useSWR<T extends PromiseType>(
     const hit = cache.get(cacheKey)
     return {...hit, refresh, loading: !!hit?.promise}
   })
-
   /** A cb to re-run the async function and skip any cache */
   function refresh(hardRefresh = true): ReturnType<T> {
     const hit = cache.get(cacheKey) || ({} as CacheVal<T>)

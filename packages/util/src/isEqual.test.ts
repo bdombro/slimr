@@ -1,4 +1,4 @@
-import {isEqual} from './isEqual'
+import {isEqual} from './isEqual.js'
 
 it('returns the isEqual between two objects', () => {
   // negatives
