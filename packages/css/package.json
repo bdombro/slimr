@@ -22,7 +22,7 @@
   "exports": {
     ".": {
       "require": "./cjs/index.js",
-      "default": "./esm/index.js"
+      "import": "./esm/index.js"
     }
   },
   "scripts": {

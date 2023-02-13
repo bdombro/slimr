@@ -57,6 +57,13 @@ export function IconSvg({
     }
   }
 
+  // return (
+  //   <svg viewBox="0 0 24 24" width={size} height={size} fill={fill} {...props} style={style}>
+  //     {path}
+  //     {d && <path d={d} />}
+  //   </svg>
+  // )
+
   return createElement(
     'svg',
     {

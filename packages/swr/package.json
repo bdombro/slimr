@@ -19,7 +19,7 @@
   "exports": {
     ".": {
       "require": "./cjs/index.js",
-      "default": "./esm/index.js"
+      "import": "./esm/index.js"
     }
   },
   "scripts": {
@@ -30,8 +30,10 @@
     "lint": "eslint .",
     "prepack": "npm run build && npm version patch"
   },
-  "peerDependencies": {
-    "@slimr/util": "^1.0.19",
+  "dependencies": {
+    "@slimr/util": "^1.0.31"
+  },
+  "optionalDependencies": {
     "react": "*",
     "react-dom": "*"
   }

@@ -1,26 +1,26 @@
 {
-  "name": "@slimr/util",
-  "version": "1.0.31",
+  "name": "@slimr/markdown",
+  "version": "1.0.10",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
-  "main": "cjs/index.js",
-  "module": "esm/index.js",
-  "exports": {
-    ".": {
-      "require": "./cjs/index.js",
-      "import": "./esm/index.js"
-    },
-    "./code-highlight": {
-      "require": "./cjs/code-highlight.js",
-      "import": "./esm/code-highlight.js"
-    }
-  },
+  "keywords": [
+    "markdown",
+    "react"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/bdombro/slimr.git"
   },
   "type": "module",
+  "main": "./cjs/index.js",
+  "module": "./esm/index.js",
+  "exports": {
+    ".": {
+      "require": "./cjs/index.js",
+      "import": "./esm/index.js"
+    }
+  },
   "scripts": {
     "build": "npm-run-all clean lint --parallel build:*",
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
@@ -30,9 +30,10 @@
     "prepack": "npm run build && npm version patch"
   },
   "dependencies": {
-    "highlight.js": "^11.7.0",
-    "is-what": "^4.1.8",
-    "merge-anything": "^5.1.4",
-    "nanoid": "^4.0.1"
+    "@slimr/util": "^1.0.31"
+  },
+  "optionalDependencies": {
+    "react": "*",
+    "react-dom": "*"
   }
 }

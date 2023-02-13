@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, {memo, useEffect, useMemo, useState} from 'react'
 
 import {Lazy} from './lazy.js'

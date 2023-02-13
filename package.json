@@ -9,7 +9,9 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run --workspaces build",
+    "build": "run-s build:phase1 build:phase2",
+    "build:phase1": "npm run -w packages/css -w packages/util build",
+    "build:phase2": "npm run -w packages/markdown -w packages/router -w packages/styled -w packages/swr build",
     "clean": "npm run --workspaces clean",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
@@ -42,7 +44,6 @@
     "extends": [
       "eslint:recommended",
       "plugin:react/recommended",
-      "plugin:react/jsx-runtime",
       "plugin:@typescript-eslint/recommended",
       "prettier"
     ],
@@ -66,12 +67,20 @@
       "@typescript-eslint/no-unused-vars": "error",
       "no-prototype-builtins": "off",
       "react/button-has-type": "error",
-      "react/jsx-no-undef": "off",
       "react/no-unescaped-entities": "off",
       "react/prop-types": "off",
       "require-jsdoc": "error"
     },
-    "overrides": [],
+    "overrides": [
+      {
+        "files": [
+          "packages/demo/**/*"
+        ],
+        "rules": {
+          "react/react-in-jsx-scope": "off"
+        }
+      }
+    ],
     "settings": {
       "react": {
         "version": "18"
