@@ -1,6 +1,6 @@
 # @slimr/styled [![npm package](https://img.shields.io/npm/v/@slimr/styled.svg?style=flat-square)](https://npmjs.org/package/@slimr/styled)
 
-A tiny (2kb) React css-in-js library inspired by chakra-ui, emotion, and styled-components libs
+A tiny (~2kb) React css-in-js library inspired by chakra-ui, emotion, and styled-components libs
 
 Demos: See `./packages/demo` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
 
@@ -15,8 +15,9 @@ Pros:
 - Much less bundle size and runtime sluggishness
 - Less is more: less bugs, no breaking changes
 - Supports declaring css and styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
-- Styled shortcuts like styled.div when imported from `@slimr/styled/withHtmlTags`. Note: To get types you'll need tsconfig:moduleResolution >= `Node16`
+- Styled shortcuts like styled.div
 - Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
+  - Most HTMLElements are enhanced and exported as pascal-case (i.e. `import {Div, A, Section, Flex} from '@slimr/styled'`)
   - Pass shorthand props or zx props to styled components. This lib will create css classes if complex, passthrough as styles otherwise.
   - `m` --> `margin`
   - `mx` --> `margin-left` and right

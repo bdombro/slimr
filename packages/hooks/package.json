@@ -1,17 +1,14 @@
 {
-  "name": "@slimr/css",
-  "version": "2.0.8",
+  "name": "@slimr/hooks",
+  "version": "1.0.2",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
   "sideEffects": false,
   "keywords": [
-    "chakra",
-    "chakra-ui",
-    "emotion",
-    "styled-components",
     "preact",
-    "react"
+    "react",
+    "swr"
   ],
   "repository": {
     "type": "git",
@@ -27,11 +24,20 @@
     }
   },
   "scripts": {
-    "build": "npm-run-all clean --parallel build:*",
+    "build": "npm-run-all clean lint --parallel build:*",
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
-    "lint": "tsc && eslint .",
-    "prepack": "run-s clean lint && npm version patch && run-s build"
+    "lint": "eslint .",
+    "prepack": "npm run build && npm version patch"
+  },
+  "dependencies": {
+    "@slimr/swr": "^2.0.10",
+    "@slimr/util": "^1.0.38",
+    "react-use": "^17.4.0"
+  },
+  "optionalDependencies": {
+    "react": "*",
+    "react-dom": "*"
   }
 }

@@ -1,9 +1,10 @@
 {
   "name": "@slimr/styled",
-  "version": "2.0.5",
+  "version": "2.0.7",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
+  "sideEffects": false,
   "keywords": [
     "chakra",
     "chakra-ui",

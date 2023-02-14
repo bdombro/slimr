@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import hljs from 'highlight.js/lib/core'
 // @ts-ignore
 import bash from 'highlight.js/lib/languages/bash'

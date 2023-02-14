@@ -4,6 +4,7 @@
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
+  "sideEffects": false,
   "keywords": [
     "markdown",
     "react"
