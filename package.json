@@ -10,15 +10,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "run-s build:phase1 build:phase2",
-    "build:phase1": "npm run -w packages/css -w packages/util build",
-    "build:phase2": "npm run -w packages/markdown -w packages/router -w packages/styled -w packages/swr build",
-    "clean": "npm run --workspaces clean",
+    "build": "npm run clean && workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths' --ignore-fs='**example**'  -- npm run build",
+    "clean": "workspaces-run --parallel -- npm run clean",
     "format": "prettier -w .",
+    "format:quick": "pretty-quick --staged",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-    "prepare": "husky install",
-    "publish": "npm publish --workspaces --access public",
+    "precommit": "npm i && npm-run-all clean format:quick lint build 'test -- --run'",
+    "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "start": "npm run -w examples/css-and-styled start",
     "test": "vitest"
   },
@@ -33,7 +32,6 @@
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-react": "^7.32.2",
-    "husky": "^8.0.0",
     "jsdom": "^21.1.0",
     "nodemon": "^2.0.20",
     "npm-run-all": "^4.1.5",
@@ -42,7 +40,8 @@
     "tsup": "^6.5.0",
     "typescript": "^4.9.5",
     "vite": "^4.0.0",
-    "vitest": "^0.26.3"
+    "vitest": "^0.26.3",
+    "workspaces-run": "^1.0.1"
   },
   "eslintConfig": {
     "env": {

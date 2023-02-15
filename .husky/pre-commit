@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npm run clean
-npx pretty-quick --staged
-npm run lint
-npm run build
-npx vitest --run
