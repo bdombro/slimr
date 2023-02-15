@@ -31,7 +31,7 @@
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
-    "lint": "tsc && eslint .",
-    "prepack": "run-s clean lint && npm version patch && run-s build"
+    "lint": "eslint .",
+    "prepack": "run-s lint build && npm version patch"
   }
 }

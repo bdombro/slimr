@@ -17,10 +17,10 @@
     "url": "https://github.com/bdombro/slimr.git"
   },
   "scripts": {
-    "prepack": "npm run build && npm version patch",
-    "postpublish": "npm run clean",
+    "build": "run-s clean && node scripts/generate.js && cp components/* .",
     "clean": "find -E . -maxdepth 1 -regex '.*(\\.js|\\.jsx|\\.ts)' -delete",
-    "build": "npm run clean && node scripts/generate.js && cp components/* ."
+    "postpublish": "run-s clean",
+    "prepack": "run-s build && npm version patch"
   },
   "devDependencies": {
     "@mdi/svg": "7.1.96"

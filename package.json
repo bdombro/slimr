@@ -10,12 +10,12 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run clean && workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths' --ignore-fs='**example**'  -- npm run build",
+    "build": "workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths'  -- npm run build",
     "clean": "workspaces-run --parallel -- npm run clean",
-    "format": "prettier --cache -w .",
+    "format": "prettier --cache -w . | (echo CHANGED:; cat -; echo DONE) | grep -v cached",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-    "precommit": "npm i && npm-run-all clean format lint build 'test -- --run'",
+    "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "start": "npm run -w examples/css-and-styled start",
     "test": "vitest"

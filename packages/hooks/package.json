@@ -24,12 +24,12 @@
     }
   },
   "scripts": {
-    "build": "npm-run-all clean lint --parallel build:*",
+    "build": "npm-run-all clean --parallel build:*",
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
     "lint": "eslint .",
-    "prepack": "npm run build && npm version patch"
+    "prepack": "run-s lint build && npm version patch"
   },
   "dependencies": {
     "@slimr/swr": "^2.0.10",
