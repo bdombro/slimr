@@ -2,7 +2,7 @@
 
 A tiny (~2kb) React css-in-js library inspired by chakra-ui, emotion, and styled-components libs
 
-Demos: See `./packages/demo` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
+Demos: See `./examples/css-and-styled` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 

@@ -1,5 +1,5 @@
 import {diff} from 'deep-object-diff'
-import fde from 'fast-deep-equal/react.js'
+import fde from 'fast-deep-equal'
 // @ts-ignore - no types available
 import fse from 'fast-shallow-equal'
 

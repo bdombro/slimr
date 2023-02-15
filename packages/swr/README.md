@@ -2,7 +2,7 @@
 
 A tiny alternative to the popular emotion library
 
-Demos: See `./packages/demo` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
+Demos: See `./examples/css-and-styled` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 

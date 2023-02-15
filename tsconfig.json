@@ -22,10 +22,14 @@
   },
   "include": [],
   "references": [
+    {"path": "./examples/css-and-styled"},
     {"path": "./packages/css"},
-    {"path": "./packages/demo"},
+    {"path": "./packages/hooks"},
+    {"path": "./packages/markdown"},
+    {"path": "./packages/router"},
     {"path": "./packages/styled"},
     {"path": "./packages/swr"},
-    {"path": "./packages/util"}
+    {"path": "./packages/util"},
+    {"path": "./tsconfig.node.json"}
   ]
 }

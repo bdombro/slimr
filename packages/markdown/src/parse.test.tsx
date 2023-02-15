@@ -1,5 +1,3 @@
-import '~/util/test-util'
-
 import {parse} from './parse.js'
 
 it('parses correctly', () => {
