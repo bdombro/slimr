@@ -1,2 +1,2 @@
-export * from './core.js'
-export {createClass as css} from './core.js'
+export * from './createClass.js'
+export {createClass as css} from './createClass.js'
