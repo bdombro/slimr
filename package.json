@@ -110,5 +110,6 @@
     ],
     "importOrderSeparation": true,
     "importOrderSortSpecifiers": true
-  }
+  },
+  "packageManager": "yarn@3.4.1"
 }

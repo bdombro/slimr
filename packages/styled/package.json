@@ -3,7 +3,6 @@
   "version": "2.0.7",
   "author": "Brian Dombrowski",
   "license": "ISC",
-  "private": false,
   "sideEffects": false,
   "keywords": [
     "chakra",
@@ -32,7 +31,7 @@
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
     "lint": "eslint .",
-    "prepack": "run-s lint build && npm version patch"
+    "prepack": "run-s lint build"
   },
   "peerDependencies": {
     "@types/react": "^18",
@@ -41,6 +40,6 @@
     "react-dom": "^16.8.0  || ^17.0.0 || ^18.0.0"
   },
   "dependencies": {
-    "@slimr/css": "^2.0.8"
+    "@slimr/css": "workspace:*"
   }
 }

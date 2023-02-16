@@ -155,9 +155,17 @@ function expandProps(css: string) {
   return css.trim()
 }
 
+interface Query {
+  start: number,
+  end: number,
+  query: string,
+  outerBody: string,
+  innerBody: string,
+}
+
 /** Find @keyframes, @media, @container queries in css **/
 function findQueries(css: string) {
-  const queries = []
+  const queries: Query[] = []
   for (const m of css.matchAll(/[@&]/gm)) {
     let query = ''
     let bodyStart = 0
@@ -173,7 +181,7 @@ function findQueries(css: string) {
         openCount--
         if (openCount === 0) {
           queries.push({
-            start: m.index,
+            start: m.index!,
             end: i + 1,
             query,
             outerBody: css.slice(m.index, i + 1),
