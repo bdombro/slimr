@@ -1,6 +1,6 @@
 {
   "name": "@slimr/markdown",
-  "version": "1.0.10",
+  "version": "2.1.7",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -23,18 +23,16 @@
     }
   },
   "scripts": {
-    "build": "npm-run-all clean lint --parallel build:*",
+    "build": "npm-run-all clean --parallel build:*",
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
-    "clean": "rm -rf esm cjs",
-    "lint": "eslint .",
-    "prepack": "npm run build && npm version patch"
+    "clean": "rm -rf esm cjs"
   },
   "dependencies": {
-    "@slimr/util": "^1.0.31"
+    "@slimr/util": "2.1.7"
   },
   "optionalDependencies": {
-    "react": "^16.8.0  || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0  || ^17.0.0 || ^18.0.0"
+    "react": "^16.8  || ^17 || ^18",
+    "react-dom": "^16.8  || ^17 || ^18"
   }
 }

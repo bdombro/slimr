@@ -1,6 +1,6 @@
 {
   "name": "@slimr/styled",
-  "version": "2.0.7",
+  "version": "2.1.7",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -30,17 +30,15 @@
     "build": "npm-run-all clean --parallel build:*",
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
-    "clean": "rm -rf esm cjs",
-    "lint": "tsc && eslint .",
-    "prepack": "run-s clean lint && npm version patch && run-s build"
+    "clean": "rm -rf esm cjs"
   },
   "peerDependencies": {
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "react": "^16.8.0  || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0  || ^17.0.0 || ^18.0.0"
+    "@types/react": "^16.8  || ^17 || ^18",
+    "@types/react-dom": "^16.8  || ^17 || ^18",
+    "react": "^16.8  || ^17 || ^18",
+    "react-dom": "^16.8  || ^17 || ^18"
   },
   "dependencies": {
-    "@slimr/css": "^2.0.8"
+    "@slimr/css": "2.1.7"
   }
 }

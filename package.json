@@ -1,6 +1,6 @@
 {
   "name": "@slimr/monorepo",
-  "version": "0.0.0",
+  "version": "2.1.7",
   "type": "module",
   "author": "Brian Dombrowski",
   "license": "ISC",
@@ -10,15 +10,17 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run clean && workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths' --ignore-fs='**example**'  -- npm run build",
+    "build": "workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths'  -- npm run build",
     "clean": "workspaces-run --parallel -- npm run clean",
     "format": "prettier --cache -w .",
-    "lint": "eslint . --cache --cache-location=node_modules/.eslintcache",
+    "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-    "precommit": "npm i && npm-run-all clean format lint build 'test -- --run'",
+    "precommit": "npm i && npm-run-all build lint 'test -- --run' version-bump publish",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
+    "publish": "workspaces-run --parallel --ignore='@slimr/mdi-paths'  -- npm publish --access public",
     "start": "npm run -w examples/css-and-styled start",
-    "test": "vitest"
+    "test": "vitest",
+    "version-bump": "npm version patch --no-git-tag-version && set-versions --workspaces && git add package.json package-lock.json '**/*/package.json'"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
@@ -35,10 +37,10 @@
     "nodemon": "^2.0.20",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.8.4",
-    "tsup": "^6.5.0",
-    "typescript": "^4.9.5",
+    "set-versions": "1.0.3",
+    "typescript": "4.9.5",
     "vite": "^4.0.0",
-    "vitest": "^0.26.3",
+    "vitest": "0.26.3",
     "workspaces-run": "^1.0.1"
   },
   "eslintConfig": {
