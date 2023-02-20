@@ -3,7 +3,14 @@ import React, {Suspense, lazy, useEffect, useState} from 'react'
 /**
  * Loads a component lazily and keeps the prior component as fallback. Also calls onLoad.
  *
- * Sadly, there is still some flickering.
+ * I tried several other approaches, but this one seems to be the most reliable. Tried:
+ *
+ * 1. Using `React.lazy` directly, but renders the fallback component even if the next
+ *   component is already loaded.
+ * 2. Using `React.lazy` + `useDeferredValue` on the lazy component, but still has the
+ *    same problem as approach #1 and I have no idea why.
+ * 3. Using a custom lazy loader instead of React.lazy, but React throws errors
+ *
  */
 export function Lazy({
   loader,

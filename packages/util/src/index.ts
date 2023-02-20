@@ -3,6 +3,7 @@ export * from 'deep-object-diff'
 export * from 'merge-anything'
 
 export * from './code-highlight.lazy.js'
+export * from './form-to-json.js'
 export * from './hashObj.js'
 export * from './equality.js'
 export * from './map-apply-max-size.js'

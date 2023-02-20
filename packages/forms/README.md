@@ -1,19 +1,13 @@
-# @slimr/util [![npm package](https://img.shields.io/npm/v/@slimr/util.svg?style=flat-square)](https://npmjs.org/package/@slimr/util)
+# @slimr/forms [![npm package](https://img.shields.io/npm/v/@slimr/forms.svg?style=flat-square)](https://npmjs.org/package/@slimr/forms)
 
-A set of slim JS polyfills
+A tiny (500B), minimalistic form hook that returns a Form component which
 
-## Exports
-
-- index.ts - ALL of the utils -- shouldn't avoid in web due to bundle impact
-- code-highlight.ts - Syntax highlight code elements in a very code-splitting way
-- equality.ts - Deep compare features
-- form-to-json.ts - Extracts the values of a form element as JSON
-- is-what.ts - ALL of npm:is-what
-- map-apply-max-size.ts stringify.ts
-- memoize.ts - A throttle/memoize function
-- merge.ts - ALL of npm:merge-anything
-- stringify.ts - A safe JSON.stringify wrapper that limits recursion
-- uid.ts - A nanoid instance with good defaults to generate unique ids
+- optimizes for vanilla, uncontrolled input elements
+- wraps onSubmit to
+  - auto call event.preventsDefault()
+  - track submitting, error, submitted, and accepted state
+- new prop onSubmitJson: a callback that is called with the json value of the form for more convenient form handling
+- ~450B when bundled+gzipped with a broader application
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 

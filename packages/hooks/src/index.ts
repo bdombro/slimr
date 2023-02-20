@@ -1,3 +1,4 @@
+export * from '@slimr/forms'
 export * from '@slimr/swr'
 export * from 'react-use'
 

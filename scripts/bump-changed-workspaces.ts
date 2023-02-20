@@ -7,19 +7,18 @@ import {globber} from 'https://deno.land/x/globber@0.1.0/mod.ts'
 /************************************************************************/
 
 const argv = import.meta.main && argParser().data
-const gitStaged = await spawn('git diff --name-only --cached')
+// const gitStaged = await spawn('git diff --name-only --cached')
+const gitChanged = await spawn('git diff --name-only HEAD')
 const rootConfig = await readJson('package.json')
 const workspaces: Record<string, Workspace> = await getWorkspaces()
 
 const usage = `
-Usage: deno run --allow-read --allow-write scripts/version-bump.ts [options]
+Usage: deno run --allow-read --allow-write scripts/bump-changed-workspaces.ts [options]
 
 Options:
-  -e, --exclude     Exclude a workspace name, or part of, from being bumped
-  -n, --npm         Path to npm executable if publishing (default: npm)
-  -p, --publish     Publish the bumped packages to npm
-  -s, --skip-stage  Skip staging the bumped packages' package.json files
   -h, --help        Show this help message
+  -e, --exclude     Exclude a workspace name, or part of, from being bumped
+  -p, --publish     Publish the bumped packages to npm
 `
 
 /************************************************************************
@@ -43,8 +42,20 @@ interface Workspace {
 /**
  * Bumps the version of any changed packages and their dependencies
  */
-export async function bumpStagedWorkspaces({exclude}: {exclude?: string[]} = {}) {
+export async function bumpChangedWorkspaces({
+  exclude,
+  publish,
+}: {exclude?: string[]; publish?: boolean} = {}) {
   console.log('VERSION-BUMP:start')
+
+  if (publish) {
+    const user = (await spawn('npm whoami')).trim()
+    if (!user) {
+      console.log('Must be logged in to npm to publish')
+      console.log('VERSION-BUMP:end')
+      Deno.exit(1)
+    }
+  }
 
   for (const workspace of Object.values(workspaces)) {
     if (exclude && exclude.some(e => workspace.name.includes(e))) {
@@ -57,6 +68,14 @@ export async function bumpStagedWorkspaces({exclude}: {exclude?: string[]} = {})
     }
   }
 
+  if (publish) {
+    await Promise.all(
+      Object.values(workspaces)
+        .filter(w => w.bumped)
+        .map(async w => console.log(await spawn('npm publish', w.path)))
+    )
+  }
+
   const bumped = Object.values(workspaces)
     .filter(w => w.bumped)
     .map(w => ({name: w.name, path: w.path, version: w.config.version}))
@@ -67,23 +86,29 @@ export async function bumpStagedWorkspaces({exclude}: {exclude?: string[]} = {})
     Deno.exit(1)
   }
 
+  console.log('Bump Result: ' + bumped.map(w => `${w.name}@${w.version}`).join(', '))
+
   console.log('VERSION-BUMP:end')
   return bumped
 }
 
 /** The entrypoint if called directly (aka import.meta.main = true) */
 async function main() {
-  const pluckArg = (short: string, long: string, boolean?: boolean): string[] => {
+  /** Find an arg and remove it from argv */
+  function pluckArg(short: string, long: string): string[]
+  function pluckArg(short: string, long: string, boolean: boolean): boolean
+  // eslint-disable-next-line require-jsdoc
+  function pluckArg(short: string, long: string, boolean?: boolean): any {
     if (short in argv.shortSwitches || long in argv.longSwitches) {
       const values = [...(argv.shortSwitches?.[short] ?? []), ...(argv.longSwitches?.[long] ?? [])]
       delete argv.shortSwitches?.[short]
       delete argv.longSwitches?.[long]
-      if (boolean) return ['true']
-      return values
+      return boolean ? true : values
     }
-    return []
+    return boolean ? false : []
   }
   const exclude = pluckArg('e', 'exclude')
+  const publish = pluckArg('p', 'publish', true)
   if (
     argv.commands.legnth ||
     Object.keys(argv.shortSwitches).length ||
@@ -92,7 +117,7 @@ async function main() {
     console.log(usage)
     Deno.exit(1)
   }
-  await bumpStagedWorkspaces({exclude})
+  await bumpChangedWorkspaces({exclude, publish})
 }
 
 if (import.meta.main && argv) {
@@ -155,7 +180,7 @@ async function getWorkspaces() {
     const config = await readJson(path + '/package.json')
     const workspace: Workspace = {
       bumped: false,
-      staged: gitStaged.includes(path),
+      staged: gitChanged.includes(path),
       config,
       name: config.name,
       path,
@@ -183,6 +208,7 @@ async function spawn(cmd: string, cwd?: string) {
   const p = Deno.run({
     cmd: cmd.split(' '),
     cwd,
+    // stderr: 'piped',
     stdout: 'piped',
   })
   const out = new TextDecoder().decode(await p.output())

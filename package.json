@@ -15,14 +15,9 @@
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-    "precommit": "npm i && npm-run-all build lint 'test -- --run'",
+    "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "publish": "run-s publish:*",
-    "publish:assertLoggedIn": "npm whoami > /dev/null || (echo 'You must be logged in to npm to publish' && exit 1)",
-    "publish:bump-staged": "deno run -A scripts/bump-staged-workspaces.ts -e examples mdi",
-    "publish:packages": "workspaces-run --parallel --ignore='@slimr/mdi-paths' -- npm publish",
-    "publish:commit": "git commit -am publish --no-verify",
-    "start": "npm run -w examples/css-and-styled start",
+    "publish": "deno run -A scripts/bump-changed-workspaces.ts -p -e examples mdi",
     "test": "vitest"
   },
   "devDependencies": {

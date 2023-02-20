@@ -1,6 +1,6 @@
 {
   "name": "@slimr/hooks",
-  "version": "2.1.7",
+  "version": "2.1.15",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -24,14 +24,16 @@
     }
   },
   "scripts": {
-    "build": "npm-run-all clean --parallel build:*",
+    "build": "run-p build:*",
     "build:esm": "OUT=esm; tsc -d -m es2020 --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
-    "clean": "rm -rf esm cjs"
+    "clean": "rm -rf esm cjs",
+    "prepack": "run-s build"
   },
   "dependencies": {
-    "@slimr/swr": "2.1.7",
-    "@slimr/util": "2.1.7",
+    "@slimr/forms": "2.1.17",
+    "@slimr/swr": "2.1.10",
+    "@slimr/util": "2.2.5",
     "react-use": "^17.4.0"
   },
   "optionalDependencies": {

@@ -1,17 +1,14 @@
 {
-  "name": "@slimr/css",
-  "version": "2.1.10",
+  "name": "@slimr/forms",
+  "version": "2.1.17",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
   "sideEffects": false,
   "keywords": [
-    "chakra",
-    "chakra-ui",
-    "emotion",
-    "styled-components",
     "preact",
-    "react"
+    "react",
+    "forms"
   ],
   "repository": {
     "type": "git",
@@ -32,5 +29,12 @@
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
     "prepack": "run-s build"
+  },
+  "dependencies": {
+    "@slimr/util": "2.2.5"
+  },
+  "optionalDependencies": {
+    "react": "^16.8  || ^17 || ^18",
+    "react-dom": "^16.8  || ^17 || ^18"
   }
 }

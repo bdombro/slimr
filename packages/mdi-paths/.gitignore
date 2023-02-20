@@ -1,7 +1,0 @@
-*
-!components/*
-!scripts/*
-!package.json
-!.gitignore
-!README.md
-!tsconfig.json

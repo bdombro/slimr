@@ -21,15 +21,5 @@
     "sourceMap": true
   },
   "include": [],
-  "references": [
-    {"path": "./examples/css-and-styled"},
-    {"path": "./packages/css"},
-    {"path": "./packages/hooks"},
-    {"path": "./packages/markdown"},
-    {"path": "./packages/router"},
-    {"path": "./packages/styled"},
-    {"path": "./packages/swr"},
-    {"path": "./packages/util"},
-    {"path": "./tsconfig.node.json"}
-  ]
+  "references": [{"path": "./tsconfig.node.json"}]
 }

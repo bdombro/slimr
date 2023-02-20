@@ -1,7 +1,7 @@
 {
   "name": "@slimr/css-and-styled-example",
   "private": true,
-  "version": "2.1.7",
+  "version": "2.1.11",
   "type": "module",
   "scripts": {
     "start": "vite",
@@ -11,8 +11,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@slimr/styled": "2.1.7",
-    "@slimr/util": "2.1.7",
+    "@slimr/styled": "2.1.12",
+    "@slimr/util": "2.2.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
