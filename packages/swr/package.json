@@ -1,6 +1,6 @@
 {
   "name": "@slimr/swr",
-  "version": "2.1.10",
+  "version": "2.1.11",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -31,7 +31,7 @@
     "prepack": "run-s build"
   },
   "dependencies": {
-    "@slimr/util": "2.2.5"
+    "@slimr/util": "2.2.6"
   },
   "optionalDependencies": {
     "react": "^16.8  || ^17 || ^18",

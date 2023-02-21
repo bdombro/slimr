@@ -1,6 +1,6 @@
 {
   "name": "@slimr/hooks",
-  "version": "2.1.15",
+  "version": "2.1.16",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -31,9 +31,9 @@
     "prepack": "run-s build"
   },
   "dependencies": {
-    "@slimr/forms": "2.1.17",
-    "@slimr/swr": "2.1.10",
-    "@slimr/util": "2.2.5",
+    "@slimr/forms": "2.1.18",
+    "@slimr/swr": "2.1.11",
+    "@slimr/util": "2.2.6",
     "react-use": "^17.4.0"
   },
   "optionalDependencies": {

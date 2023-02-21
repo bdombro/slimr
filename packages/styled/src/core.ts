@@ -1,6 +1,7 @@
 /* eslint-disable prefer-const */
 import {ShorthandProps, TemplateStringProps, classJoin, css, shorthandPropsMap} from '@slimr/css'
 
+import {toCamelCase, toKebabCase} from '@slimr/util'
 import {CSSProperties, FC, HTMLAttributes, createElement, forwardRef} from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,16 +58,6 @@ export interface SCProps extends _Props {
 
 /** Styled Component: Like FunctionalComponent but adds SCProps */
 export type SC<T extends {className?: HTMLAttributes<allowableAny>['className']}> = FC<T & SCProps>
-
-/** Converts a string to kebab case */
-function toKebabCase(str: string) {
-  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
-}
-
-/** Converts a string to camel case */
-function toCamelCase(str: string) {
-  return str.replace(/-./g, x => x[1].toUpperCase())
-}
 
 /** Expands the shorthand props of a zx prop into css full */
 function expandShorthandProps(zx: Zx) {
