@@ -1,0 +1,76 @@
+:root {
+  --color-primary: purple;
+  --color-danger: red;
+  --color-bg: white;
+  --color-fg: black;
+  --color-gray20: #eee;
+  --color-gray50: #999;
+  --color-gray80: #444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.checkbox-input {
+  margin-bottom: 1rem;
+  input {
+    accent-color: var(--color-primary);
+    margin-right: 0.8rem;
+  }
+  &[data-error='true'] input {
+    outline: 1px solid var(--color-danger);
+  }
+}
+
+.generic-error {
+  color: red;
+  color: var(--color-danger);
+  margin-bottom: 0.4rem;
+}
+
+.text-input {
+  --text-error-color: var(--color-danger);
+  position: relative;
+  margin-bottom: 0.8rem;
+
+  > label {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-size: 0.7rem;
+    left: 8px;
+    padding: 1px 3px;
+    position: absolute;
+    top: -8px;
+  }
+
+  > input {
+    background: var(--color-bg);
+    border: 1px solid var(--color-gray80);
+    color: var(--color-fg);
+    display: block;
+    height: 3rem;
+    margin-bottom: 0.2rem;
+    padding-left: 0.8rem;
+    padding-top: 0.3rem;
+    width: 100%;
+  }
+
+  &[data-disabled='true'] {
+    > label {
+      color: var(--color-gray50);
+    }
+    > input {
+      border-color: var(--color-gray20);
+    }
+  }
+
+  &[data-error='true'] {
+    > label {
+      color: var(--text-error-color);
+    }
+    > input {
+      border-color: var(--text-error-color);
+    }
+  }
+}

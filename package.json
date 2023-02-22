@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths'  -- npm run build",
+    "build:storybook": "storybook build",
     "clean": "workspaces-run --parallel -- npm run clean",
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
@@ -17,9 +18,18 @@
     "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "publish": "deno run -A scripts/bump-changed-workspaces.ts -p -e mdi",
+    "storybook": "storybook dev -p 6006",
     "test": "vitest"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^7.0.0-beta.51",
+    "@storybook/addon-interactions": "^7.0.0-beta.51",
+    "@storybook/addon-links": "^7.0.0-beta.51",
+    "@storybook/blocks": "^7.0.0-beta.51",
+    "@storybook/react": "^7.0.0-beta.51",
+    "@storybook/react-vite": "^7.0.0-beta.51",
+    "@storybook/testing-library": "^0.0.13",
+    "@storybook/testing-react": "^2.0.0-next.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
@@ -33,11 +43,20 @@
     "jsdom": "^21.1.0",
     "nodemon": "^2.0.20",
     "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.21",
+    "postcss-nested": "^6.0.0",
     "prettier": "^2.8.4",
+    "storybook": "7.0.0-beta.51",
     "typescript": "4.9.5",
     "vite": "^4.0.0",
     "vitest": "0.26.3",
     "workspaces-run": "^1.0.1"
+  },
+  "postcss": {
+    "map": true,
+    "plugins": {
+      "postcss-nested": {}
+    }
   },
   "eslintConfig": {
     "env": {
@@ -75,7 +94,17 @@
       "react/prop-types": "off",
       "require-jsdoc": "error"
     },
-    "overrides": [],
+    "overrides": [
+      {
+        "files": [
+          "packages/**/*.mdx",
+          "packages/**/*.stories.*"
+        ],
+        "rules": {
+          "react/react-in-jsx-scope": "off"
+        }
+      }
+    ],
     "settings": {
       "react": {
         "version": "18"
