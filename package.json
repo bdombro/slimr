@@ -6,7 +6,6 @@
   "license": "ISC",
   "private": true,
   "workspaces": [
-    "examples/*",
     "packages/*"
   ],
   "scripts": {
@@ -17,7 +16,7 @@
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
     "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "publish": "deno run -A scripts/bump-changed-workspaces.ts -p -e examples mdi",
+    "publish": "deno run -A scripts/bump-changed-workspaces.ts -p -e mdi",
     "test": "vitest"
   },
   "devDependencies": {
@@ -76,16 +75,7 @@
       "react/prop-types": "off",
       "require-jsdoc": "error"
     },
-    "overrides": [
-      {
-        "files": [
-          "examples/css-and-styled/**/*"
-        ],
-        "rules": {
-          "react/react-in-jsx-scope": "off"
-        }
-      }
-    ],
+    "overrides": [],
     "settings": {
       "react": {
         "version": "18"
