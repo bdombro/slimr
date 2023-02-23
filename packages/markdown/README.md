@@ -1,4 +1,4 @@
-# @slimr/markdown [![npm package](https://img.shields.io/npm/v/@slimr/markdown.svg?style=flat-square)](https://npmjs.org/package/@slimr/markdown)
+# 🪶 @slimr/markdown [![npm package](https://img.shields.io/npm/v/@slimr/markdown.svg?style=flat-square)](https://npmjs.org/package/@slimr/markdown)
 
 A tiny markdown parser and react component
 

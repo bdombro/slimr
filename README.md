@@ -1,4 +1,4 @@
-# slimr
+# 🪶 @slimr monorepo
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 

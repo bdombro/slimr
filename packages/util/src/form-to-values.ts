@@ -1,12 +1,9 @@
 type FormJson = Record<string, string | string[] | number | number[] | boolean | boolean[]>
 
 /**
- * Extracts form values from a <form> ref, such as e.target from form.onSubmit
- * Is more friendly than the FormData api, but isn't compatible with
- * multipart/form-data encoding -- which is required if there are file inputs.
- * For example, FormData handles checkboxes weirdly
+ * Extracts form values from a `form` element, such as e.target from form.onSubmit
  */
-export function formToJson(formElement: HTMLFormElement): FormJson {
+export function formToValues(formElement: HTMLFormElement): FormJson {
   const reqBody: FormJson = {}
   for (const e of formElement.elements as unknown as HTMLInputElement[]) {
     const isArray = e.getAttribute('isarray')

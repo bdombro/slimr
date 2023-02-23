@@ -1,4 +1,4 @@
-# @slimr/swr [![npm package](https://img.shields.io/npm/v/@slimr/swr.svg?style=flat-square)](https://npmjs.org/package/@slimr/swr)
+# 🪶 @slimr/swr [![npm package](https://img.shields.io/npm/v/@slimr/swr.svg?style=flat-square)](https://npmjs.org/package/@slimr/swr)
 
 A tiny alternative to the popular emotion library
 

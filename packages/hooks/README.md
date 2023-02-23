@@ -1,4 +1,4 @@
-# @slimr/hooks [![npm package](https://img.shields.io/npm/v/@slimr/hooks.svg?style=flat-square)](https://npmjs.org/package/@slimr/hooks)
+# 🪶 @slimr/hooks [![npm package](https://img.shields.io/npm/v/@slimr/hooks.svg?style=flat-square)](https://npmjs.org/package/@slimr/hooks)
 
 A collection of tiny, useful react hooks
 

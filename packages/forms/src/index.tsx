@@ -1,4 +1,3 @@
-import {formToJson} from '@slimr/util'
 import React, {forwardRef, useRef, useState} from 'react'
 
 type ReactFormEvent = Parameters<React.FormEventHandler<HTMLFormElement>>[0]
@@ -16,17 +15,12 @@ interface FormState {
 export interface FormContext extends FormState {
   /** A form wrapper that has useForm magic sprinkled in */
   Form: React.ForwardRefExoticComponent<
-    Omit<FormProps, 'ref'> & React.RefAttributes<HTMLFormElement>
+    Omit<JSX.IntrinsicElements['form'], 'ref'> & React.RefAttributes<HTMLFormElement>
   >
 }
 
 /** A dictionary of form input names to error message strings  */
 type FormErrorFieldError = Record<string, string>
-
-type FormProps = JSX.IntrinsicElements['form'] & {
-  /** Like onSubmit, but props = the json value of the form */
-  onSubmitJson?: (formValues: ReturnType<typeof formToJson>) => void
-}
 
 /**
  * A tiny (500B), minimalistic form hook that returns a Form component which
@@ -43,7 +37,7 @@ export function useForm(): FormContext {
 
   /** A form wrapper that has useForm magic sprinkled in */
   const FormComponent = forwardRef(function FormComponent(
-    {children, onReset, onSubmit, onSubmitJson, ...formProps}: FormProps,
+    {children, onReset, onSubmit, ...formProps}: JSX.IntrinsicElements['form'],
     ref: React.Ref<HTMLFormElement>
   ) {
     /** Resets the state onReset */
@@ -59,9 +53,6 @@ export function useForm(): FormContext {
       try {
         if (onSubmit) {
           await promisify(onSubmit)(formEvent)
-        }
-        if (onSubmitJson) {
-          await promisify(onSubmitJson)(formToJson(formEvent.target as HTMLFormElement))
         }
         setState({
           accepted: true,

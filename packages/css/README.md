@@ -1,4 +1,4 @@
-# @slimr/css [![npm package](https://img.shields.io/npm/v/@slimr/css.svg?style=flat-square)](https://npmjs.org/package/@slimr/css)
+# 🪶 @slimr/css [![npm package](https://img.shields.io/npm/v/@slimr/css.svg?style=flat-square)](https://npmjs.org/package/@slimr/css)
 
 tiny css-in-js features, inspired by the popular emotion library
 
@@ -10,7 +10,7 @@ Features:
 - Less is more: faster, less bugs, no breaking changes
 - Is progressive -- lazy loads styles
 - Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props)
-- CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
+- CSS responsive shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles)
 
 ## Context
 

@@ -19,6 +19,7 @@ Options:
   -h, --help        Show this help message
   -e, --exclude     Exclude a workspace name, or part of, from being bumped
   -p, --publish     Publish the bumped packages to npm
+  -r, --reset       Bump all workspaces and publish, thereby ensuring all versions are callibrated
 `
 
 /************************************************************************
@@ -45,7 +46,19 @@ interface Workspace {
 export async function bumpChangedWorkspaces({
   exclude,
   publish,
-}: {exclude?: string[]; publish?: boolean} = {}) {
+  reset,
+}: {
+  /** Exclude a workspace name, or part of, from being bumped */
+  exclude?: string[]
+  /** Publish the bumped packages to npm */
+  publish?: boolean
+  /**
+   * Bump all workspaces and publish, thereby ensuring all versions are callibrated
+   *
+   * Is useful if you commit a lot of changes and need to catch up
+   */
+  reset?: boolean
+} = {}) {
   console.log('VERSION-BUMP:start')
 
   if (publish) {
@@ -63,7 +76,7 @@ export async function bumpChangedWorkspaces({
     }
   }
   for (const workspace of Object.values(workspaces)) {
-    if (workspace.staged) {
+    if (workspace.staged || reset) {
       await bumpVersion(workspace)
     }
   }
@@ -109,6 +122,7 @@ async function main() {
   }
   const exclude = pluckArg('e', 'exclude')
   const publish = pluckArg('p', 'publish', true)
+  const reset = pluckArg('r', 'reset', true)
   if (
     argv.commands.legnth ||
     Object.keys(argv.shortSwitches).length ||
@@ -117,7 +131,7 @@ async function main() {
     console.log(usage)
     Deno.exit(1)
   }
-  await bumpChangedWorkspaces({exclude, publish})
+  await bumpChangedWorkspaces({exclude, publish, reset})
 }
 
 if (import.meta.main && argv) {

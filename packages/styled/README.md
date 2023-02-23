@@ -1,4 +1,4 @@
-# @slimr/styled [![npm package](https://img.shields.io/npm/v/@slimr/styled.svg?style=flat-square)](https://npmjs.org/package/@slimr/styled)
+# 🪶 @slimr/styled [![npm package](https://img.shields.io/npm/v/@slimr/styled.svg?style=flat-square)](https://npmjs.org/package/@slimr/styled)
 
 A tiny (~2kb) React css-in-js library inspired by chakra-ui, emotion, and styled-components libs
 
@@ -33,6 +33,8 @@ Features:
 ```bash
 npm i @slimr/styled
 ```
+
+## API
 
 ### Includes @slimr/css exports
 

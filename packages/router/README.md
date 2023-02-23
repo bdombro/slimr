@@ -1,4 +1,4 @@
-# @slimr/router [![npm package](https://img.shields.io/npm/v/@slimr/router.svg?style=flat-square)](https://npmjs.org/package/@slimr/router)
+# 🪶 @slimr/router [![npm package](https://img.shields.io/npm/v/@slimr/router.svg?style=flat-square)](https://npmjs.org/package/@slimr/router)
 
 A tiny alternative to react-router with some novel features like stack routing and scroll restore
 
