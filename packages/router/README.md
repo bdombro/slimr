@@ -2,10 +2,6 @@
 
 A tiny alternative to react-router with some novel features like stack routing and scroll restore
 
-<!--
-Demos: See `./examples/css-and-styled` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
--->
-
 Features:
 
 - No dependencies, 3kb min+gziped

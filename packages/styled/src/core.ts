@@ -1,5 +1,5 @@
 /* eslint-disable prefer-const */
-import {ShorthandProps, TemplateStringProps, classJoin, css, shorthandPropsMap} from '@slimr/css'
+import {ShorthandProps, classJoin, css, shorthandPropsMap} from '@slimr/css'
 
 import {toCamelCase, toKebabCase} from '@slimr/util'
 import {CSSProperties, FC, HTMLAttributes, createElement, forwardRef} from 'react'
@@ -42,6 +42,9 @@ export interface SCProps extends _Props {
   _focusWithin?: Zx
   /** Like zx prop, but applies only on :hover */
   _hover?: Zx
+  /** Like zx prop, but applies only when user prefers dark theme */
+  _light?: Zx
+  /** Standard style prop */
   style?: CSSProperties
   /** Like zx prop, but applies only on :target */
   _target?: Zx
@@ -59,53 +62,13 @@ export interface SCProps extends _Props {
 /** Styled Component: Like FunctionalComponent but adds SCProps */
 export type SC<T extends {className?: HTMLAttributes<allowableAny>['className']}> = FC<T & SCProps>
 
-/** Expands the shorthand props of a zx prop into css full */
-function expandShorthandProps(zx: Zx) {
-  return Object.entries(zx).reduce((acc, [k, v]) => {
-    if (k === 'mx') {
-      acc.marginLeft = v
-      acc.marginRight = v
-    } else if (k === 'my') {
-      acc.marginTop = v
-      acc.marginBottom = v
-    } else if (k === 'px') {
-      acc.paddingLeft = v
-      acc.paddingRight = v
-    } else if (k === 'py') {
-      acc.paddingTop = v
-      acc.paddingBottom = v
-    } else if (k in shorthandPropsMap) {
-      acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
-    } else {
-      acc[k] = v
-    }
-    return acc
-  }, {} as Record<string, allowableAny>)
-}
-
-/** Converts a zx prop into css string */
-function zxToCss(zx: Zx): string {
-  return Object.entries(zx)
-    .map(([k, v]) => {
-      if (!v) return ''
-      k = toKebabCase(k)
-      if (typeof v === 'number') v = v + 'px'
-      if (Array.isArray(v)) {
-        // @ts-expect-error - TS gets confused by the complexity
-        v = '[' + v.map(v => (typeof v === 'number' ? v + 'px' : v)).join(',') + ']'
-      }
-      return k + ':' + v + ';'
-    })
-    .join('\n')
-}
-
 /**
- * A lightweight alternative to styled-components
- * @param function - a functional component to be styled; must accept a className prop
- * @returns a function that accepts a template string of css returns a decorated functional component
+ * The core functionality of the exported `styled` Object.
+ *
+ * Not intended to be used directly. Instead, use the `styled` object.
  */
 export function styledBase<C extends FC<allowableAny>>(Component: C) {
-  return (...cssProps: TemplateStringProps) => {
+  return (...cssProps: Parameters<typeof css>) => {
     const className = css(...cssProps)
     /**
      * A functional component that accepts Styled Props
@@ -119,6 +82,7 @@ export function styledBase<C extends FC<allowableAny>>(Component: C) {
         _focusVisible,
         _focusWithin,
         _hover,
+        _light,
         _target,
         _visited,
         _zx = {},
@@ -179,6 +143,13 @@ export function styledBase<C extends FC<allowableAny>>(Component: C) {
           }
         `
       }
+      if (_light) {
+        cssStr += `
+          @media (prefers-color-scheme: light) {
+          ${zxToCss(_light)}
+          }
+        `
+      }
       if (_target) {
         cssStr += `
           &:target {
@@ -217,4 +188,48 @@ export function styledBase<C extends FC<allowableAny>>(Component: C) {
     CStyled.toString = () => '.' + className
     return CStyled as unknown as SC<Parameters<C>[0]>
   }
+}
+
+/**********************
+ * Helper Functions
+ **********************/
+
+/** Expands the shorthand props of a zx prop into css full */
+function expandShorthandProps(zx: Zx) {
+  return Object.entries(zx).reduce((acc, [k, v]) => {
+    if (k === 'mx') {
+      acc.marginLeft = v
+      acc.marginRight = v
+    } else if (k === 'my') {
+      acc.marginTop = v
+      acc.marginBottom = v
+    } else if (k === 'px') {
+      acc.paddingLeft = v
+      acc.paddingRight = v
+    } else if (k === 'py') {
+      acc.paddingTop = v
+      acc.paddingBottom = v
+    } else if (k in shorthandPropsMap) {
+      acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
+    } else {
+      acc[k] = v
+    }
+    return acc
+  }, {} as Record<string, allowableAny>)
+}
+
+/** Converts a zx prop into css string */
+function zxToCss(zx: Zx): string {
+  return Object.entries(zx)
+    .map(([k, v]) => {
+      if (!v) return ''
+      k = toKebabCase(k)
+      if (typeof v === 'number') v = v + 'px'
+      if (Array.isArray(v)) {
+        // @ts-expect-error - TS gets confused by the complexity
+        v = '[' + v.map(v => (typeof v === 'number' ? v + 'px' : v)).join(',') + ']'
+      }
+      return k + ':' + v + ';'
+    })
+    .join('\n')
 }

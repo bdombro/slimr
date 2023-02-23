@@ -8,17 +8,16 @@ exports[`parses correctly 1`] = `
 <h4>H4</h4>
 <h5>H5</h5>
 <h6>H6</h6>
-this text should not interfere with the above<br />
-<br />
+this text should not interfere with the above<br /><br />
 <h1>Alt-H1</h1>
 <h2>Alt-H2</h2>
 this text should not interfere with the above<br />
 <br />
 <b>Bold</b> <i>Italic</i> <strike>Strikethrough</strike><br />
 <br />
-<a href='https://google.com'>https://google.com</a>  <a href='https://google.com' title='title'>https://google.com</a><br />
+<a href='https://google.com'>Link</a>  <a href='https://google.com' title='title'>Link with title</a> <a href='http://google.com'>@not-an-email</a><br />
 <br />
-<img alt='Image' src='https://google.com' />  <img href='https://google.com' title='title'>https://google.com</img>
+<img alt='Image' src='https://google.com'/>  <img alt='Image with title' src='https://google.com' title='title'/>
 <br />
 <img src=\\"https://google.com\\" alt=\\"alt\\" title=\\"title\\" />
 <br />

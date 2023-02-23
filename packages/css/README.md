@@ -1,8 +1,18 @@
 # @slimr/css [![npm package](https://img.shields.io/npm/v/@slimr/css.svg?style=flat-square)](https://npmjs.org/package/@slimr/css)
 
-A tiny alternative to the popular emotion library
+tiny css-in-js features, inspired by the popular emotion library
 
-Demos: See `./examples/css-and-styled` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
+Demo: [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
+
+Features:
+
+- Much smaller (less bundle size)
+- Less is more: faster, less bugs, no breaking changes
+- Is progressive -- lazy loads styles
+- Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props)
+- CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
+
+## Context
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -16,67 +26,59 @@ Demos: See `./examples/css-and-styled` or [CodeSandbox](https://codesandbox.io/s
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
 - [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
 
-Pros:
-
-- Much less bundle size
-- Less is more: faster, less bugs, no breaking changes
-- Is progressive -- lazy loads styles along with component if component is lazy
-- Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
-  - `m` --> `margin`
-  - `mx` --> `margin-left` and bottom
-  - `py` --> `padding-top` and bottom
-  - More [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
-- CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
-
-  ```css
-  margin: [auto, null, inherit];
-  /* Translates to */
-  margin: auto;
-  @media (min-width: 48em) {
-    margin: inherit;
-  }
-  ```
-
-  - Breakpoints are `[30em, 48em, 62em, 80em, 96em]`
-
-Cons:
-
-- No SSR support
-
 ## Setup/Install
 
 ```bash
 npm i @slimr/css
 ```
 
-## Usage
+## API
 
-```tsx
-// Add some global styles
-addCss`
-  body {
-    color: lightgray;
-  }
-`
+### addCss
 
-export function App() {
-  const on = useOn()
+Injects css to the page head
 
-  return (
-    <div
-      className={css`
-        background: white;
-        color: ${on ? 'red' : 'initial'};
-        &:hover {
-          font-weight: bold;
-        }
-        font-size: [20px, null, 16px];
-      `}
-    >
-      Helo css!
-    </div>
-  )
-}
+- Queues and batches injections for better performance
+- Has local cache to recall prior adds, to reduce duplicates and dom changes
+
+```typescript
+import { addCSs } from '@slimr/css'
+addCss(`.foo { color: green; }`) // queues css for injection
+addCss(`.foo { color: green; }`) // ignored bc duplicate
+addCss(`.foo { background: purplse`) // queues more css
+// the queue will be executed next javascript tick
+```
+
+### `css` (alias for `createClass`)
+
+Upserts and returns a unique css class for a given css string
+
+- Leverages addCss under the hood, so very performant
+- Supports several css short-hands, inspired by [Chakra-UI's box](https://chakra-ui.com/docs/styled-system/responsive-styles)
+- Supports array values for responsive styles, similar to Chakra-UI's box. More [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)
+
+```typescript
+import {createClass, css} from '@slimr/css'
+c1 = createClass('c: red;') // queues the create of new css class 's0'
+c2 = createClass('c: red;') // is duplicate so will return 's0'
+c3 = createClass`c: red;` // same
+c4 = css`c: red;` // same
+// c1 = c2 = c3 = c4
+<div className={css`c: red;`} /> // will resolve to 's0' like above
+c5 = css`c: blue;` // queues the create of new css class 's1'
+c6 = css`w: [100%, null, 400px]` // width = 100% on mobile and table, 400px on desktop
+```
+
+...and the queue will be executed next javascript tick
+
+### `classJoin`
+
+Joins class names and omits falsey props
+
+```typescript
+import { classJoin } from '@slimr/css'
+classJoin('a', 'b', 'c') // 'a b c'
+classJoin('a', 0, 'b', null, 'c') // 'a b c'
 ```
 
 ## Comparisons

@@ -1,6 +1,6 @@
 {
   "name": "@slimr/markdown",
-  "version": "2.1.12",
+  "version": "2.1.15",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -30,7 +30,7 @@
     "prepack": "run-s build"
   },
   "dependencies": {
-    "@slimr/util": "2.2.6"
+    "@slimr/util": "2.2.9"
   },
   "optionalDependencies": {
     "react": "^16.8  || ^17 || ^18",

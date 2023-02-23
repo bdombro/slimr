@@ -2,37 +2,19 @@
 
 A tiny (~2kb) React css-in-js library inspired by chakra-ui, emotion, and styled-components libs
 
-Demos: See `./examples/css-and-styled` or [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
+Demo: [CodeSandbox](https://codesandbox.io/s/64r9px?file=/src/App.tsx)
 
-Pros:
+Features:
 
-- Much less bundle size and runtime sluggishness
-- Less is more: less bugs, no breaking changes
-- Supports declaring css and styled components inside of Components for better code colocating and NO MORE NEED TO PASS ARGS!
-- Styled shortcuts like styled.div
-- Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
-  - Most HTMLElements are enhanced and exported as pascal-case (i.e. `import {Div, A, Section, Flex} from '@slimr/styled'`)
-  - Pass shorthand props or zx props to styled components. This lib will create css classes if complex, passthrough as styles otherwise.
-  - `m` --> `margin`
-  - `mx` --> `margin-left` and right
-  - `py` --> `padding-top` and bottom
-  - More [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
-- CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
+- Easily create React components with styles using familiar syntax
+- Much less bundle size and runtime sluggishness than others
+- Supports declaring css and styled components inside of Components for better code colocating
+- Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props)
+- Will favor inline-style for performance reasons, if non-responsive and non-stateful.
+- Concise responsive CSS syntax Breakpoints shorthand similar to [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles)
+- Import pre-enhanced HTML Elements like `Div` or `A` for profit
 
-  ```css
-  margin: [auto, null, inherit];
-  /* Translates to */
-  margin: auto;
-  @media (min-width: 48em) {
-    margin: inherit;
-  }
-  ```
-
-  - Breakpoints are `[30em, 48em, 62em, 80em, 96em]`
-
-Cons:
-
-- No SSR support
+## Context
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -52,68 +34,79 @@ Cons:
 npm i @slimr/styled
 ```
 
-## Usage
+### Includes @slimr/css exports
 
-Preview below. For full code, see demos
+See [npm](https://www.npmjs.com/package/@slimr/css) for more info.
 
-```tsx
-// Create primitive components if you like
-const Box = styled.div`
-  pos: relative;
+```typescript
+import {addCSs, createClass, css} from '@slimr/styled'
+addCss('.foo { color: purple }')
+c1 = createClass('c: red;')
+c4 = css`c: red;`
+<div className={css`c: red;`} /> // will resolve to 's0' like above
+c6 = css`w: [100%, null, 400px]` // width = 100% on mobile and table, 400px on desktop
+```
+
+### ZX and Stateful CSS Props
+
+Props to help style based on CSS state
+
+```typescript
+import {styled} from '@slimr/styled'
+const MyDiv = styled.div`
+  _zx={{color: 'blue}} // applies color = blue
+  _active={{color: 'blue'}} // applied on :active
+  _dark={{color: 'blue'}} // applied when browser prefers dark modes
+  _focus={{color: 'blue'}} // applied on :focus
+  _focusVisible={{color: 'blue'}} // applied on :focusVisible
+  _focusWithin={{color: 'blue'}} // applied on :focusWithin
+  _hover={{color: 'blue'}} // applied on :hover
+  _light={{color: 'blue'}} // applied on :light
+  _target={{color: 'blue'}} // applied on :target
+  _visited={{color: 'blue'}} // applied on :visited
 `
+```
 
-interface ButtonProps extends Omit<HtmlTagProps['button'], 'id'> {
-  id: HtmlTagProps['button']['id'] // make required
-}
-function Button(props: ButtonProps) {
-  return (
-    <button
-      {...props}
-      onClick={e => {
-        console.log(`Button ${props.id} clicked`)
-        props.onClick?.(e)
-      }}
-    />
-  )
-}
-const ButtonP = styled(Button)`
-  bg: red;
-  c: white;
-  w: [100%, null, inherit];
-`
+### Shorthand props
 
-export function App() {
-  const on = useOscillator()
+Some styles are available as shorthand -- all of them [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73).
 
-  return (
-    <Box
-      // enjoy chakra-ui like shorthand syntax
-      bg={['lightblue', null, 'lightred']}
-    >
-      <ButtonP
-        // use css if you'd like, which gets converted into a css class and attached to this element
-        css={`
-          --font-weight: [bold, null, initial];
-        `}
-        id="my-button"
-        // kinda like style but accepts shorthand syntax
-        _zx={{
-          textTransform: on ? 'uppercase' : 'inherit',
-        }}
-        // Any attr with '_' prefix will be passed to zx
-        _fontWeight="var(--font-weight)"
-        // like _zx, but applies only on :hover
-        _hover={{bg: 'lightblue'}}
-        // like _zx, but applies only on :active
-        _active={{bg: 'lightblue'}}
-        // like _zx, but applies only when browser prefers dark modes
-        _dark={{bg: 'lightblue'}}
-      >
-        Click me!
-      </ButtonP>
-    </Box>
-  )
-}
+```typescript
+import {styled} from '@slimr/styled'
+const MyDiv = styled.div`
+  _bgColor="blue"
+  _c="green"
+  _p={18}
+  _pos="absolute"
+  _w={100}
+```
+
+### Responsive Props
+
+Specify responsive styles as arrays, similar to [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles)
+
+Default breakpoints are `[30em, 48em, 62em, 80em, 96em]` and can be overridden by setting `css.breakpoints`
+
+```typescript
+import {styled} from '@slimr/styled'
+const MyDiv = styled.div`
+  _w=[100%, null, 200px] // width = 100% on mobile, tablet. 200px on > tablet
+  _zx={{w: ['100%', null, '200px']}} // is equivalent to _w
+```
+
+### Pre-Enhanced HTML Elements
+
+Import pre-enhanced HTML Elements like `Div` or `A` for profit. With a few exceptions, most elements
+accept ANY CSS style as a prop when prefixed by '_'
+
+```typescript
+import {Div, A} from '@slimr/styled'
+<Div _p=[8, null, 18]> // a div with responsive padding
+  <P _fontSize={30} _lineHeight="1rem"> // style props
+  <A _active={{ scale: 1.5 }} _hover={{ c: 'green' }}> // stateful styles
+    I grow during keypress and am green on hover
+  </A>
+</Div>
 ```
 
 ## Comparisons
@@ -125,7 +118,7 @@ export function App() {
 Pros
 
 - More mature, SSR support
-- Premade components
+- Lots of premade components
 
 Cons
 

@@ -1,4 +1,4 @@
-# @slimr/mdi-paths [![npm package](https://img.shields.io/npm/v/@slimr/mdi-paths.svg?style=flat-square)](https://npmjs.org/package/@slimr/mdi-paths) [![Material Design Icons version](https://img.shields.io/badge/mdi-v7.1.96-blue.svg?style=flat-square)](https://materialdesignicons.com)
+# @slimr/mdi-paths [![npm package](https://img.shields.io/npm/v/@slimr/mdi-paths.svg?style=flat-square)](https://npmjs.org/package/@slimr/mdi-paths)
 
 [Material Design Icon](https://materialdesignicons.com) paths for any TS/JS project, packaged as single files default export = path.
 

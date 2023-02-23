@@ -1,13 +1,87 @@
-/** Breakpoints like chakra */
-export const breakPoints = ['30em', '48em', '62em', '80em', '96em']
+import {T2SProps, t2s} from '@slimr/util'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type allowableAny = any
+import {addCss} from './addCss.js'
+import {expandShorthands} from './shorthandProps.js'
 
-/** Joins class names and filters out blanks */
-export function classJoin(...classes: allowableAny[]) {
+/**
+ * Joins class names and omits falsey props
+ *
+ * @param classes
+ * class names to be joined
+ *
+ * @returns a string of joined class names
+ *
+ * @example
+ * ```typescript
+ * classJoin('a', 'b', 'c') // 'a b c'
+ * classJoin('a', 0, 'b', null, 'c') // 'a b c'
+ * ```
+ */
+export function classJoin(...classes: (string | 0 | null | undefined)[]) {
   return classes.filter(c => c && typeof c === 'string').join(' ')
 }
+
+/**
+ * Upserts and returns a unique css class for a given css string
+ *
+ * @param cssString
+ * string or template string, to be injected. Shorthand props are supported (see Readme).
+ *
+ * @returns a unique class name
+ *
+ * @example
+ * ```typescript
+ * c1 = createClass('c: red;') // queues the create of new css class 's0'
+ * c2 = createClass('c: red;') // is duplicate so will return 's0'
+ * c3 = createClass`c: red;` // same
+ * c4 = css`c: red;` // same
+ * // c1 = c2 = c3 = c4
+ * <div className={css`c: red;`} /> // will resolve to 's0' like above
+ * c5 = css`c: blue;` // queues the create of new css class 's1'
+ * c6 = css`w: [100%, null, 400px]` // width = 100% on mobile and table, 400px on desktop
+ * ```
+ * ...and the queue will be executed next javascript tick
+ */
+export function createClass(...p: T2SProps) {
+  let css = t2s(...p)
+  if (!css) return ''
+  let className = createClass.history.get(css)
+  if (!className) {
+    className = 's' + createClass.count++
+    createClass.history.set(css, className)
+
+    css = deleteComments(css)
+    css = expandShorthands(css)
+    css = expandArrayValues(css)
+    const qs = findQueries(css)
+
+    for (const q of qs.reverse()) {
+      css = css.slice(0, q.start) + css.slice(q.end)
+    }
+
+    css = `.${className}{\n${css}\n}\n`
+    css += qs
+      .map(q => {
+        if (q.query.startsWith('&')) {
+          return `.${className}${q.query.slice(1)}{\n${q.innerBody}\n}`
+        }
+        if (q.query.startsWith('@keyframes')) {
+          return q.outerBody
+        }
+        return `${q.query}{\n.${className}{${q.innerBody}\n}\n}`
+      })
+      .join('\n')
+
+    css = trimByLine(css) + '\n\n'
+
+    addCss(css)
+  }
+  return className
+}
+/** Breakpoints like chakra */
+createClass.breakPoints = ['30em', '48em', '62em', '80em', '96em']
+createClass.count = 0
+createClass.history = new Map<string, string>()
 
 /** delete css comments **/
 function deleteComments(css: string) {
@@ -35,124 +109,13 @@ function expandArrayValues(css: string) {
             if (i === 0) {
               return `${prop}: ${val};`
             }
-            return `@media (min-width: ${breakPoints[i - 1]}) { ${prop}: ${val}; }`
+            return `@media (min-width: ${createClass.breakPoints[i - 1]}) { ${prop}: ${val}; }`
           })
           .join('\n')
       }
       return l
     })
     .join('\n')
-}
-
-export interface ShorthandProps {
-  /** shorthand for css:align-items */
-  ai?: string
-  /** shorthand for css:border */
-  b?: string | number
-  /** shorthand for css:border-radius */
-  br?: string | number
-  /** shorthand for css:background */
-  bg?: string
-  /** shorthand for css:color */
-  c?: string
-  /** shorthand for css:display */
-  d?: string
-  /** shorthand for css:flex */
-  f?: string
-  /** shorthand for css:flex-direction */
-  fd?: string
-  /** shorthand for css:height */
-  h?: number | string
-  /** shorthand for css:inset */
-  i?: number | string
-  /** shorthand for css:justify-content */
-  jc?: string
-  /** shorthand for css:margin */
-  m?: number | string
-  /** shorthand for css:margin-left */
-  ml?: number | string
-  /** shorthand for css:margin-right */
-  mr?: number | string
-  /** shorthand for css:margin-top */
-  mt?: number | string
-  /** shorthand for css:margin-bottom */
-  mb?: number | string
-  /** shorthand for css:margin-top & margin-bottom */
-  my?: number | string
-  /** shorthand for css:margin-left & margin-right */
-  mx?: number | string
-  /** shorthand for css:max-width */
-  maxW?: number | string
-  /** shorthand for css:min-width */
-  minW?: number | string
-  /** shorthand for css:padding */
-  p?: number | string
-  /** shorthand for css:padding-left */
-  pl?: number | string
-  /** shorthand for css:padding-right */
-  pr?: number | string
-  /** shorthand for css:padding-top */
-  pt?: number | string
-  /** shorthand for css:padding-bottom */
-  pb?: number | string
-  /** shorthand for css:padding-top & padding-bottom */
-  py?: number | string
-  /** shorthand for css:padding-left & padding-right */
-  px?: number | string
-  /** shorthand for css:position */
-  pos?: number | string
-  /** shorthand for css:text-align */
-  ta?: string
-  /** shorthand for css:width */
-  w?: number | string
-  /** shorthand for css:z-index */
-  z?: number | string
-}
-export const shorthandPropsMap: Record<
-  keyof Omit<ShorthandProps, 'mx' | 'my' | 'px' | 'py'>,
-  string
-> = {
-  ai: 'align-items',
-  b: 'border',
-  br: 'border-radius',
-  bg: 'background',
-  c: 'color',
-  d: 'display',
-  f: 'flex',
-  fd: 'flex-direction',
-  i: 'inset',
-  h: 'height',
-  jc: 'justify-content',
-  m: 'margin',
-  ml: 'margin-left',
-  mr: 'margin-right',
-  mt: 'margin-top',
-  mb: 'margin-bottom',
-  maxW: 'max-width',
-  minW: 'min-width',
-  p: 'padding',
-  pl: 'padding-left',
-  pr: 'padding-right',
-  pt: 'padding-top',
-  pb: 'padding-bottom',
-  pos: 'position',
-  ta: 'text-align',
-  w: 'width',
-  z: 'z-index',
-}
-export const shorthandProps = [...Object.keys(shorthandPropsMap), 'mx', 'my', 'px', 'py']
-
-/** Expand short-hand css props to full */
-function expandProps(css: string) {
-  css = '\n' + css // inject a newline to make the regex easier
-  // Handle 'mx', 'my', 'px', 'py'
-  css = css
-    .replace(/([mp])x:([^;]*)/g, '$1l:$2;\n$1r:$2')
-    .replace(/([mp])y:([^;]*);/g, '$1t:$2;\n$1b:$2')
-  Object.entries(shorthandPropsMap).forEach(([k, v]) => {
-    css = css.replace(new RegExp(`([ \n\t;])${k}:`, 'g'), `$1${v}:`)
-  })
-  return css.trim()
 }
 
 /** Find @keyframes, @media, @container queries in css **/
@@ -189,102 +152,10 @@ function findQueries(css: string) {
 }
 
 /** Trims whitespace for every line */
-function trim(css: string) {
+function trimByLine(css: string) {
   return css
     .split('\n')
     .map(l => l.trim())
     .filter(l => l)
     .join('\n')
 }
-
-/**
- * Assemble a string from a template string array and a list of placeholders.
- *
- * - If the first argument is a string, it is returned as is.
- *
- * i.e.
- * myFoo(...props: TemplateStringProps) => {
- *  const inputStr = t2s(...props);
- * }
- * myFoo`hello ${name}` => 'hello world'
- * myFoo(`hello ${name}`) => 'hello world'
- */
-export function t2s(...tsp: TemplateStringProps) {
-  const [s, ...p] = tsp
-  return typeof s === 'string' ? s : s.map((s, i) => s + (p?.[i] ?? '')).join('')
-}
-export type TemplateStringProps = [
-  strings: TemplateStringsArray | string,
-  ...placeHolders: string[]
-]
-
-/**
- * Injects css to the page
- *
- * - Batches adds for performance
- *
- * @param css - css to be injected
- * @returns void
- */
-export function addCss(css: string) {
-  addCss.que.add(css)
-  setTimeout(() => {
-    const css = [...addCss.que].join('\n')
-    if (css) {
-      addCss.que.clear()
-      const s = document.createElement('style')
-      s.id = `u${addCss.count++}`
-      s.innerHTML = css
-      document.head.appendChild(s)
-    }
-  }, 0)
-}
-addCss.que = new Set<string>()
-addCss.count = 0
-
-/**
- * Injects css and creates unique class names
- *
- * - Skips if already added
- *
- * @param css - string or template string, to be injected
- * @returns a unique class name
- */
-export function createClass(...p: TemplateStringProps) {
-  let css = t2s(...p)
-  if (!css) return ''
-  let className = createClass.history.get(css)
-  if (!className) {
-    className = 's' + createClass.count++
-    createClass.history.set(css, className)
-
-    css = deleteComments(css)
-    css = expandProps(css)
-    css = expandArrayValues(css)
-    const qs = findQueries(css)
-
-    for (const q of qs.reverse()) {
-      css = css.slice(0, q.start) + css.slice(q.end)
-    }
-
-    css = `.${className}{\n${css}\n}\n`
-    css += qs
-      .map(q => {
-        if (q.query.startsWith('&')) {
-          return `.${className}${q.query.slice(1)}{\n${q.innerBody}\n}`
-        }
-        if (q.query.startsWith('@keyframes')) {
-          return q.outerBody
-        }
-        return `${q.query}{\n.${className}{${q.innerBody}\n}\n}`
-      })
-      .join('\n')
-
-    css = trim(css) + '\n\n'
-
-    addCss(css)
-  }
-  return className
-}
-createClass.count = 0
-createClass.history = new Map<string, string>()

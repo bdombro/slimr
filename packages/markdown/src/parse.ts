@@ -47,27 +47,25 @@ export const parse = (str: string) => {
     .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>') // blockquotes i.e. '> quote'
     // if a line ends with a space, replace with &nbsp;
     .replace(/ $/gm, '&nbsp;')
-    // if a line ends with a space, regular letter or number, add a <br/>
-    // .replace(/[\p{L}\p{N}.*-_]$/gu, '<br/>$1')
     .replace(/\*\*(.*?)\*\*/gm, '<b>$1</b>') // bold
     .replace(/\*(.*?)\*/gm, '<i>$1</i>') // italic
     .replace(/~~(.*?)~~/gm, '<strike>$1</strike>') // deleted text
-    .replace(/!\[(.*?)\]\(([^ ]*)\)/gm, "<img alt='$1' src='$2' />") // images
-    .replace(/([^ \n]+@[^. \n]+\.[^ \n]+)/gm, "<a href='mailto:$1'>$1</a>") // emails
     // images
+    .replace(/!\[(.*?)\]\(([^ ]*)\)/gm, "<img alt='$1' src='$2'/>")
     .replace(
       /!\[(.*?)\]\(([^ ]*)( [('"][^)'"]+[)'"])*\)/gm,
       (_, ...args) =>
-        `<img href='${args[1]}'${args[2] ? ` title='${args[2].slice(2, -1)}'` : ''}>${
-          args[1]
-        }</img>`
+        `<img alt='${args[0]}' src='${args[1]}'${
+          args[2] ? ` title='${args[2].slice(2, -1)}'` : ''
+        }/>`
     )
     // links
     .replace(
       /\[(.*?)\]\(([^ ]*)( [('"][^)'"]+[)'"])*\)/gm,
       (_, ...args) =>
-        `<a href='${args[1]}'${args[2] ? ` title='${args[2].slice(2, -1)}'` : ''}>${args[1]}</a>`
+        `<a href='${args[1]}'${args[2] ? ` title='${args[2].slice(2, -1)}'` : ''}>${args[0]}</a>`
     )
+    .replace(/([^ \n]+@[^. \n]+\.[^ \n]+)/gm, "<a href='mailto:$1'>$1</a>") // emails
     // reference links
     .replace(/\[([^\]]+)\]\[([^\]]+)\]/gm, (_, ...args) => {
       const refValue = new RegExp('\\[' + args[1] + '\\]: ([^ \n]+)( [^\n]*)?\n', 'gim').exec(str)

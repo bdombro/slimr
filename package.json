@@ -9,8 +9,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "workspaces-run --order-by-deps --parallel --ignore='@slimr/mdi-paths'  -- npm run build",
-    "clean": "workspaces-run --parallel -- npm run clean",
+    "build": "npm run -w @slimr/util -w @slimr/css -w @slimr/forms -w @slimr/markdown -w @slimr/router -w @slimr/styled -w @slimr/swr -w @slimr/hooks build",
+    "clean": "npm run -ws clean",
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
@@ -36,8 +36,7 @@
     "prettier": "^2.8.4",
     "typescript": "4.9.5",
     "vite": "^4.0.0",
-    "vitest": "0.26.3",
-    "workspaces-run": "^1.0.1"
+    "vitest": "0.26.3"
   },
   "eslintConfig": {
     "env": {

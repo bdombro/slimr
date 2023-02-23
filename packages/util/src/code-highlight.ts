@@ -1,3 +1,6 @@
+// @ts-ignore
+import css from 'highlight.js/lib/languages/css'
+
 import hljs from 'highlight.js/lib/core'
 // @ts-ignore
 import bash from 'highlight.js/lib/languages/bash'
@@ -27,6 +30,7 @@ import ts from 'highlight.js/lib/languages/typescript'
 import yaml from 'highlight.js/lib/languages/yaml'
 
 hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('css', css)
 hljs.registerLanguage('go', go)
 hljs.registerLanguage('java', java)
 hljs.registerLanguage('js', js)

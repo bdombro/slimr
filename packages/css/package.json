@@ -1,6 +1,6 @@
 {
   "name": "@slimr/css",
-  "version": "2.1.10",
+  "version": "2.1.13",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -32,5 +32,8 @@
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
     "prepack": "run-s build"
+  },
+  "dependencies": {
+    "@slimr/util": "2.2.9"
   }
 }

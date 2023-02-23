@@ -10,6 +10,7 @@ it('parses correctly', () => {
     ###### H6
     this text should not interfere with the above
 
+
     Alt-H1
     =============
 
@@ -19,7 +20,7 @@ it('parses correctly', () => {
     
     **Bold** *Italic* ~~Strikethrough~~
 
-    [Link](https://google.com)  [Link with title](https://google.com 'title')
+    [Link](https://google.com)  [Link with title](https://google.com 'title') [@not-an-email](http://google.com)
     
     ![Image](https://google.com)  ![Image with title](https://google.com 'title')
 
