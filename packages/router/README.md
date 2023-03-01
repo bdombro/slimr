@@ -1,6 +1,6 @@
 # 🪶 @slimr/router [![npm package](https://img.shields.io/npm/v/@slimr/router.svg?style=flat-square)](https://npmjs.org/package/@slimr/router)
 
-A tiny alternative to react-router with some novel features like stack routing and scroll restore
+A tiny alternative to [react-router](https://www.npmjs.com/package/react-router) with some novel features like stack routing and scroll restore
 
 Features:
 
@@ -10,7 +10,7 @@ Features:
 - Fosters/facilitates type-safe linking (no broken links!)
 - Attempts to scroll restore -- usually works so long as your pages use stale-while-refresh
 - Less is more: faster, less bugs, no breaking changes
-- Enhanced lazy-loading -- reduces and sometimes eliminates flicker between route changes
+- Enhanced lazy-loading -- reduces and often eliminates flicker between route changes
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -26,7 +26,88 @@ Features:
 
 ## Usage
 
-coming soon
+For a more complete example, please see demo in repo at `packages/demo`.
+
+Basic Example:
+
+```typescript
+// app.tsx
+import {Switch} from '@slimr/router'
+import {router} from './router'
+
+export function App() {
+  return (
+    <Switch router={router} />
+  )
+}
+
+// router.tsx
+import {Router, Switch} from '@slimr/router'
+
+export const router = new Router({
+  index: {
+    loader: () => import('./pages/index'),
+    path: '/',
+  },
+  hello: {
+    loader: () => import('./pages/hello'),
+    path: '/hello/:name',
+  },
+  notFound: {
+    exact: false,
+    loader: () => import('./pages/not-found'),
+    path: '/',
+  },
+})
+
+// pages/index.tsx
+import {setPageMeta} from '@slimr/util'
+import {router as r} from '../router'
+
+export default function Index() {
+  const {title, description} = setPageMeta({title: 'Home'})
+  const helloHref = r.routes.hello.toPath({name: 'world'})
+  return (
+    <>
+      <h1>Home</h1>
+      <a href={helloHref}>Goto Hello World</a>
+    </>
+  )
+}
+
+// pages/hello.tsx
+import {setPageMeta} from '@slimr/util'
+import {router} from '../router'
+
+export default function Hello({route}: {route: RouteMatch}) {
+  const {title, description} = setPageMeta({
+    title: `Hello ${route.urlParams!.name}`,
+    description: 'A demo of route with url params.',
+  })
+  return (
+    <>
+      <h1>{title}</h1>
+      <p>{description}</p>
+    </>
+  )
+}
+
+// pages/not-found.tsx
+import {setPageMeta} from '@slimr/util'
+
+export default function NotFound() {
+  const {title, description} = setPageMeta({
+    title: '404: Not Found',
+    description: "Sorry, we can't find that page",
+  })
+  return (
+    <>
+      <h1>{title}</h1>
+      <p>{description}</p>
+    </p>
+  )
+}
+```
 
 ## Comparisons
 

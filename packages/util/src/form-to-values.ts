@@ -1,4 +1,4 @@
-type FormJson = Record<string, string | string[] | number | number[] | boolean | boolean[]>
+type FormJson = Record<string, string | string[] | number | number[] | boolean>
 
 /**
  * Extracts form values from a `form` element, such as e.target from form.onSubmit

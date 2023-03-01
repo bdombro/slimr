@@ -1,3 +1,5 @@
+import {appendStyle} from '@slimr/util'
+
 /**
  * Injects css to the page head
  *
@@ -19,13 +21,12 @@
 export function addCss(css: string) {
   addCss.que.add(css)
   setTimeout(() => {
-    const css = [...addCss.que].join('\n')
-    if (css) {
+    if (addCss.que.size) {
+      appendStyle({
+        id: `u${addCss.count++}`,
+        innerHTML: [...addCss.que].join('\n'),
+      })
       addCss.que.clear()
-      const s = document.createElement('style')
-      s.id = `u${addCss.count++}`
-      s.innerHTML = css
-      document.head.appendChild(s)
     }
   }, 0)
 }

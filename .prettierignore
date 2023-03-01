@@ -2,3 +2,6 @@
 cjs
 esm
 dist
+*.d.ts
+*.js
+*.html

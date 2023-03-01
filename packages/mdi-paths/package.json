@@ -1,6 +1,6 @@
 {
   "name": "@slimr/mdi-paths",
-  "version": "2.1.19",
+  "version": "2.1.22",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -19,7 +19,6 @@
   "scripts": {
     "build": "run-s clean && node scripts/generate.js && cp components/* .",
     "clean": "find -E . -maxdepth 1 -regex '.*(\\.js|\\.jsx|\\.ts)' -delete",
-    "postpublish": "run-s clean",
     "prepack": "run-s build"
   },
   "devDependencies": {
@@ -28,5 +27,8 @@
   "optionalDependencies": {
     "react": "^16.8  || ^17 || ^18",
     "react-dom": "^16.8  || ^17 || ^18"
+  },
+  "dependencies": {
+    "@slimr/util": "3.2.16"
   }
 }

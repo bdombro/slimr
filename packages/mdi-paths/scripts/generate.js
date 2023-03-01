@@ -33,13 +33,13 @@ export default _default;`
     )
   }
 
-  fs.writeFileSync(
-    path.resolve(buildPath, './IconNamesEnum.ts'),
-    `export enum IconNames {
-${names.join(',\n')}
-}
-`
-  )
+//   fs.writeFileSync(
+//     path.resolve(buildPath, './IconNamesEnum.ts'),
+//     `export enum IconNames {
+// ${names.join(',\n')}
+// }
+// `
+//   )
 }
 
 /** Return ALL of the icon paths */

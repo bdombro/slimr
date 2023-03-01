@@ -1,11 +1,3 @@
-/**
- *
- * useSWR: a tiny (600B) async resolver that displays a cached version (if available) of the
- * callback until the callback resolves.
- *
- * Tiny: only ~600 bytes when bundled with Vite
- *
- */
 import {mapApplyMaxSize, stringify} from '@slimr/util'
 import {useEffect, useState} from 'react'
 
@@ -53,9 +45,11 @@ const cache = new Map()
 mapApplyMaxSize(cache, 100)
 
 /**
- *
- * useSWR: an async resolver that displays a cached version (if available) of the
- * callback until the callback resolves.
+ * A tiny (~600B when bundled) hook that accepts a function callback, calls the function and
+ * returns a reactive callback state. Uses a cache and will return the cache value if available
+ * while waiting for the callback to complete, then update the return on complete. This is often
+ * called 'stale-while-refresh' and abbreviated as 'SWR', hence the name of the hook. Source is
+ * in [@slimr/swr](https://www.npmjs.com/package/@slimr/swr).
  *
  * Benefits:
  * - Only 440 bytes (minified + gzipped)
@@ -65,22 +59,24 @@ mapApplyMaxSize(cache, 100)
  *
  * @param fetcher - an async callback that returns data. *Data be JSONable*
  * @param props - initial props to pass to the callback (only if callback has arguments)
- * @param throtle - Throttle threshold in ms: time that the cache is deemed current, to avoid over re-fetching
+ * @param options
+ * - throttle - Throttle threshold in ms: time that the cache is deemed current, to avoid over re-fetching
  *
  * @returns SWR State
  *
  * @example
- * ```ts
- *  import useSWR from '@ulibs/swr'
- *  export function Planets() {
- *    const data = useSWR({
- *      fetcher: () => sw.Planets.getPage(Number(_page)),
- *      props: [page]
- *    })
- *    if (data.loading) return <p>Loading...</p>
- *    if (data.error) return <Error error={data.error} />
- *    return (<pre>{JSON.stringify(data.result, null, 2)}</pre>)
- *  }
+ * ```tsx
+ * function MyComponent({ page }: number) {
+ *   const { result, loading, refresh} = useSWR(() => getPageData(page), [page], {throttle: Infinity})
+ *   if (loading) return null
+ *   return (
+ *     <section>
+ *       <h1>{result.title}</h1>
+ *       <p>{result.description}</h1>
+ *       <button onClick={refresh}>Refresh</button>
+ *     </section>
+ *   )
+ * }
  * ```
  */
 export function useSWR<T extends PromiseType>(

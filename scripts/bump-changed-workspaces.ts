@@ -29,7 +29,7 @@ Options:
 interface Workspace {
   bumped: boolean
   staged: boolean
-  config: {version: string; dependencies: Record<string, string>}
+  config: {version: string; private: boolean; dependencies: Record<string, string>}
   name: string
   path: string
   save: () => Promise<void>

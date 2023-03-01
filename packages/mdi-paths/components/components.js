@@ -1,5 +1,11 @@
+import {appendStyle} from '@slimr/util'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, {createElement, useEffect, useState} from 'react'
+
+appendStyle({
+  id: 'mdi',
+  innerHTML: `@keyframes spin { to { transform: rotate(360deg); } } @keyframes spin-inverse { to { transform: rotate(-360deg); } }`,
+})
 
 /**
  * A component that lazily loads an icon using a cb that returns a promise.

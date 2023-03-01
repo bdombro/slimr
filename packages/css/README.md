@@ -42,7 +42,8 @@ Injects css to the page head
 - Has local cache to recall prior adds, to reduce duplicates and dom changes
 
 ```typescript
-import { addCSs } from '@slimr/css'
+import {addCSs} from '@slimr/css'
+
 addCss(`.foo { color: green; }`) // queues css for injection
 addCss(`.foo { color: green; }`) // ignored bc duplicate
 addCss(`.foo { background: purplse`) // queues more css
@@ -76,7 +77,8 @@ c6 = css`w: [100%, null, 400px]` // width = 100% on mobile and table, 400px on d
 Joins class names and omits falsey props
 
 ```typescript
-import { classJoin } from '@slimr/css'
+import {classJoin} from '@slimr/css'
+
 classJoin('a', 'b', 'c') // 'a b c'
 classJoin('a', 0, 'b', null, 'c') // 'a b c'
 ```

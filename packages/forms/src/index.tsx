@@ -6,13 +6,23 @@ type Fnc = (...args: any[]) => any
 
 /** The current state of the form */
 interface FormState {
-  accepted: boolean
-  errors: Record<string, any>
+  /** True if the onSubmit has started but not yet finished */
   submitting: boolean
+  /** True if the onSubmit has been started and finished, regardless of outcome. */
   submitted: boolean
+  /** If the form has been submitted and processed by the handler without error */
+  accepted: boolean
+  /**
+   * A dictionary of error keys to messages. Typically the keys are field names
+   * so it's easy to show inline error state and messages for fields. Also
+   * helpful to set a 'form' key with a message to be displayed at the bottom.
+   *
+   * These are set by throwing a 'FormError' in onSubmit
+   */
+  errors: Record<string, any>
 }
 
-export interface FormContext extends FormState {
+interface UseFormReturnType extends FormState {
   /** A form wrapper that has useForm magic sprinkled in */
   Form: React.ForwardRefExoticComponent<
     Omit<JSX.IntrinsicElements['form'], 'ref'> & React.RefAttributes<HTMLFormElement>
@@ -23,16 +33,46 @@ export interface FormContext extends FormState {
 type FormErrorFieldError = Record<string, string>
 
 /**
- * A tiny (500B), minimalistic form hook that returns a Form component which
- * - optimizes for vanilla, uncontrolled input elements
- * - wraps onSubmit to
- *    - auto call event.preventsDefault()
- *    - track submitting, error, submitted, and accepted state
- * - new prop onSubmitJson: a callback that is called with the json value of the form
- *   for more convenient form handling
- * - ~450B when bundled+gzipped with a broader application
+ * A hook that returns a Form component and the form state.
+ *
+ * @ref
+ * https://www.npmjs.com/package/@slimr/forms
+ *
+ * ```tsx
+ * import {formError, useForm} from '@slimr/forms'
+ * import {formToValues} from '@slimr/util'
+ *
+ * function MyForm() {
+ *   const { Form, submitting, submitted, accepted, errors} = useForm()
+ *
+ *   const onSubmit = async (e: React.FormEventHandler<HTMLFormElement> => {
+ *     const vals = formToJson(e.target as HTMLFormElement)
+ *     const errors: Record<string, string> = {}
+ *     if (!vals.name) {
+ *       errors.name = 'Name is required'
+ *     }
+ *     if (!vals.terms) {
+ *       errors.checkbox = 'You must agree to the terms'
+ *     }
+ *     if (Object.keys(errors).length) {
+ *       throw new FormError(errors)
+ *     }
+ *   }
+ *
+ *   return (
+ *     <Form onSubmit={onSubmit}>
+ *       <input disabled={submitting || accepted} name="name" />
+ *       <div>{errors.name}<div>
+ *       <input disabled={submitting || accepted} name="terms" type="checkbox" />
+ *       <div>{errors.terms}<div>
+ *       <button type="submit">Submit</button>
+ *       <button type="reset">Reset</button>
+ *     </Form>
+ *   )
+ * }
+ * ```
  */
-export function useForm(): FormContext {
+export function useForm(): UseFormReturnType {
   const [state, setState] = useState(formDefaultState)
 
   /** A form wrapper that has useForm magic sprinkled in */
@@ -83,7 +123,7 @@ export function useForm(): FormContext {
     )
   })
 
-  const context: FormContext = {
+  const context: UseFormReturnType = {
     Form: useRef(FormComponent).current,
     ...state,
   }
@@ -98,7 +138,13 @@ const formDefaultState: FormState = {
   errors: {},
 }
 
-/** A special error with errorSet -- a key/val map of field-names to errors */
+/**
+ * An extension of Error that accepts an `errorSet` as a constructor property. It is used to share error context with `useForm`. When thrown from within an onSubmit handler, `useForm` will set `errorSet` to the `error` state.
+ *
+ * ```typescript
+ * throw new FormError({ form: 'Please add a value for the name field', name: 'This field is required' })
+ * ```
+ */
 export class FormError extends Error {
   type = 'ValidationErrorSet'
   errorSet: Partial<FormErrorFieldError>
@@ -109,11 +155,7 @@ export class FormError extends Error {
   }
 }
 
-/** Convenience wrapper to throw FormError */
-export function throwFormError(errorSet: Partial<FormErrorFieldError>): never {
-  throw new FormError(errorSet)
-}
-
+/** Turn any function into an async function */
 const promisify =
   <T extends Fnc>(fn: T) =>
   async (...p: Parameters<T>) =>

@@ -18,6 +18,10 @@ A set of slim JS polyfills with tree-shaking support
 
 ## Exports
 
+### appendElement, appendLink, appendScript, appendStyle
+
+Append a link, script, style, or ANY element to the head of the document if not already added
+
 ### areEqualDeep, areNotEqualDeep
 
 Deep compare methods
@@ -82,10 +86,10 @@ Quickly converts any plain object, string, number, and more to a 32bit/64bit has
 ```typescript
 hash32('hello world') // 1047750623
 hash32('hello world', true) // 'hbsxjz'
-hash32({ hello: 'world' }) // 141133545
+hash32({hello: 'world'}) // 141133545
 hash64('hello world') // 927946135
 hash64('hello world', true) // 'fch3tj'
-hash64({ hello: 'world' }) // 1139059049
+hash64({hello: 'world'}) // 1139059049
 ```
 
 > _NOTE_ hash64 is not a true 64 bit hash and has higher collision odds than a true 64 bit hash.
@@ -158,7 +162,7 @@ Deeply merge objects or arrays in a familiar pattern to Object.assign
 merge({foo: 'bar', arr: [2]}, {foo: 'bar2', arr: [3]}) // {foo: bar2, arr: [3]}
 mergeAndConcat({foo: 'bar', arr: [2]}, {foo: 'bar2', arr: [3]}) // {foo: bar2, arr: [2, 3]}
 
-mergeAndCompare(concatStrings, { name: 'John' }, { name: 'Simth' })
+mergeAndCompare(concatStrings, {name: 'John'}, {name: 'Simth'})
 // returns { name: 'JohnSmith' }
 
 function concatStrings(originVal, newVal, key) {
@@ -169,6 +173,39 @@ function concatStrings(originVal, newVal, key) {
   // always return newVal as fallback!!
   return newVal
 }
+```
+
+### setPageMeta
+
+Allows setting common page attrs.
+
+- Intelligently use the attrs, only setting if changed
+- Resets back to initial if omitted, based on initial introspection
+- Stores element handles in memory to remove need to query the dom
+  on every update
+
+> Note: Set `window.setPageMetaSkip=true` to disable setPageMeta for testing
+
+Parameters:
+
+- `title` - Sets title, meta:og:title. Is postfixed by ' - {siteName}'
+- `siteName` - Sets meta:og:site_name
+- `description` - Sets meta:description
+- `image` - Sets meta:og:image
+- `locale` - Sets meta:og:local
+
+Assumption: The page should already have the following meta tags, to be used as defaults:
+
+```html
+<title>React Template</title>
+<meta property="og:title" content="React template" />
+<meta property="og:site_name" content="React Template" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://react-template.com" />
+<meta name="description" content="A template to build tiny Preact applications" />
+<meta property="og:description" content="A template to build tiny React applications" />
+<meta property="og:url" content="https://github.com/bdombro/react-template" />
+<meta property="og:image" content="https://preact-template.com/apple-touch-icon.png" />
 ```
 
 ### stringify

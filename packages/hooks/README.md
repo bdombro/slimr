@@ -2,11 +2,7 @@
 
 A collection of tiny, useful react hooks
 
-1. All of npm:react-use, which is an excellently tiny set of hooks
-2. `useDeepCompareMemo` and `useShallowCompareMemo`: like react-use's useDeepEffects, but for memos
-3. `useForm` from [@slimr/forms](https://www.npmjs.com/package/@slimr/forms)
-4. `useSwr` from [@slimr/swr](https://www.npmjs.com/package/@slimr/swr)
-5.
+## Context
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -33,4 +29,72 @@ export default defineConfig({
     },
   },
 })
+```
+
+## API
+
+### [npm:react-use](https://www.npmjs.com/package/react-use)
+
+All of the hooks from [npm:react-use](https://www.npmjs.com/package/react-use), which are excellent
+
+### useDeepCompareMemo and useShallowCompareMemo
+
+like react-use's useDeepEffects, but for memos
+
+### useForm, FormError
+
+A hook and custom Error from [@slimr/forms](https://www.npmjs.com/package/@slimr/forms), which returns a Form component and reactive form state.
+
+```tsx
+import {FormError, useForm} from '@slimr/forms'
+import {formToValues} from '@slimr/util'
+
+function MyForm() {
+  const { Form, submitting, submitted, accepted, errors} = useForm()
+
+  const onSubmit = async (e: React.FormEventHandler<HTMLFormElement> => {
+    const vals = formToJson(e.target as HTMLFormElement)
+    const errors: Record<string, string> = {}
+    if (!vals.name) {
+      errors.name = 'Name is required'
+    }
+    if (!vals.terms) {
+      errors.checkbox = 'You must agree to the terms'
+    }
+    if (Object.keys(errors).length) {
+      throw new FormError(errors)
+    }
+  }
+
+  return (
+    <Form onSubmit={onSubmit}>
+      <input disabled={submitting || accepted} name="name" />
+      <div>{errors.name}<div>
+      <input disabled={submitting || accepted} name="terms" type="checkbox" />
+      <div>{errors.terms}<div>
+      <button type="submit">Submit</button>
+      <button type="reset">Reset</button>
+    </Form>
+  )
+}
+```
+
+### useSWR
+
+A hook that accepts a function callback, calls the function and returns a reactive callback state. Uses a cache and will return the cache value if available while waiting for the callback to complete, then update the return on complete. This is often called 'stale-while-refresh' and abbreviated as 'SWR', hence the name of the hook. Source is in [@slimr/swr](https://www.npmjs.com/package/@slimr/swr)
+
+```tsx
+import {useSWR} from `@slimr/swr`
+
+function MyComponent({ page }: number) {
+  const { result, loading, refresh} = useSWR(() => getPageData(page), [page], {throttle: Infinity})
+  if (loading) return null
+  return (
+    <section>
+      <h1>{result.title}</h1>
+      <p>{result.description}</h1>
+      <button onClick={refresh}>Refresh</button>
+    </section>
+  )
+}
 ```

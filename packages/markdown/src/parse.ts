@@ -1,14 +1,40 @@
 /**
- * Converts a limited markdown subset to JSX
+ * Converts a limited markdown subset to HTML
  *
- * - 2Kb zipped, 1kb when bundled with other code
- * - ...is MUCH smaller than any lib I've found
+ * - headings, i.e. # H1, ## H2, ### H3, #### H4, ##### H5, ###### H6
+ * - alt H1 heading, i.e. H1\n===
+ * - alt H2 heading, i.e. H1\n---
+ * - Horizontal rule/lines, i.e. *** --- ___
+ * - **bold**
+ * - *italic*
+ * - ~~strikethrough~~
+ * - links, i.e. [Link](https://google.com)  [Link with title](https://google.com 'title')
+ * - reference links, i.e. [link1-text][link1-ref]
+ * - images, i.e. ![Image](https://google.com)  ![Image with title](https://google.com 'title')
+ * - ordered and unordered lists up to one level. nesting not supported.
+ * - code blocks
+ * - Most HTML is passed through without modification, except scripts/style which will be HTML encoded
  *
+ * @param md
+ * A string containing valid markdown text
+ *
+ * @returns
+ * A string of html
+ *
+ * @example
+ * ```typescript
+ * import { parse } from '@slimr/markdown'
+ * const html = parse(`
+ *  # ~~The Jungle~~Heaven
+ *
+ *  Welcome to ~~the jungle~~heaven, baby.
+ * `)
+ * ```
  */
-export const parse = (str: string) => {
+export const parse = (md: string) => {
   const trashgc: string[] = []
 
-  str = str
+  md = md
     .trim()
     .replace(/\n[ \t]+/gm, '\n') // trim indentation
     .replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;') // Encode any script and style tags
@@ -19,7 +45,7 @@ export const parse = (str: string) => {
 
   // code blocks i.e. ```code```
   // transpile and remove before others to prevent interference
-  str = str
+  md = md
     .replace(/```/g, 'ỻ') // intermediate placeholder
     .replace(/ỻ([^ỻ\n]*)ỻ/gm, (_, code) => `<code>${code}</code>`)
     .replace(/ỻ(.*)(\n*)([^ỻ]*)ỻ/gm, (_, ...args) => {
@@ -34,7 +60,7 @@ export const parse = (str: string) => {
       return key
     })
 
-  str = str
+  md = md
     .replace(/\n\n(\*\*\*+|---*|___*)$/gm, '\n<hr/>') // Horizontal rule/lines, i.e. *** --- ___
     .replace(/^###### (.*$)(\n*)/gm, '<h6>$1</h6>\n')
     .replace(/^##### (.*$)(\n*)/gm, '<h5>$1</h5>\n')
@@ -68,7 +94,7 @@ export const parse = (str: string) => {
     .replace(/([^ \n]+@[^. \n]+\.[^ \n]+)/gm, "<a href='mailto:$1'>$1</a>") // emails
     // reference links
     .replace(/\[([^\]]+)\]\[([^\]]+)\]/gm, (_, ...args) => {
-      const refValue = new RegExp('\\[' + args[1] + '\\]: ([^ \n]+)( [^\n]*)?\n', 'gim').exec(str)
+      const refValue = new RegExp('\\[' + args[1] + '\\]: ([^ \n]+)( [^\n]*)?\n', 'gim').exec(md)
       if (refValue !== null) {
         trashgc.push(refValue[0])
         return (
@@ -93,10 +119,10 @@ export const parse = (str: string) => {
 
   // Trash collect
   for (const s of trashgc) {
-    str = str.replace(s, '')
+    md = md.replace(s, '')
   }
 
-  str = str
+  md = md
     // Add breaks
     .replace(/\n\n/gm, '\n<br />\n')
     .replace(/([^>$])$/gm, '$1<br />')
@@ -106,13 +132,13 @@ export const parse = (str: string) => {
 
   // Add placeholders back
   for (const [key, value] of placeholders) {
-    str = str.replace(key, value)
+    md = md.replace(key, value)
   }
 
   // Remove the no-newline character $ from the end lines
-  str = str.replace(/\$$/gm, '')
+  md = md.replace(/\$$/gm, '')
 
-  str = '\n' + str.trim() + '\n'
+  md = '\n' + md.trim() + '\n'
 
-  return str
+  return md
 }

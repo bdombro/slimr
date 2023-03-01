@@ -1,33 +1,13 @@
 # 🪶 @slimr/swr [![npm package](https://img.shields.io/npm/v/@slimr/swr.svg?style=flat-square)](https://npmjs.org/package/@slimr/swr)
 
-A tiny alternative to the popular emotion library
+A tiny (~600B when bundled) hook that accepts a function callback, calls the function and returns a reactive callback state. Uses a cache and will return the cache value if available while waiting for the callback to complete, then update the return on complete. This is often called 'stale-while-refresh' and abbreviated as 'SWR', hence the name of the hook. Source is in [@slimr/swr](https://www.npmjs.com/package/@slimr/swr).
 
-Pros:
+- Only 440 bytes (minified + gzipped)
+- Shows cached data immediately and updates the UI when the callback resolves
+- Deduplicates concurrent requests: runs the callback only once if duplicates are requested
+- UX: no flickering, no waiting if cached, enables native scroll restoration
 
-- Much less bundle size
-- Less is more: faster, less bugs, no breaking changes
-- Is progressive -- lazy loads styles along with component if component is lazy
-- Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props):
-  - `m` --> `margin`
-  - `mx` --> `margin-left` and bottom
-  - `py` --> `padding-top` and bottom
-  - More [here](https://github.com/bdombro/slimr/blob/65bf012086760b7e481a4064f3be8aea6a098b91/packages/css/src/index.ts#L73)!
-- CSS Breakpoints shorthand like [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles):
-
-  ```css
-  margin: [auto, null, inherit];
-  /* Translates to */
-  margin: auto;
-  @media (min-width: 48em) {
-    margin: inherit;
-  }
-  ```
-
-  - Breakpoints are `[30em, 48em, 62em, 80em, 96em]`
-
-Cons:
-
-- No SSR support
+## Context
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -41,73 +21,24 @@ Cons:
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
 - [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
 
-## Setup/Install
+## Options
 
-```bash
-npm i @slimr/css
-```
+- throttle - Throttle threshold in ms: time that the cache is deemed current, to avoid over re-fetching
 
 ## Usage
 
 ```tsx
-// Add some global styles
-addCss`
-  body {
-    color: lightgray;
-  }
-`
+import {useSWR} from `@slimr/swr`
 
-export function App() {
-  const on = useOn()
-
+function MyComponent({ page }: number) {
+  const { result, loading, refresh} = useSWR(() => getPageData(page), [page], {throttle: Infinity})
+  if (loading) return null
   return (
-    <div
-      className={css`
-        background: white;
-        color: ${on ? 'red' : 'initial'};
-        &:hover {
-          font-weight: bold;
-        }
-        font-size: [20px, null, 16px];
-      `}
-    >
-      Helo css!
-    </div>
+    <section>
+      <h1>{result.title}</h1>
+      <p>{result.description}</h1>
+      <button onClick={refresh}>Refresh</button>
+    </section>
   )
 }
 ```
-
-## Comparisons
-
-### [Emotion](https://emotion.sh/docs/introduction)
-
-- A popular css-in-js lib that inspired this lib
-
-Pros
-
-- More mature, SSR support
-
-Cons
-
-- Is huge (>10kb)
-- Many features require addons, which make bundle even larger
-- Does not support zx prop or css shorthand props
-
-### [Astroturf](https://astroturfcss.github.io/astroturf/)
-
-- A popular css-in-js lib similar to Emotion but compiles out the css into css stylesheets
-
-Pros
-
-- More performant (zero kbs, no need for caching or Map lookups)
-- Support for all the PostCSS magic you may desire
-
-Cons
-
-- Requires babel/bundler config
-- Does not support zx prop or css shorthand props
-- Is not progressive -- all styles for all components is loaded and blocks initial page paint
-
-### [Linaria](https://linaria.dev/)
-
-- Pretty much identical to Astroturf, but maybe better Vite support

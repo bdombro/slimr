@@ -55,6 +55,7 @@ Props to help style based on CSS state
 
 ```typescript
 import {styled} from '@slimr/styled'
+
 const MyDiv = styled.div`
   _zx={{color: 'blue}} // applies color = blue
   _active={{color: 'blue'}} // applied on :active
@@ -99,7 +100,7 @@ const MyDiv = styled.div`
 ### Pre-Enhanced HTML Elements
 
 Import pre-enhanced HTML Elements like `Div` or `A` for profit. With a few exceptions, most elements
-accept ANY CSS style as a prop when prefixed by '_'
+accept ANY CSS style as a prop when prefixed by '\_'
 
 ```typescript
 import {Div, A} from '@slimr/styled'
