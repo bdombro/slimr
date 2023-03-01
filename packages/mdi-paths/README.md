@@ -60,7 +60,7 @@ export function Icon({name, ...props}: IconProps) {
 }
 ```
 
-## References
+## Dependencies, References & Inspirations
 
 - [mdi-react](https://npmjs.com/package/mdi-react) - The generator in this package was adapted from that one (Thanks!). This package achieves similar things but does so with much less bandwidth penalty per icon.
 - [materialdesignicons.com](https://materialdesignicons.com) - Where to browse icons
