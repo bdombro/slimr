@@ -13,6 +13,11 @@ export function formToValues(formElement: HTMLFormElement): FormJson {
       case 'checkbox':
         reqBody[e.name] = e.checked
         break
+      case 'radio':
+        if (e.checked) {
+          reqBody[e.name] = e.value
+        }
+        break
       case 'number':
         reqBody[e.name] = isArray ? e.value.split(',').map(Number) : Number(e.value)
         break
