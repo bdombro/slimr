@@ -191,6 +191,8 @@ export const styled = Object.assign(s, {
   summary: (...p: TSP) => s('summary' as unk as FC<HTP['summary']>)(...p),
   /** creates a 'sup' component with css applied; See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
   sup: (...p: TSP) => s('sup' as unk as FC<HTP['sup']>)(...p),
+  /** creates a 'svg' component with css applied; See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
+  svg: (...p: TSP) => s('svg' as unk as FC<HTP['svg']>)(...p),
   /** creates a 'table' component with css applied; See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
   table: (...p: TSP) => s('table' as unk as FC<HTP['table']>)(...p),
   /** creates a 'tbody' component with css applied; See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */

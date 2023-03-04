@@ -7,8 +7,11 @@ import {CSSProperties, FC, HTMLAttributes, createElement, forwardRef} from 'reac
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type allowableAny = any
 
-/** A type that represents all the css properties + shorthand props */
-export interface ZxProps extends CSSProperties, ShorthandProps {}
+/** A type that represents all the css properties + shorthand props + any css variable */
+export interface ZxProps
+  extends CSSProperties,
+    ShorthandProps,
+    Record<`--${string}`, number | string | undefined> {}
 type ZxP = ZxProps
 
 type Zx = {

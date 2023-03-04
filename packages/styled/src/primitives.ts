@@ -155,6 +155,8 @@ export const Summary = styled.summary``
 /** A decorated HTML Element. See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
 export const Sup = styled.sup``
 /** A decorated HTML Element. See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
+export const Svg = styled.svg``
+/** A decorated HTML Element. See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
 export const Table = styled.table``
 /** A decorated HTML Element. See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
 export const Tbody = styled.tbody``
