@@ -1,6 +1,6 @@
 import React, {forwardRef, useRef, useState} from 'react'
 
-type ReactFormEvent = Parameters<React.FormEventHandler<HTMLFormElement>>[0]
+type ReactFormEvent = React.FormEvent<HTMLFormElement>
 
 type Fnc = (...args: any[]) => any
 

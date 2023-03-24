@@ -103,7 +103,8 @@ export function useSWR<T extends PromiseType>(
     }
     if (!hardRefresh && hit?.result && hit?.updatedAt && Date.now() - hit.updatedAt < throttle) {
       // @ts-expect-error - TS doesn't like this, but it works
-      return (async () => hit.result)()
+      // return (async () => hit.result)()
+      return Promise.resolve(hit.result)
     }
 
     const onUpdate = (res: CacheVal<T>) => {

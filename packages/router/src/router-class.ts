@@ -42,29 +42,6 @@ export type RouterClass = typeof Router
 export type RouterInstance = InstanceType<RouterClass>
 
 /**
- * Searches up the dom from an element to find an enclosing anchor tag
- */
-function findLinkTagInParents(node: HTMLElement): any {
-  if (node?.nodeName === 'A') return node
-  if (node?.parentNode) return findLinkTagInParents(node.parentElement!)
-}
-
-/**
- * Accepts a url string or a URL object and returns a URL object
- */
-function toUrlObj(urlOrPath: string | URL) {
-  if (urlOrPath instanceof URL) return urlOrPath
-  if (urlOrPath.startsWith('//')) {
-    urlOrPath = location.protocol + urlOrPath
-  }
-  if (!urlOrPath.startsWith('http')) {
-    if (urlOrPath[0] !== '/') urlOrPath = '/' + urlOrPath
-    urlOrPath = location.origin + urlOrPath
-  }
-  return new URL(urlOrPath)
-}
-
-/**
  * A class to manage and negotiate url paths
  *
  * Accepts a map of route keys to route definitions. Order by priority because
@@ -79,6 +56,8 @@ export class Router<
   /** A map of all the registered routes */
   routes: RoutesVal<T> = {} as any
 
+  private scrollElSelector?: string
+
   /** An array of all the registered routes */
   get routeArray() {
     return Object.values(this.routes)
@@ -91,7 +70,9 @@ export class Router<
     return {
       route: this.find(new URL(location.href)),
       url: location.href,
-      scrollTop: window.scrollY,
+      scrollTop:
+        (this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
+        window.scrollY,
     }
   }
   get previous() {
@@ -110,7 +91,12 @@ export class Router<
    * Accepts a map of route keys to route definitions. Order by priority because
    * the first match will be returned when querying.
    */
-  constructor(routes: T) {
+  constructor(
+    routes: T,
+    options: {
+      scrollElSelector?: string
+    } = {}
+  ) {
     Object.entries(routes).forEach(([k, routeDef]) => {
       this.routes[k as keyof T] = {
         ...routeDef,
@@ -127,6 +113,7 @@ export class Router<
       .forEach(r => {
         this.routeArray.filter(r2 => r2.path.startsWith(r.path)).forEach(r2 => (r2.stack = r))
       })
+    this.scrollElSelector = options.scrollElSelector
     this.hookHistory()
   }
 
@@ -154,7 +141,12 @@ export class Router<
    * 1. Restore the scroll position after a route change
    */
   public onLoad = () => {
-    const _scrollTo = () => !navigator.userAgent.includes('jsdom') && scrollTo(0, this.scrollNext)
+    if (navigator.userAgent.includes('jsdom')) return
+    const scrollEl = this.scrollElSelector && document.querySelector(this.scrollElSelector)
+    const _scrollTo = () => {
+      if (scrollEl) scrollEl.scrollTop = this.scrollNext
+      else scrollTo(0, this.scrollNext)
+    }
     setTimeout(_scrollTo)
     setTimeout(_scrollTo, 100)
     setTimeout(_scrollTo, 200)
@@ -212,16 +204,21 @@ export class Router<
 
       this.current.route.stack?.stackHistory?.push({
         url: location.href,
-        scrollTop: window.scrollY,
+        scrollTop:
+          (this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
+          window.scrollY,
       })
       this.history.push(this.current)
 
       this.subscribers.forEach(fn => fn(next))
+      dispatchEvent(new CustomEvent('locationchange', {detail: next}))
       pushStateOrig(date, unused, urlObj)
     }
     history.replaceState = (date, unused, url) => {
       const urlObj = toUrlObj(url as any)
-      this.subscribers.forEach(fn => fn(this.find(urlObj)))
+      const next = this.find(urlObj)
+      this.subscribers.forEach(fn => fn(next))
+      dispatchEvent(new CustomEvent('locationchange', {detail: next}))
       replaceStateOrig(date, unused, urlObj)
     }
 
@@ -229,7 +226,9 @@ export class Router<
       this.previous?.route.stack?.stackHistory?.pop()
       this.scrollNext = this.previous?.scrollTop || 0
       this.history.pop()
-      this.subscribers.forEach(fn => fn(this.find(new URL(location.href))))
+      const next = this.find(new URL(location.href))
+      this.subscribers.forEach(fn => fn(next))
+      dispatchEvent(new CustomEvent('locationchange', {detail: next}))
     })
 
     /**
@@ -248,7 +247,7 @@ export class Router<
   static isMatch = (path: string, pathMask: string, exact = true) => {
     const argRx = /:([^/]*)/g
     const urlRx = '^' + pathMask.replace(argRx, '([^/]*)') + (exact ? '$' : '')
-    const match = [...path.matchAll(new RegExp(urlRx, 'gi'))]?.[0]
+    const match = [...(path || '/').matchAll(new RegExp(urlRx, 'gi'))]?.[0]
     const urlParams = match
       ? [...pathMask.matchAll(argRx)].reduce(
           (acc, arg, i) => ({...acc, [arg[1]]: match[i + 1]}),
@@ -257,4 +256,27 @@ export class Router<
       : false
     return urlParams
   }
+}
+
+/**
+ * Searches up the dom from an element to find an enclosing anchor tag
+ */
+function findLinkTagInParents(node: HTMLElement): any {
+  if (node?.nodeName === 'A') return node
+  if (node?.parentNode) return findLinkTagInParents(node.parentElement!)
+}
+
+/**
+ * Accepts a url string or a URL object and returns a URL object
+ */
+function toUrlObj(urlOrPath: string | URL) {
+  if (urlOrPath instanceof URL) return urlOrPath
+  if (urlOrPath.startsWith('//')) {
+    urlOrPath = location.protocol + urlOrPath
+  }
+  if (!urlOrPath.startsWith('http')) {
+    if (urlOrPath[0] !== '/') urlOrPath = '/' + urlOrPath
+    urlOrPath = location.origin + urlOrPath
+  }
+  return new URL(urlOrPath)
 }

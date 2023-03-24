@@ -1,6 +1,8 @@
 import {areNotEqualDeep} from '@slimr/util'
 import {useEffect, useMemo, useState} from 'react'
 
+type Fnc = (...args: any[]) => any
+
 /**
  * Like useMemo, but does a deep compare instead default compare
  * to avoid misfires. Is more expensive than useMemo though,

@@ -79,6 +79,19 @@ function MyForm() {
 }
 ```
 
+### useSet2
+
+Returns a set-like object that intercepts the setter function to trigger re-renders on change. Also adds a toggle and reset method. `@slimr/hooks` also exports a `useSet` from `react-use`, which is similar but has a different, less desirable (imho) pattern.
+
+```typescript
+function MyComponent() {
+  const optionalInitialValue = new Set()
+  const [set1, set1Setters] = useSet(optionalInitialValue)
+  const set2 = useSet2(optionalInitialValue)
+
+  // Use set2 like you would a vanilla JS Set
+```
+
 ### useSWR
 
 A hook that accepts a function callback, calls the function and returns a reactive callback state. Uses a cache and will return the cache value if available while waiting for the callback to complete, then update the return on complete. This is often called 'stale-while-refresh' and abbreviated as 'SWR', hence the name of the hook. Source is in [@slimr/swr](https://www.npmjs.com/package/@slimr/swr)

@@ -1,6 +1,6 @@
 {
   "name": "@slimr/forms",
-  "version": "4.1.27",
+  "version": "4.1.28",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -30,7 +30,9 @@
     "clean": "rm -rf esm cjs",
     "prepack": "run-s build"
   },
-  "optionalDependencies": {
+  "peerDependencies": {
+    "@types/react": "^16.8  || ^17 || ^18",
+    "@types/react-dom": "^16.8  || ^17 || ^18",
     "react": "^16.8  || ^17 || ^18",
     "react-dom": "^16.8  || ^17 || ^18"
   }

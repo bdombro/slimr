@@ -1,4 +1,5 @@
 export * from 'is-what'
+export * from 'copy-anything'
 export * from 'deep-object-diff'
 export * from 'merge-anything'
 
@@ -9,6 +10,7 @@ export * from './hash.js'
 export * from './equality-deep-debug.js'
 export * from './equality-deep.js'
 export * from './equality-shallow.js'
+export * from './query-strings.js'
 export * from './map-apply-max-size.js'
 export * from './memoize.js'
 export * from './set-page-meta.js'

@@ -40,6 +40,18 @@ Shallow compare methods
 - Note: Imperfect on Classes and less perfect than deep
 - Tip: For debugging, try using areEqualDebug/areNotEqualDebug
 
+### copy
+
+Deeply copy two objects
+
+- Is imperfect on classes.
+- Extends [npm:copy-anything](https://www.npmjs.com/package/copy-anything), which has a full list of options.
+
+```typescript
+const obj1 = [{foo: 'bar', arr: [2]}, {foo: 'bar2', arr: [3]}]
+const obj2 = copy(obj1)
+```
+
 ### createUid
 
 Generate a random string of 12 characters, provided by [npm:nanoid](https://www.npmjs.com/package/nanoid).
@@ -156,7 +168,7 @@ A memoization wrapper with ttl expiration for cache hits.
 Deeply merge objects or arrays in a familiar pattern to Object.assign
 
 - Is imperfect on classes.
-- Dependencies: [npm:merge-anything](https://www.npmjs.com/package/merge-anything), which has a full list of options.
+- Extends [npm:merge-anything](https://www.npmjs.com/package/merge-anything), which has a full list of options.
 
 ```typescript
 merge({foo: 'bar', arr: [2]}, {foo: 'bar2', arr: [3]}) // {foo: bar2, arr: [3]}
@@ -206,6 +218,15 @@ Assumption: The page should already have the following meta tags, to be used as 
 <meta property="og:description" content="A template to build tiny React applications" />
 <meta property="og:url" content="https://github.com/bdombro/react-template" />
 <meta property="og:image" content="https://preact-template.com/apple-touch-icon.png" />
+```
+
+Usage:
+
+```typescript
+const {description} = setPageMeta({
+  title: `Hello World`,
+  description: 'This page is awesome',
+})
 ```
 
 ### stringify

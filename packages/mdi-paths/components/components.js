@@ -43,24 +43,22 @@ export function IconSvg({
   rotate = 0,
   spin,
   spinInverse,
-  style = {},
   ...props
 }) {
-  if (typeof style !== 'string') {
-    style.verticalAlign = style.verticalAlign || 'middle'
-    const transforms = style.transform ? [style.transform] : []
-    if (horizontal) transforms.push('scaleX(-1)')
-    if (vertical) transforms.push('scaleY(-1)')
-    if (rotate !== 0) transforms.push(`rotate(${rotate}deg)`)
-    if (transforms.length > 0) {
-      style.transform = transforms.join(' ')
-      style.transformOrigin = 'center'
-    }
-    if (spin) {
-      const spinSec = spin === true || typeof spin !== 'number' ? 2 : spin
-      style.animation = `spin${spinInverse ? '-inverse' : ''} linear ${Math.abs(spinSec)}s infinite`
-      style.transformOrigin = 'center'
-    }
+  const style = {...props.style}
+  style.verticalAlign = style.verticalAlign || 'middle'
+  const transforms = style.transform ? [style.transform] : []
+  if (horizontal) transforms.push('scaleX(-1)')
+  if (vertical) transforms.push('scaleY(-1)')
+  if (rotate !== 0) transforms.push(`rotate(${rotate}deg)`)
+  if (transforms.length > 0) {
+    style.transform = transforms.join(' ')
+    style.transformOrigin = 'center'
+  }
+  if (spin) {
+    const spinSec = spin === true || typeof spin !== 'number' ? 2 : spin
+    style.animation = `spin${spinInverse ? '-inverse' : ''} linear ${Math.abs(spinSec)}s infinite`
+    style.transformOrigin = 'center'
   }
 
   // return (
