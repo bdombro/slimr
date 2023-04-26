@@ -10,9 +10,9 @@ Features:
 - Much less bundle size and runtime sluggishness than others
 - Supports declaring css and styled components inside of Components for better code colocating
 - Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props)
-- Will favor inline-style for performance reasons, if non-responsive and non-stateful.
 - Concise responsive CSS syntax Breakpoints shorthand similar to [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles)
 - Import pre-enhanced HTML Elements like `Div` or `A` for profit
+- Experimental: Will favor inline-style for performance reasons, if basic.
 
 ## Context
 
