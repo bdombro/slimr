@@ -12,3 +12,7 @@
 - `packages/styled` - css-in-js features inspired by the popular styled-components and Chakra-UI libs
 - `packages/swr` - A React hook for fetching data that supports stale-while-refresh eager rendering
 - `packages/util` - Framework agnostic Javascript polyfills
+
+## Publishing
+
+- There is a convenience script, `npm run publish:changed`, which will detect all changes and bump impacted workspaces. For example, if one changed `@slimr/css`, both that and `@slimr/styled` need be bumped because `@slimr/styled` depends on `@slimr/css`. Note that build must be ran first.

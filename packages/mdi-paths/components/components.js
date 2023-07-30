@@ -12,6 +12,14 @@ appendStyle({
  * The promise should resolve to an object with a `default` property = string
  * of an SVG's path `d` attribute. The 'd' attribute is the actual content of
  * an MDI svg.
+ * 
+ * For a list of available icons, see https://materialdesignicons.com/ and
+ * remember to use uppercase first + camel-case for the icon name.
+ * 
+ * @example
+ * ```tsx
+ * <LazyIconSvg pathImporter={() => import('@slimr/mdi-paths/Home')} />
+ * ```
  *
  * @param pathImporter A cb that returns a promise of an object with a `default` property = string of an SVG's path `d` attribute
  * @param IconSvg props excluding `d` and `path`

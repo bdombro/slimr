@@ -9,7 +9,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run -w @slimr/util -w @slimr/css -w @slimr/mdi-paths -w @slimr/forms -w @slimr/markdown -w @slimr/router -w @slimr/styled -w @slimr/swr -w @slimr/hooks -w @slimr/demo build",
+    "build": "npm run -w @slimr/util && npm run -w @slimr/css -w @slimr/mdi-paths -w @slimr/forms -w @slimr/markdown -w @slimr/router -w @slimr/swr -w @slimr/hooks && npm run -w @slimr/styled && npm run -w @slimr/demo build",
     "clean": "npm run -ws clean",
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",

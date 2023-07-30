@@ -192,3 +192,7 @@ export const FlexC = styled.div`
   d: flex;
   fd: column;
 `
+/** An alias to Div with display=grid. See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
+export const Grid = styled.div`
+  d: grid;
+`

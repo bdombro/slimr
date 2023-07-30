@@ -58,6 +58,7 @@ export function createClass(...p: T2SProps) {
     for (const q of qs.reverse()) {
       css = css.slice(0, q.start) + css.slice(q.end)
     }
+    qs.reverse()
 
     css = `.${className}{\n${css}\n}\n`
     css += qs
@@ -120,7 +121,13 @@ function expandArrayValues(css: string) {
 
 /** Find @keyframes, @media, @container queries in css **/
 function findQueries(css: string) {
-  const queries = []
+  const queries: {
+    start: number
+    end: number
+    query: string
+    outerBody: string
+    innerBody: string
+  }[] = []
   for (const m of css.matchAll(/[@&]/gm)) {
     let query = ''
     let bodyStart = 0
@@ -136,7 +143,7 @@ function findQueries(css: string) {
         openCount--
         if (openCount === 0) {
           queries.push({
-            start: m.index,
+            start: m.index!,
             end: i + 1,
             query,
             outerBody: css.slice(m.index, i + 1),
