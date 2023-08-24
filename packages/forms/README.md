@@ -38,36 +38,4 @@ throw new FormError({form: 'Please add a value for the name field', name: 'This 
 
 A hook that returns a Form component and reactive form state.
 
-```tsx
-import {FormError, useForm} from '@slimr/forms'
-import {formToValues} from '@slimr/util'
-
-function MyForm() {
-  const { Form, submitting, submitted, accepted, errors} = useForm()
-
-  const onSubmit = async (e: React.FormEventHandler<HTMLFormElement> => {
-    const vals = formToJson(e.target as HTMLFormElement)
-    const errors: Record<string, string> = {}
-    if (!vals.name) {
-      errors.name = 'Name is required'
-    }
-    if (!vals.terms) {
-      errors.checkbox = 'You must agree to the terms'
-    }
-    if (Object.keys(errors).length) {
-      throw new FormError(errors)
-    }
-  }
-
-  return (
-    <Form onSubmit={onSubmit}>
-      <input disabled={submitting || accepted} name="name" />
-      <div>{errors.name}<div>
-      <input disabled={submitting || accepted} name="terms" type="checkbox" />
-      <div>{errors.terms}<div>
-      <button type="submit">Submit</button>
-      <button type="reset">Reset</button>
-    </Form>
-  )
-}
-```
+- [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)

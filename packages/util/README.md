@@ -48,7 +48,10 @@ Deeply copy two objects
 - Extends [npm:copy-anything](https://www.npmjs.com/package/copy-anything), which has a full list of options.
 
 ```typescript
-const obj1 = [{foo: 'bar', arr: [2]}, {foo: 'bar2', arr: [3]}]
+const obj1 = [
+  {foo: 'bar', arr: [2]},
+  {foo: 'bar2', arr: [3]},
+]
 const obj2 = copy(obj1)
 ```
 
@@ -75,8 +78,13 @@ Highlight code elements using highlight.js
 
 Extracts form values from a `form` element, such as e.target from form.onSubmit
 
-- This method is a limited alternative to the FormData api, which aiming to be less awkward.
-- Can't handle complex forms (multipart/form-data encoding)
+- An alternative to the FormData api, aiming to be more predictable, flexible and less awkward.
+  - For example, FormData has not great way to enumerate all fields (even ones with undefined
+    values) or multiple checkboxes or multi selects.
+- Handles text, number, checkboxes, radio buttons, textarea, select
+- Value = array if multiple inputs with same 'name', such as checkboxes
+- Usage: [Code Sandbox](https://codesandbox.io/s/form-to-json-y7cs3t?file=/src/App.tsx)
+- Limitation: Can't handle complex forms (multipart/form-data encoding)
 - Dependencies: `./src/form-to-values.ts`
 
 Why not FormData?

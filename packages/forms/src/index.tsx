@@ -1,3 +1,4 @@
+import {FormValue, FormValues, formToValues} from '@slimr/util'
 import React, {forwardRef, useRef, useState} from 'react'
 
 type ReactFormEvent = React.FormEvent<HTMLFormElement>
@@ -6,10 +7,6 @@ type Fnc = (...args: any[]) => any
 
 /** The current state of the form */
 interface FormState {
-  /** True if the onSubmit has started but not yet finished */
-  submitting: boolean
-  /** True if the onSubmit has been started and finished, regardless of outcome. */
-  submitted: boolean
   /** If the form has been submitted and processed by the handler without error */
   accepted: boolean
   /**
@@ -20,17 +17,26 @@ interface FormState {
    * These are set by throwing a 'FormError' in onSubmit
    */
   errors: Record<string, any>
+  /** True if the onSubmit has started but not yet finished */
+  submitting: boolean
+  /** True if the onSubmit has been started and finished, regardless of outcome. */
+  submitted: boolean
 }
 
 interface UseFormReturnType extends FormState {
   /** A form wrapper that has useForm magic sprinkled in */
   Form: React.ForwardRefExoticComponent<
-    Omit<JSX.IntrinsicElements['form'], 'ref'> & React.RefAttributes<HTMLFormElement>
+    Omit<FormProps, 'ref'> & React.RefAttributes<HTMLFormElement>
   >
 }
 
 /** A dictionary of form input names to error message strings  */
 type FormErrorFieldError = Record<string, string>
+
+interface FormProps extends Omit<JSX.IntrinsicElements['form'], 'onChange' | 'onSubmit'> {
+  onChange?: (event: ReactFormEvent, value: FormValue, values: FormValues) => any
+  onSubmit?: (event: ReactFormEvent, values: FormValues) => any
+}
 
 /**
  * A hook that returns a Form component and the form state.
@@ -38,93 +44,78 @@ type FormErrorFieldError = Record<string, string>
  * @ref
  * https://www.npmjs.com/package/@slimr/forms
  *
- * ```tsx
- * import {formError, useForm} from '@slimr/forms'
- * import {formToValues} from '@slimr/util'
- *
- * function MyForm() {
- *   const { Form, submitting, submitted, accepted, errors} = useForm()
- *
- *   const onSubmit = async (e: React.FormEventHandler<HTMLFormElement> => {
- *     const vals = formToJson(e.target as HTMLFormElement)
- *     const errors: Record<string, string> = {}
- *     if (!vals.name) {
- *       errors.name = 'Name is required'
- *     }
- *     if (!vals.terms) {
- *       errors.checkbox = 'You must agree to the terms'
- *     }
- *     if (Object.keys(errors).length) {
- *       throw new FormError(errors)
- *     }
- *   }
- *
- *   return (
- *     <Form onSubmit={onSubmit}>
- *       <input disabled={submitting || accepted} name="name" />
- *       <div>{errors.name}<div>
- *       <input disabled={submitting || accepted} name="terms" type="checkbox" />
- *       <div>{errors.terms}<div>
- *       <button type="submit">Submit</button>
- *       <button type="reset">Reset</button>
- *     </Form>
- *   )
- * }
- * ```
+ * @usage [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
  */
 export function useForm(): UseFormReturnType {
   const [state, setState] = useState(formDefaultState)
 
   /** A form wrapper that has useForm magic sprinkled in */
-  const FormComponent = forwardRef(function FormComponent(
-    {children, onReset, onSubmit, ...formProps}: JSX.IntrinsicElements['form'],
-    ref: React.Ref<HTMLFormElement>
-  ) {
-    /** Resets the state onReset */
-    function _onReset(e: any) {
-      setState(formDefaultState)
-      onReset?.(e)
-    }
+  const Form = useRef(
+    forwardRef(function FormComponent(
+      {children, onChange, onReset, onSubmit, ...formProps}: FormProps,
+      ref: React.Ref<HTMLFormElement>
+    ) {
+      /** Resets the state onReset */
+      function _onReset(e: any) {
+        setState(formDefaultState)
+        onReset?.(e)
+      }
 
-    /** A form wrapper that has useForm magic sprinkled in */
-    async function _onSubmit(formEvent: ReactFormEvent) {
-      formEvent.preventDefault()
-      setState(last => ({...last, submitting: true}))
-      try {
-        if (onSubmit) {
-          await promisify(onSubmit)(formEvent)
-        }
-        setState({
-          accepted: true,
-          errors: {},
-          submitting: false,
-          submitted: true,
-        })
-      } catch (error: any) {
-        setState({
-          accepted: false,
-          errors: {
-            form: error.message,
-            ...error?.errorSet,
-          },
-          submitting: false,
-          submitted: true,
-        })
-        if (!(error instanceof FormError)) {
-          throw error
+      /** A form wrapper that has useForm magic sprinkled in */
+      async function _onSubmit(formEvent: ReactFormEvent) {
+        formEvent.preventDefault()
+        setState(last => ({...last, submitting: true}))
+        try {
+          if (onSubmit) {
+            await promisify(onSubmit)(formEvent, formToValues(formEvent.target as HTMLFormElement))
+          }
+          setState({
+            accepted: true,
+            errors: {},
+            submitting: false,
+            submitted: true,
+          })
+        } catch (error: any) {
+          setState({
+            accepted: false,
+            errors: {
+              form: error.message,
+              ...error?.errorSet,
+            },
+            submitting: false,
+            submitted: true,
+          })
+          if (!(error instanceof FormError)) {
+            throw error
+          }
         }
       }
-    }
 
-    return (
-      <form onReset={_onReset} onSubmit={_onSubmit} ref={ref} {...formProps}>
-        {children}
-      </form>
-    )
-  })
+      /** A form wrapper that has useForm magic sprinkled in */
+      async function _onChange(formEvent: ReactFormEvent) {
+        if (onChange) {
+          const target = formEvent.target as HTMLInputElement
+          const values = formToValues(target.closest('form') as HTMLFormElement)
+          await promisify(onChange)(formEvent, values[target.name], values)
+        }
+      }
+
+      return (
+        <form
+          onChange={onChange ? _onChange : undefined}
+          onReset={onReset ? _onReset : undefined}
+          onSubmit={onSubmit ? _onSubmit : undefined}
+          ref={ref}
+          {...formProps}
+        >
+          {children}
+        </form>
+      )
+    })
+  ).current
 
   const context: UseFormReturnType = {
-    Form: useRef(FormComponent).current,
+    Form,
     ...state,
   }
 
@@ -132,10 +123,10 @@ export function useForm(): UseFormReturnType {
 }
 
 const formDefaultState: FormState = {
-  submitting: false,
-  submitted: false,
   accepted: false,
   errors: {},
+  submitted: false,
+  submitting: false,
 }
 
 /**

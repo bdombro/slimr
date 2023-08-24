@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.28",
+  "version": "2.1.31",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -35,6 +35,6 @@
     "@types/react-dom": "^16.8  || ^17 || ^18"
   },
   "dependencies": {
-    "@slimr/hooks": "2.1.32"
+    "@slimr/hooks": "2.1.35"
   }
 }
