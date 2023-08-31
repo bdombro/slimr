@@ -191,24 +191,22 @@ export class Router<
       this.scrollNext = 0
       let next = this.find(urlObj)
 
-      if (next.isStack && next.stackHistory?.length) {
-        if (this.current.route.stack?.key === next.key) {
-          next.stackHistory = []
-        } else {
-          const recall = next.stackHistory.at(-1)!
-          urlObj = new URL(recall.url)
-          this.scrollNext = recall.scrollTop
-          next = this.find(urlObj)
-        }
-      }
+      // const shouldPush = true
 
-      this.current.route.stack?.stackHistory?.push({
-        url: location.href,
-        scrollTop:
-          (this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
-          window.scrollY,
-      })
-      this.history.push(this.current)
+      if (next.isStack && next.stackHistory?.length) {
+        const recall = next.stackHistory.pop()!
+        urlObj = new URL(recall.url)
+        this.scrollNext = recall.scrollTop
+        next = this.find(urlObj)
+      } else {
+        this.current.route.stack?.stackHistory?.push({
+          url: location.href,
+          scrollTop:
+            (this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
+            window.scrollY,
+        })
+        this.history.push(this.current)
+      }
 
       this.subscribers.forEach(fn => fn(next))
       dispatchEvent(new CustomEvent('locationchange', {detail: next}))

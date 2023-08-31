@@ -38,16 +38,17 @@ export function Lazy({
     last: JSX.Element | null
   }>({current: null, last: null})
 
+  const OnLoadComponent = () => {
+    useEffect(onLoad, [])
+    return null
+  }
+
   const Wrapped = () => {
-    useEffect(() => {
-      const observer = new MutationObserver(onLoad)
-      observer.observe(document.body, {childList: true, subtree: true})
-      return () => observer.disconnect()
-    }, [])
     const C = lazy(loader)
     return (
       <Suspense fallback={state.last}>
         <C {...props} />
+        <OnLoadComponent />
       </Suspense>
     )
   }
