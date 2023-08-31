@@ -39,7 +39,11 @@ export function Lazy({
   }>({current: null, last: null})
 
   const Wrapped = () => {
-    useEffect(onLoad, [])
+    useEffect(() => {
+      const observer = new MutationObserver(onLoad)
+      observer.observe(document.body, {childList: true, subtree: true})
+      return () => observer.disconnect()
+    }, [])
     const C = lazy(loader)
     return (
       <Suspense fallback={state.last}>
