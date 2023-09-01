@@ -147,10 +147,10 @@ export class Router<
       if (scrollEl) scrollEl.scrollTop = this.scrollNext
       else scrollTo(0, this.scrollNext)
     }
-    setTimeout(_scrollTo)
-    setTimeout(_scrollTo, 100)
-    setTimeout(_scrollTo, 200)
-    setTimeout(_scrollTo, 300)
+    _scrollTo()
+    for (let i = 0; i < 10; i++) {
+      setTimeout(_scrollTo, 100 * i)
+    }
   }
 
   /** Navigate to a route by replaceState */
