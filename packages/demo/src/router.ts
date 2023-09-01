@@ -1,36 +1,43 @@
 import {Router} from '@slimr/router'
 
+import Hello from './pages/hello'
+import Home from './pages/index'
+import NotFound from './pages/not-found'
+import Planets from './pages/planets'
+import PlanetsByPage from './pages/planets-by-page'
+import StackTest from './pages/stack-test'
+
 export const router = new Router({
   index: {
-    loader: () => import('./pages/index'),
+    component: Home,
     path: '/',
   },
   hello: {
-    loader: () => import('./pages/hello'),
+    component: Hello,
     path: '/hello/:name',
   },
   planets: {
     isStack: true,
-    loader: () => import('./pages/planets'),
+    component: Planets,
     path: '/planets',
   },
   planetsByPage: {
-    loader: () => import('./pages/planets-by-page'),
+    component: PlanetsByPage,
     path: '/planets/:page',
   },
   stack1: {
     isStack: true,
-    loader: () => import('./pages/stack-test'),
+    component: StackTest,
     path: '/stack1',
   },
   stack1Inner: {
     exact: false,
-    loader: () => import('./pages/stack-test'),
+    component: StackTest,
     path: '/stack1',
   },
   notFound: {
     exact: false,
-    loader: () => import('./pages/not-found'),
+    component: NotFound,
     path: '/',
   },
 })

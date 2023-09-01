@@ -20,11 +20,6 @@
     }
   },
   "dependencies": {
-    "@slimr/hooks": "^2.1.23",
-    "@slimr/markdown": "^2.1.19",
-    "@slimr/mdi-paths": "^2.1.19",
-    "@slimr/styled": "^2.1.20",
-    "@slimr/util": "^3.2.14",
     "preact": "^10.11.3"
   },
   "devDependencies": {

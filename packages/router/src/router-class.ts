@@ -3,7 +3,7 @@ export interface RouteDef {
   /** Boolean indicating if should fuzzy match. Defaults to false */
   exact?: boolean
   /** A function that returns a promise that resolves to a Svelte component */
-  loader: () => Promise<any>
+  component: React.FC<any>
   /** Additional info you may want to track on your route, i.e. icon, description */
   meta?: Record<string, any>
   /**

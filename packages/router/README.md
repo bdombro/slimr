@@ -10,7 +10,6 @@ Features:
 - Fosters/facilitates type-safe linking (no broken links!)
 - Attempts to scroll restore -- usually works so long as your pages use stale-while-refresh
 - Less is more: faster, less bugs, no breaking changes
-- Enhanced lazy-loading -- reduces and often eliminates flicker between route changes
 
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
@@ -44,18 +43,23 @@ export function App() {
 // router.tsx
 import {Router, Switch} from '@slimr/router'
 
+import Home from './pages/index'
+import Hello from './pages/hello'
+import NotFound from './pages/not-found'
+
+
 export const router = new Router({
   index: {
-    loader: () => import('./pages/index'),
+    component: Home,
     path: '/',
   },
   hello: {
-    loader: () => import('./pages/hello'),
+    component: Hello,
     path: '/hello/:name',
   },
   notFound: {
     exact: false,
-    loader: () => import('./pages/not-found'),
+    component: NotFound,
     path: '/',
   },
 })
@@ -77,7 +81,7 @@ export default function Index() {
 
 // pages/hello.tsx
 import {setPageMeta} from '@slimr/util'
-import {router} from '../router'
+import type {RouteMatch} from '@slimr/router'
 
 export default function Hello({route}: {route: RouteMatch}) {
   const {title, description} = setPageMeta({
@@ -124,7 +128,6 @@ Pros
 Cons
 
 - Is bigger bundle than it should be
-- No scroll restore, especially for lazy loaded routes
 - No stack route support
 
 ### nextjs router

@@ -1,6 +1,5 @@
-import React, {memo, useEffect, useMemo, useState} from 'react'
+import React, {memo, useEffect, useState} from 'react'
 
-import {Lazy} from './lazy.js'
 import type {RouterInstance} from './router-class.js'
 
 /**
@@ -11,14 +10,8 @@ export const Switch = memo(function Switch({router}: {router: RouterInstance}) {
 
   useEffect(() => router.subscribe(setRoute), [])
 
-  return useMemo(
-    () => (
-      <Lazy
-        loader={route.loader}
-        props={{route, url: new URL(location.href)}}
-        onLoad={router.onLoad}
-      />
-    ),
-    [route]
-  )
+  useEffect(router.onLoad, [route])
+
+  const C = route.component
+  return <C route={route} url={new URL(location.href)} />
 })
