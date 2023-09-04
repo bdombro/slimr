@@ -22,6 +22,8 @@ export default function StackTest({url}: {url: URL}) {
         <p>{description}</p>
         <p>
           <a href={`${url.pathname}/inners`}>Goto inner page</a>
+          <br />
+          <a href="#back">Go back in stack</a>
         </p>
         <Filler />
       </Layout.Section>

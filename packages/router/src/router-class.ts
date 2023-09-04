@@ -148,7 +148,7 @@ export class Router<
       else scrollTo(0, this.scrollNext)
     }
     _scrollTo()
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 3; i++) {
       setTimeout(_scrollTo, 100 * i)
     }
   }
@@ -188,17 +188,32 @@ export class Router<
         return pushStateOrig(date, unused, urlObj)
       }
 
+      if (urlObj.href === location.href) {
+        return
+      }
+
+      const isBack = urlObj.hash === '#back'
+
+      if (isBack) {
+        urlObj = toUrlObj(this.current.route.stack?.path as any)
+      }
+
       this.scrollNext = 0
       let next = this.find(urlObj)
 
-      // const shouldPush = true
-
       if (next.isStack && next.stackHistory?.length) {
-        const recall = next.stackHistory.pop()!
-        urlObj = new URL(recall.url)
-        this.scrollNext = recall.scrollTop
-        next = this.find(urlObj)
-      } else {
+        // Is a stack clear if the next url is a stack root of the current stack
+        if (this.current.route.stack?.key === next.key && !isBack) {
+          next.stackHistory = []
+        } else {
+          const recall = next.stackHistory.pop()!
+          urlObj = new URL(recall.url)
+          this.scrollNext = recall.scrollTop
+          next = this.find(urlObj)
+        }
+      }
+
+      if (!isBack) {
         this.current.route.stack?.stackHistory?.push({
           url: location.href,
           scrollTop:
