@@ -13,8 +13,7 @@ import {mapApplyMaxSize} from './map-apply-max-size.js'
  * last response from a function if called again with same props
  * before ttl interval has passed.
  *
- * Compared to other memoization algs (fast-memoize, nano-memoize), is much simpler,
- * shorter, easier to fork/enhance while less perfect and slower for primitive args.
+ * If you only need basic debounce, see @slimio/util/debounce
  */
 export const memoize: Memoize = <F extends Fnc>(
   /** the function to be memoized */

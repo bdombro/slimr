@@ -63,6 +63,27 @@ Generate a random string of 12 characters, provided by [npm:nanoid](https://www.
 const id = createUid()
 ```
 
+### debounce
+
+Don't call a function until a certain amount of time has passed without it being called.
+
+- If you want more features, like arg diffing and return values, see @slimr/util/memoize
+- Dependences: `./src/debounce.ts`
+
+```typescript
+const fnc = async () => 2
+const debounced = debounce(fnc, 250)
+debounced()
+debounced()
+debounced()
+await sleep(250)
+debounced()
+debounced()
+debounced()
+await sleep(250)
+// fnc would only be called twice
+```
+
 ### diff, addedDiff, deletedDiff, updatedDiff, detailedDiff
 
 Deep compare methods provided by [npm:deep-object-diff](https://www.npmjs.com/package/deep-object-diff), which return an object describing the differencees between two objs.
@@ -167,6 +188,7 @@ expect(t.get('d')).toBeUndefined()
 
 A memoization wrapper with ttl expiration for cache hits.
 
+- Aka a feature rich debounce. If you only need basic debounce, see @slimr/util/debounce.
 - Compared to other memoization algs (fast-memoize, nano-memoize), is much simpler,
   shorter, easier to fork/enhance while less perfect and slower for primitive args.
 - Dependences: `./src/memoize.ts`

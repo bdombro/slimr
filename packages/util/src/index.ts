@@ -5,6 +5,7 @@ export * from 'merge-anything'
 
 export * from './append-to-head.js'
 export * from './code-highlight.lazy.js'
+export * from './debounce.js'
 export * from './form-to-values.js'
 export * from './hash.js'
 export * from './equality-deep-debug.js'
