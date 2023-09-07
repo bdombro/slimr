@@ -3,6 +3,14 @@
  * used to merge refs from a forwardRef and a local ref from useRef.
  *
  * Credits: react-merge-refs
+ *
+ * @example
+ * ```typescript
+ * const MyComponent = forwardRef((props, ref1) => {
+ *  const ref2 = useRef(null)
+ *  return (<div ref={mergeRefs([ref1, ref2])} />)
+ * })
+ * ```
  **/
 export function mergeRefs<T = any>(
   refs: Array<React.MutableRefObject<T> | React.LegacyRef<T>>

@@ -217,6 +217,45 @@ function concatStrings(originVal, newVal, key) {
 }
 ```
 
+### mergeRefs
+
+Merge React refs so that multiple refs can be used on a single element. Is
+used to merge refs from a forwardRef and a local ref from useRef.
+
+Credits: react-merge-refs
+
+```typescript
+const MyComponent = forwardRef((props, ref1) => {
+ const ref2 = useRef(null)
+ return (<div ref={mergeRefs([ref1, ref2])} />)
+})
+```
+
+### numericStringMask
+
+Applies a mask to a string of numbers, helpful for phone numbers
+
+Grabs all of the numbers out of str into an array, then assembles
+the mask and replaces the '#' with the numbers in order
+
+```typescript
+numericStringMask('1234567890', '(###) ### - ####') // (123) 456 - 7890
+numericStringMask('1234567890', '(###) ### - ####') // (123) 456 - 7890
+numericStringMask('(123)abc45678-90', '(###) ### - ####') // (123) 456 - 7890
+numericStringMask('1234567890', '(###) ###-####') // (123) 456-7890
+numericStringMask('11900567890', '(##) #####-####') // (11) 90056-7890
+
+// react input usage
+const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+ e.currentTarget.value = numericStringMask(e.target.value, '(###) ###-####')
+   // Replaces so we don't add characters past the end of the string,
+   // and so the user can delete characters
+   .replace(/-$/, '') // changes '(123) 456-' to '(123) 456'
+   .replace(/\) $/, '') // changes '(11)' to '(11'
+   .replace(/\($/, '') // changes '(' to ''
+}
+```
+
 ### setPageMeta
 
 Allows setting common page attrs.

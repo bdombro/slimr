@@ -1,21 +1,18 @@
 import {FormError, useForm} from '@slimr/forms'
-import {mergeRefs} from '@slimr/util'
+import {mergeRefs, numericStringMask} from '@slimr/util'
 import {forwardRef, useEffect, useRef, useState} from 'react'
 
 const phoneNumberRegex = /^\(\d{3}\)\s\d{3}-\d{4}$/
-
-// TODO: Consider if input is not simple text
-// TODO: Consider including errors in useForm.onSubmit
-// TODO: Consider adding mergeRefs to @slimr/utils
-// TODO: Consider merging refs inside of useForm.Form
 
 export default function Form() {
   const {Form, accepted, errors, submitted, submitting} = useForm()
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.currentTarget.value = numericStringMask(e.target.value, '(###) ###-####')
-      .replace(/-$/, '')
-      .replace(/\) $/, '')
-      .replace(/\($/, '')
+      // Replaces so we don't add characters past the end of the string,
+      // and so the user can delete characters
+      .replace(/-$/, '') // changes '(123) 456-' to '(123) 456'
+      .replace(/\) $/, '') // changes '(11)' to '(11'
+      .replace(/\($/, '') // changes '(' to ''
   }
 
   return (
@@ -119,39 +116,3 @@ const Input = forwardRef(function Input(
     </div>
   )
 })
-
-/**
- * Applies a mask to a string of numbers, helpful for phone numbers
- *
- * Example 1: (123) 456 - 7890
- *
- * numericStringMask('1234567890', '(###) ### - ####')
- *
- * Example 2: (123) 456-7890
- *
- * numericStringMask('1234567890', '(###) ###-####')
- *
- * Example 3: (11) 90056-7890
- *
- * numericStringMask('11900567890', '(##) #####-####')
- */
-export function numericStringMask(str: string, mask: string) {
-  if (!mask) return str
-
-  const numeric = str.replaceAll(/[^\d]/g, '')
-
-  let idx = 0
-
-  const formated = mask
-    .split('')
-    .map(el => {
-      if (el === '#') {
-        el = numeric[idx]
-        idx++
-      }
-      return el
-    })
-    .join('')
-
-  return formated
-}

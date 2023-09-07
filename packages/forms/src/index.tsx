@@ -1,5 +1,5 @@
 import {FormValue, FormValues, formToValues} from '@slimr/util'
-import { mergeRefs } from '@slimr/util';
+import {mergeRefs} from '@slimr/util'
 import React, {forwardRef, useRef, useState} from 'react'
 
 type ReactFormEvent = React.FormEvent<HTMLFormElement>
@@ -28,7 +28,7 @@ interface UseFormReturnType extends FormState {
   /** A form wrapper that has useForm magic sprinkled in */
   Form: React.ForwardRefExoticComponent<
     Omit<FormProps, 'ref'> & React.RefAttributes<HTMLFormElement>
-  >,
+  >
   /** Resets the form to its initial state */
   reset: () => void
   /** Submits the form */
@@ -57,12 +57,14 @@ declare global {
  *
  * @usage [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
  */
-export function useForm(hookProps: {
-  /** Whether the form elements will be disabled while submitting. Default = true */
-  disableWhileSubmitting?: boolean
-  /** Whether the form will be reset when the onSubmit handler completes without error */
-  resetOnAccepted?: boolean
-} = {}): UseFormReturnType {
+export function useForm(
+  hookProps: {
+    /** Whether the form elements will be disabled while submitting. Default = true */
+    disableWhileSubmitting?: boolean
+    /** Whether the form will be reset when the onSubmit handler completes without error */
+    resetOnAccepted?: boolean
+  } = {}
+): UseFormReturnType {
   const {disableWhileSubmitting = true, resetOnAccepted} = hookProps
   const hookFormRef = useRef<HTMLFormElement>(null)
   const [state, setState] = useState(formDefaultState)
@@ -77,7 +79,7 @@ export function useForm(hookProps: {
       function _onReset(e: any) {
         const formElements = getFormElements(e.currentTarget)
         if (disableWhileSubmitting) {
-          formElements.forEach(e => e.disabled = e.disabledBefore)
+          formElements.forEach(e => (e.disabled = e.disabledBefore))
         }
         setState(formDefaultState)
         onReset?.(e)
@@ -87,8 +89,10 @@ export function useForm(hookProps: {
       async function _onSubmit(formEvent: ReactFormEvent) {
         formEvent.preventDefault()
 
-        const formElements = getFormElements(formEvent.currentTarget).filter(e => e.type !== 'reset')
-        
+        const formElements = getFormElements(formEvent.currentTarget).filter(
+          e => e.type !== 'reset'
+        )
+
         if (disableWhileSubmitting) {
           formElements.forEach(e => {
             e.disabledBefore = e.disabled
@@ -122,7 +126,7 @@ export function useForm(hookProps: {
             submitted: true,
           })
           if (disableWhileSubmitting) {
-            formElements.forEach(e => e.disabled = e.disabledBefore)
+            formElements.forEach(e => (e.disabled = e.disabledBefore))
           }
           if (!(error instanceof FormError)) {
             throw error
@@ -157,7 +161,7 @@ export function useForm(hookProps: {
     Form,
     ...state,
     reset: () => hookFormRef.current!.reset(),
-    submit: () => hookFormRef.current!.requestSubmit()
+    submit: () => hookFormRef.current!.requestSubmit(),
   }
 
   return context
