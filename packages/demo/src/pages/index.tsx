@@ -2,6 +2,7 @@ import {Markdown} from '@slimr/markdown'
 import {setPageMeta} from '@slimr/util'
 
 import {Layout} from '~/comps/layout-default'
+import {Icon} from '~/util/icons'
 
 /**
  * A demo of a home page
@@ -13,6 +14,14 @@ export default function Index() {
       <Layout.Section>
         <h1>{title}</h1>
         <p>{description}</p>
+        <fieldset style={{marginBottom: 20}}>
+          <legend>Icons:</legend>
+          <Icon name="alert" />
+          <Icon name="close" />
+          <Icon name="error" />
+          <Icon name="info" />
+          <Icon name="success" />
+        </fieldset>
         <fieldset>
           <legend>Markdown example:</legend>
           <Markdown

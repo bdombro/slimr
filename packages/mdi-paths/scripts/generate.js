@@ -33,6 +33,16 @@ export default _default;`
     )
   }
 
+  const packageJsonPath = path.resolve(buildPath, 'package.json')
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath))
+  packageJson.exports = {
+    "./components": "./components/components.js",
+  }
+  for (const name of names) {
+    packageJson.exports[`./${name}`] = `./${name}.js`
+  }
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
+
 //   fs.writeFileSync(
 //     path.resolve(buildPath, './IconNamesEnum.ts'),
 //     `export enum IconNames {

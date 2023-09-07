@@ -199,26 +199,29 @@ export function styledBase<C extends FC<allowableAny>>(Component: C) {
 
 /** Expands the shorthand props of a zx prop into css full */
 function expandShorthandProps(zx: Zx) {
-  return Object.entries(zx).reduce((acc, [k, v]) => {
-    if (k === 'mx') {
-      acc.marginLeft = v
-      acc.marginRight = v
-    } else if (k === 'my') {
-      acc.marginTop = v
-      acc.marginBottom = v
-    } else if (k === 'px') {
-      acc.paddingLeft = v
-      acc.paddingRight = v
-    } else if (k === 'py') {
-      acc.paddingTop = v
-      acc.paddingBottom = v
-    } else if (k in shorthandPropsMap) {
-      acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
-    } else {
-      acc[k] = v
-    }
-    return acc
-  }, {} as Record<string, allowableAny>)
+  return Object.entries(zx).reduce(
+    (acc, [k, v]) => {
+      if (k === 'mx') {
+        acc.marginLeft = v
+        acc.marginRight = v
+      } else if (k === 'my') {
+        acc.marginTop = v
+        acc.marginBottom = v
+      } else if (k === 'px') {
+        acc.paddingLeft = v
+        acc.paddingRight = v
+      } else if (k === 'py') {
+        acc.paddingTop = v
+        acc.paddingBottom = v
+      } else if (k in shorthandPropsMap) {
+        acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
+      } else {
+        acc[k] = v
+      }
+      return acc
+    },
+    {} as Record<string, allowableAny>
+  )
 }
 
 /** Converts a zx prop into css string */

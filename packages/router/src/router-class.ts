@@ -85,7 +85,7 @@ export class Router<
     [key: string]: RouteDef
     /** A route to be shown when no match is found (aka 404) */
     notFound: NotFoundRouterDef
-  }
+  },
 > {
   /** A map of all the registered routes */
   routes: RoutesVal<T> = {} as any
