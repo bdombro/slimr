@@ -1,5 +1,5 @@
 import {FormError, useForm} from '@slimr/forms'
-import {mergeRefs} from '@slimr/util/react'
+import {mergeRefs} from '@slimr/util'
 import {forwardRef, useEffect, useRef, useState} from 'react'
 
 const phoneNumberRegex = /^\(\d{3}\)\s\d{3}-\d{4}$/
@@ -10,7 +10,7 @@ const phoneNumberRegex = /^\(\d{3}\)\s\d{3}-\d{4}$/
 // TODO: Consider merging refs inside of useForm.Form
 
 export default function Form() {
-  const {Form, accepted, errors, submitting, submitted} = useForm()
+  const {Form, accepted, errors, submitted, submitting} = useForm()
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.currentTarget.value = numericStringMask(e.target.value, '(###) ###-####')
       .replace(/-$/, '')
@@ -20,9 +20,9 @@ export default function Form() {
 
   return (
     <Form
-      onSubmit={(e, vals) => {
+      onSubmit={async (e, vals) => {
         assertFormValid(e.currentTarget)
-        console.log(vals)
+        console.log('vals', vals)
       }}
     >
       <Input
@@ -36,9 +36,10 @@ export default function Form() {
         }
       />
       <div>
-        <button disabled={submitting || accepted} type="submit">
-          {accepted ? 'Success!' : 'Submit'}
+        <button type="submit">
+          {accepted ? 'Success!' : submitting ? 'Submitting...' : 'Submit'}
         </button>
+        <button type="reset">Reset</button>
       </div>
       {errors.form && (
         <div
@@ -74,7 +75,6 @@ function assertFormValid(form: HTMLFormElement) {
       errors[el.name] = el.error
     }
   }
-  console.log(errors)
 
   if (Object.keys(errors).length) {
     throw new FormError(errors)

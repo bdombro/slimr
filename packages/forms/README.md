@@ -24,6 +24,11 @@ The Form component:
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
 - [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
 
+## Usage
+
+- `../demo/src/pages/form.tsx`
+- [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
+
 ## API
 
 ### FormError
@@ -37,5 +42,3 @@ throw new FormError({form: 'Please add a value for the name field', name: 'This 
 ### useForm
 
 A hook that returns a Form component and reactive form state.
-
-- [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
