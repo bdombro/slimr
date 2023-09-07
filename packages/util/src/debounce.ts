@@ -11,7 +11,7 @@ export function debounce<T extends (...args: any) => any>(
   fnc: T,
   delay = 250
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
+  let timeout: any
   return (...args: Parameters<T>) => {
     return new Promise(resolve => {
       if (timeout) {

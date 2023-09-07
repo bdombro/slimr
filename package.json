@@ -16,7 +16,6 @@
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
     "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "publish:all": "npm run -ws publish",
     "publish:changed": "deno run -A scripts/bump-changed-workspaces.ts -p -e demo",
     "start": "npm run -w @slimr/demo start",
     "test": "vitest"

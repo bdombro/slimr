@@ -10,7 +10,7 @@
     "start": "vite"
   },
   "engines": {
-    "node": "18.12.0"
+    "node": "18"
   },
   "postcss": {
     "map": true,
