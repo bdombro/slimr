@@ -1,6 +1,6 @@
 {
   "name": "@slimr/util",
-  "version": "3.2.27",
+  "version": "3.2.28",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -15,6 +15,10 @@
     "./code-highlight": {
       "require": "./cjs/code-highlight.js",
       "import": "./esm/code-highlight.js"
+    },
+    "./react": {
+      "require": "./cjs/react/index.js",
+      "import": "./esm/react/index.js"
     }
   },
   "repository": {
@@ -38,5 +42,11 @@
     "is-what": "4.1.8",
     "merge-anything": "5.1.4",
     "nanoid": "4.0.1"
+  },
+  "optionalDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@types/react": "^18.0.26",
+    "@types/react-dom": "^18.0.9"
   }
 }
