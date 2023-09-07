@@ -1,4 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface RouterOptions {
+  /**
+   * A document.querySelector selector to be used for scroll restoration
+   *
+   * If undefined, window.scrollY will be used
+   */
+  scrollElSelector?: string
+}
+
+/**
+ * A declaration of a route to be passed to Router class constructor
+ */
 export interface RouteDef {
   /** Boolean indicating if should fuzzy match. Defaults to false */
   exact?: boolean
@@ -17,6 +28,18 @@ export interface RouteDef {
   isStack?: boolean
 }
 
+/** A route to be shown when no match is found (aka 404) */
+export interface NotFoundRouterDef {
+  exact: false
+  component: React.FC<any>
+  meta?: never
+  path: '/'
+  isStack?: never
+}
+
+/**
+ * An enhanced RouteDef with computed methods
+ */
 export interface Route extends RouteDef {
   /** Returns an object of URL args if path matches route.path, false otherwise */
   isMatch: (path: string) => false | Record<string, string>
@@ -27,7 +50,7 @@ export interface Route extends RouteDef {
   /** A reference to a stack route, if the current route is in a stack */
   stack?: Route
   /** A history stack if the current route is a stack */
-  stackHistory?: {url: string; scrollTop: number}[]
+  stackHistory?: {href: string; scrollTop: number}[]
 }
 
 /** A map of route keys to routes */
@@ -44,18 +67,34 @@ export type RouterInstance = InstanceType<RouterClass>
 /**
  * A class to manage and negotiate url paths
  *
- * Accepts a map of route keys to route definitions. Order by priority because
- * the first match will be returned when querying.
+ * @param routes
+ * Accepts an Record of route keys to route definitions. Order by priority because
+ * the first match will be returned when querying. The last route should always be
+ * a 'notFound' route.
+ *
+ * @param options
+ * An object of options
+ *
+ * @param options.scrollElSelector
+ * A document.querySelector selector to be used for scroll restoration. If undefined,
+ * window.scrollY will be used
  */
 export class Router<
   T extends {
     /** key: The unique key of a route */
     [key: string]: RouteDef
+    /** A route to be shown when no match is found (aka 404) */
+    notFound: NotFoundRouterDef
   }
 > {
   /** A map of all the registered routes */
   routes: RoutesVal<T> = {} as any
 
+  /**
+   * A document.querySelector selector to be used for scroll restoration
+   *
+   * If undefined, window.scrollY will be used
+   */
   private scrollElSelector?: string
 
   /** An array of all the registered routes */
@@ -91,12 +130,7 @@ export class Router<
    * Accepts a map of route keys to route definitions. Order by priority because
    * the first match will be returned when querying.
    */
-  constructor(
-    routes: T,
-    options: {
-      scrollElSelector?: string
-    } = {}
-  ) {
+  constructor(routes: T, options: RouterOptions = {}) {
     Object.entries(routes).forEach(([k, routeDef]) => {
       this.routes[k as keyof T] = {
         ...routeDef,
@@ -117,7 +151,11 @@ export class Router<
     this.hookHistory()
   }
 
-  /** Returns the first route that matches the path */
+  /**
+   * Returns the first route that matches the path
+   *
+   * Will always return a route, so long as you have a notFound route
+   */
   public find = (url: URL): RouteMatch => {
     for (const route of this.routeArray) {
       const urlParams = route.isMatch(url.pathname)
@@ -126,7 +164,9 @@ export class Router<
         return {...route, urlParams: {...urlParams, ...qs}}
       }
     }
-    throw new Error(`No route found for path: ${url.pathname}`)
+    throw new Error(
+      `No route found for path: ${url.pathname}. You may want to add a notFound route`
+    )
   }
 
   /** Navigate to a route */
@@ -177,6 +217,19 @@ export class Router<
     const pushStateOrig = history.pushState.bind(history)
     const replaceStateOrig = history.replaceState.bind(history)
 
+    /**
+     * A custom pushState intercepts soft navigations, i.e. same origin
+     *
+     * 0. If the url is the same as current url, do nothing
+     * 1. If the url is a stack root, clear the stack history
+     * 2. If the url is a stack child, add the current url to the stack history
+     * 3. Store the current route in history with current scrollTop
+     * 4. Notify subscribers of the new route
+     * 5. If hash is '#back', pop and goto the last stack history for the
+     *    stack corresponding to the url
+     * 6. If hash is '#replace', call history.replaceState. Is convenient for
+     *    anchor tags so you dont need to use onClick or javascript
+     */
     history.pushState = (date, unused, url) => {
       let urlObj = toUrlObj(url as any)
 
@@ -207,7 +260,7 @@ export class Router<
           next.stackHistory = []
         } else {
           const recall = next.stackHistory.pop()!
-          urlObj = new URL(recall.url)
+          urlObj = new URL(recall.href)
           this.scrollNext = recall.scrollTop
           next = this.find(urlObj)
         }
@@ -215,7 +268,7 @@ export class Router<
 
       if (!isBack) {
         this.current.route.stack?.stackHistory?.push({
-          url: location.href,
+          href: location.href,
           scrollTop:
             (this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
             window.scrollY,
@@ -244,9 +297,7 @@ export class Router<
       dispatchEvent(new CustomEvent('locationchange', {detail: next}))
     })
 
-    /**
-     * intercept anchor tag clicks
-     */
+    /** intercept anchor tag clicks */
     addEventListener('click', (e: any) => {
       const ln = findLinkTagInParents(e.target) // aka linkNode
       if (ln) {

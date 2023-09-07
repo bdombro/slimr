@@ -27,7 +27,8 @@ Features:
 
 ## Usage
 
-For a more complete example, please see demo in repo at `packages/demo`.
+For a more complete example, please see demo in repo at `packages/demo`. Also, do refer to the
+extensive in-code comments.
 
 Basic Example:
 
@@ -50,7 +51,8 @@ import Hello from './pages/hello'
 import NotFound from './pages/not-found'
 
 
-export const router = new Router({
+export const router = new Router(
+  {
   index: {
     component: Home,
     path: '/',
@@ -64,7 +66,9 @@ export const router = new Router({
     component: NotFound,
     path: '/',
   },
-})
+  },
+  { }
+)
 
 // pages/index.tsx
 import {setPageMeta} from '@slimr/util'
