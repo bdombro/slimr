@@ -1,6 +1,6 @@
 # 🪶 @slimr/forms [![npm package](https://img.shields.io/npm/v/@slimr/forms.svg?style=flat-square)](https://npmjs.org/package/@slimr/forms)
 
-A slim (< 500B), minimalistic form hook that returns a Form component and reactive form state.
+A slim (< 1kB), minimalistic form hook that returns a Form component and reactive form state.
 
 The Form component:
 
@@ -8,7 +8,8 @@ The Form component:
 - wraps onSubmit to
   - auto call event.preventsDefault()
   - track submitting, error, submitted, accepted state
-- < 500B when bundled+gzipped with a broader application
+  - auto catches errors if elements have an `error` attribute
+- < 1kB when bundled+gzipped with a broader application
 
 ## Context
 
@@ -26,8 +27,9 @@ The Form component:
 
 ## Usage
 
-- `../demo/src/pages/form.tsx`
-- [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
+- [Code Sandbox - sleek login form](https://codesandbox.io/s/phone-tel-input-hjr27s?file=/src/App.tsx)
+- [Code Sandbox - kitchen sink](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
+- kitchen sink - `../demo/src/pages/form.tsx`
 
 ## API
 

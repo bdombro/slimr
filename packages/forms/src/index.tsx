@@ -38,14 +38,23 @@ interface UseFormReturnType extends FormState {
 /** A dictionary of form input names to error message strings  */
 type FormErrorFieldError = Record<string, string>
 
-interface FormProps extends Omit<JSX.IntrinsicElements['form'], 'onChange' | 'onSubmit'> {
-  onChange?: (event: ReactFormEvent, value: FormValue, values: FormValues) => any
-  onSubmit?: (event: ReactFormEvent, values: FormValues) => any
+export interface FormProps extends Omit<JSX.IntrinsicElements['form'], 'onChange' | 'onSubmit'> {
+  onChange?: OnChange
+  onSubmit?: OnSubmit
+}
+
+export interface OnChange {
+  (event: ReactFormEvent, value: FormValue, values: FormValues): any
+}
+
+export interface OnSubmit {
+  (event: ReactFormEvent, values: FormValues): any
 }
 
 declare global {
   interface EventTarget {
     disabledBefore: boolean
+    error?: string | null
   }
 }
 
@@ -102,8 +111,9 @@ export function useForm(
 
         setState(last => ({...last, submitting: true}))
         try {
+          checkElementsForErrors(formEvent.currentTarget)
           if (onSubmit) {
-            await promisify(onSubmit)(formEvent, formToValues(formEvent.target as HTMLFormElement))
+            await promisify(onSubmit)(formEvent, formToValues(formEvent.currentTarget))
           }
           if (resetOnAccepted) {
             hookFormRef.current!.reset()
@@ -165,6 +175,24 @@ export function useForm(
   }
 
   return context
+}
+
+/**
+ * If the form has elements with an error attribute, throw a FormError with them.
+ */
+function checkElementsForErrors(form: HTMLFormElement) {
+  const formElements = getFormElements(form)
+
+  const errors: Record<string, string> = {}
+  for (const el of formElements) {
+    if (el.error) {
+      errors[el.name] = el.error
+    }
+  }
+
+  if (Object.keys(errors).length) {
+    throw new FormError(errors)
+  }
 }
 
 const formDefaultState: FormState = {
