@@ -16,6 +16,7 @@ export default function StackTest({url}: {url: URL}) {
     <Layout>
       <Layout.Section>
         <h1>{title}</h1>
+        <div style={{background: 'red', height: 300}} />
         <p>
           <b>Current URL: {url.pathname}</b>
         </p>

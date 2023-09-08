@@ -14,15 +14,13 @@ export function Layout({children}: {children: React.ReactNode}) {
     {name: 'Planets', path: r.routes.planets.path},
   ]
   return (
-    <>
-      <header style={{height: 55}}>
+    <div style={{display: 'flex', flexDirection: 'column', height: 'var(--dvh)'}}>
+      <header style={{flex: 0, width: '100%'}}>
         <Nav
           _bg="#aaa"
           _border="8px solid #ffffff77"
           _boxSizing="border-box"
           _px={4}
-          _pos="fixed"
-          _w="100%"
           _ta="center"
           _dark={{bg: '#555'}}
         >
@@ -51,8 +49,10 @@ export function Layout({children}: {children: React.ReactNode}) {
         </Nav>
       </header>
 
-      <main>{children}</main>
-    </>
+      <main style={{flex: 1, opacity: 0, overflowY: 'auto', transition: 'opacity .05s'}}>
+        {children}
+      </main>
+    </div>
   )
 }
 

@@ -40,6 +40,19 @@
   --step-4: clamp(2.3rem, calc(2.1rem + 1.3vw), 3rem);
   --step-5: clamp(2.8rem, calc(2.5rem + 1.8vw), 3.8rem);
   --step-6: clamp(3.3rem, calc(2.9rem + 2.5vw), 4.7rem);
+
+  /**
+    * Set the CSS variable `--dvh` to the height of the viewport.
+    *
+    * Is more reliable than `100vh` because it takes into account the height of
+    * the browser's UI elements (e.g. address bar, status bar, etc).
+    *
+    * Is set in ./index.ts
+    */
+  --dvh: 100vh; /* Firefox + Webkit doesn't yet support dvh */
+  &.browser-chrome {
+    --dvh: 100dvh; /* Chrome is the only browser that supports dvh reliably atm */
+  }
 }
 @media (prefers-color-scheme: dark) {
   :root {

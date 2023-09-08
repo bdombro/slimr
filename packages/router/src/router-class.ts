@@ -77,7 +77,9 @@ export type RouterInstance = InstanceType<RouterClass>
  *
  * @param options.scrollElSelector
  * A document.querySelector selector to be used for scroll restoration. If undefined,
- * window.scrollY will be used
+ * window.scrollY will be used. Also, opacity on scrollElSelector is set to 1 on load,
+ * which we leverage to fade in the page after a route change. This helps avoid screen
+ * shift and flicker due to scroll restoration.
  */
 export class Router<
   T extends {
@@ -93,7 +95,9 @@ export class Router<
   /**
    * A document.querySelector selector to be used for scroll restoration
    *
-   * If undefined, window.scrollY will be used
+   * If undefined, window.scrollY will be used.  Also, opacity on scrollElSelector
+   * is set to 1 on load, which we leverage to fade in the page after a route change
+   * This helps avoid screen shift and flicker due to scroll restoration.
    */
   private scrollElSelector?: string
 
@@ -197,9 +201,15 @@ export class Router<
 
   /** Scroll the window or scrollElSelector if available  */
   public scrollTo(options: ScrollToOptions) {
-    const scrollEl = this.scrollElSelector && document.querySelector(this.scrollElSelector)
-    if (scrollEl) scrollEl.scrollTo(options)
-    else scrollTo(options)
+    if (this.scrollElSelector) {
+      const scrollEl = document.querySelector(this.scrollElSelector)
+      if (!scrollEl) return
+      scrollEl.scrollTo(options)
+      // @ts-expect-error -- style property is missing from type
+      scrollEl.style.setProperty('opacity', 1)
+    } else {
+      scrollTo(options)
+    }
   }
 
   /** Subscribe to changes to the route */

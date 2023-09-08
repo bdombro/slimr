@@ -8,41 +8,46 @@ import Planets from './pages/planets'
 import PlanetsByPage from './pages/planets-by-page'
 import StackTest from './pages/stack-test'
 
-export const router = new Router({
-  index: {
-    component: Home,
-    path: '/',
+export const router = new Router(
+  {
+    index: {
+      component: Home,
+      path: '/',
+    },
+    form: {
+      component: Form,
+      path: '/form',
+    },
+    hello: {
+      component: Hello,
+      path: '/hello/:name',
+    },
+    planets: {
+      isStack: true,
+      component: Planets,
+      path: '/planets',
+    },
+    planetsByPage: {
+      component: PlanetsByPage,
+      path: '/planets/:page',
+    },
+    stack1: {
+      isStack: true,
+      component: StackTest,
+      path: '/stack1',
+    },
+    stack1Inner: {
+      exact: false,
+      component: StackTest,
+      path: '/stack1',
+    },
+    notFound: {
+      exact: false,
+      component: NotFound,
+      path: '/',
+    },
   },
-  form: {
-    component: Form,
-    path: '/form',
-  },
-  hello: {
-    component: Hello,
-    path: '/hello/:name',
-  },
-  planets: {
-    isStack: true,
-    component: Planets,
-    path: '/planets',
-  },
-  planetsByPage: {
-    component: PlanetsByPage,
-    path: '/planets/:page',
-  },
-  stack1: {
-    isStack: true,
-    component: StackTest,
-    path: '/stack1',
-  },
-  stack1Inner: {
-    exact: false,
-    component: StackTest,
-    path: '/stack1',
-  },
-  notFound: {
-    exact: false,
-    component: NotFound,
-    path: '/',
-  },
-})
+  {
+    scrollElSelector: 'main',
+  }
+)
