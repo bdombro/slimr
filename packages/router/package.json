@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.43",
+  "version": "2.1.48",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -28,13 +28,14 @@
     "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
-    "prepack": "run-s build"
+    "prepack": "run-s build",
+    "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
   "peerDependencies": {
     "@types/react": "^16.8  || ^17 || ^18",
     "@types/react-dom": "^16.8  || ^17 || ^18"
   },
   "dependencies": {
-    "@slimr/hooks": "2.1.40"
+    "@slimr/hooks": "^2.1.43"
   }
 }

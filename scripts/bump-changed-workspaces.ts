@@ -169,7 +169,7 @@ async function bumpVersion(workspace: Workspace, dependency?: string, dependency
   for (const workspace2 of Object.values(workspaces)) {
     if (workspace2 === workspace) continue
     if (workspace2.config.dependencies?.[workspace.name]) {
-      await bumpVersion(workspace2, workspace.name, workspace.config.version)
+      await bumpVersion(workspace2, workspace.name, '^' + workspace.config.version)
     }
   }
 }

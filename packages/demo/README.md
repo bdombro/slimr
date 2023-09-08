@@ -2,7 +2,7 @@
 
 A React Vitejs demo of many @slimr libraries. Checkout the scripts in package.json to get started!
 
-![demo](slimr-demo.jpg)
+![demo](preview.jpg)
 
 ## Context
 

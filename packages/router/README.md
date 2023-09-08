@@ -6,9 +6,7 @@ Features:
 
 - No dependencies, 3kb min+gziped
 - Stack routing -- a route "stack" can have it's own history like react native's react-navigation
-  - pop (aka go back) in a stack by navigating to any stack + '#back'
 - Auto handles all link clicks to same-site and back/popstate without needing to use a Link component
-  - Adding '#replace' to any navigation will replace instead of push
 - Fosters/facilitates type-safe linking (no broken links!)
 - Attempts to scroll restore -- usually works so long as your pages use stale-while-refresh
 - Less is more: faster, less bugs, no breaking changes

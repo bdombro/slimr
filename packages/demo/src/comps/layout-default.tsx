@@ -7,11 +7,11 @@ import {router as r} from '~/router'
  */
 export function Layout({children}: {children: React.ReactNode}) {
   const navitems = [
-    {name: 'Home', path: r.routes.index.path},
+    {name: 'Home', path: r.routes.index.path, exact: true},
     {name: 'Hello', path: r.routes.hello.toPath({name: 'world'})},
+    {name: 'Form', path: r.routes.form.path, exact: true},
     {name: 'Stack1', path: r.routes.stack1.path},
     {name: 'Planets', path: r.routes.planets.path},
-    {name: '404', path: '/does-not-exist'},
   ]
   return (
     <>
@@ -31,7 +31,15 @@ export function Layout({children}: {children: React.ReactNode}) {
               className="small"
               key={item.name}
               href={item.path}
-              _bg={item.path === location.pathname ? 'gray' : undefined}
+              _bg={
+                (
+                  item.exact
+                    ? item.path === location.pathname
+                    : location.pathname.startsWith(item.path)
+                )
+                  ? 'gray'
+                  : undefined
+              }
               _c="var(--color-fg)"
               _d="inline-block"
               _p={10}

@@ -182,21 +182,24 @@ export class Router<
    */
   public onLoad = () => {
     if (navigator.userAgent.includes('jsdom')) return
-    const scrollEl = this.scrollElSelector && document.querySelector(this.scrollElSelector)
-    const _scrollTo = () => {
-      if (scrollEl) scrollEl.scrollTop = this.scrollNext
-      else scrollTo(0, this.scrollNext)
-    }
-    _scrollTo()
-    for (let i = 0; i < 3; i++) {
-      setTimeout(_scrollTo, 100 * i)
-    }
+    const scrollToNext = () => this.scrollTo({top: this.scrollNext})
+    scrollToNext()
+    setTimeout(scrollToNext, 100)
+    setTimeout(scrollToNext, 200)
+    setTimeout(scrollToNext, 300)
   }
 
   /** Navigate to a route by replaceState */
   public replace = (routeOrKey: Route | string, urlParams: Record<string, string> = {}) => {
     const route = typeof routeOrKey === 'string' ? this.routes[routeOrKey] : routeOrKey
     history.replaceState(Date.now(), '', route.toPath(urlParams))
+  }
+
+  /** Scroll the window or scrollElSelector if available  */
+  public scrollTo(options: ScrollToOptions) {
+    const scrollEl = this.scrollElSelector && document.querySelector(this.scrollElSelector)
+    if (scrollEl) scrollEl.scrollTo(options)
+    else scrollTo(options)
   }
 
   /** Subscribe to changes to the route */
@@ -220,15 +223,19 @@ export class Router<
     /**
      * A custom pushState intercepts soft navigations, i.e. same origin
      *
-     * 0. If the url is the same as current url, do nothing
-     * 1. If the url is a stack root, clear the stack history
-     * 2. If the url is a stack child, add the current url to the stack history
-     * 3. Store the current route in history with current scrollTop
-     * 4. Notify subscribers of the new route
-     * 5. If hash is '#back', pop and goto the last stack history for the
-     *    stack corresponding to the url
-     * 6. If hash is '#replace', call history.replaceState. Is convenient for
+     * 0. If the url is the same as current url, just scroll to top
+     * 1. If hash is '#replace', call history.replaceState. Is convenient for
      *    anchor tags so you dont need to use onClick or javascript
+     * 2. Clear the stack if,
+     *   a. the url is an inner page of a different stack than the current route
+     *   b. the hash is '#clear'
+     * 3. Pop the stack if,
+     *   a. The url is a stack root and is the same stack as the current route
+     *   b. the hash is '#back'
+     * 4. If the url is a stack child of the current stack, push the url to the
+     *    stack history
+     * 5. Store the current route in history with current scrollTop
+     * 6. Notify subscribers of the new route
      */
     history.pushState = (date, unused, url) => {
       let urlObj = toUrlObj(url as any)
@@ -242,31 +249,44 @@ export class Router<
       }
 
       if (urlObj.href === location.href) {
+        this.scrollNext = 0
+        this.scrollTo({top: 0, behavior: 'smooth'})
         return
-      }
-
-      const isBack = urlObj.hash === '#back'
-
-      if (isBack) {
-        urlObj = toUrlObj(this.current.route.stack?.path as any)
       }
 
       this.scrollNext = 0
       let next = this.find(urlObj)
 
-      if (next.isStack && next.stackHistory?.length) {
-        // Is a stack clear if the next url is a stack root of the current stack
-        if (this.current.route.stack?.key === next.key && !isBack) {
-          next.stackHistory = []
-        } else {
-          const recall = next.stackHistory.pop()!
-          urlObj = new URL(recall.href)
-          this.scrollNext = recall.scrollTop
-          next = this.find(urlObj)
-        }
+      const navToInnerStackPageFromOutOfStack =
+        next.stack && !next.isStack && next.stack.key !== this.current.route.stack?.key
+
+      const isClear = next.stack && (urlObj.hash === '#clear' || navToInnerStackPageFromOutOfStack)
+      if (isClear) {
+        next.stack!.stackHistory = []
+        urlObj = toUrlObj(next.stack!.path as any)
+        next = this.find(urlObj)
+        this.scrollNext = 0
       }
 
-      if (!isBack) {
+      // If the next route is a stack root, treat as if it's a #back
+      const isBack =
+        !isClear &&
+        next.stack &&
+        (urlObj.hash === '#back' || this.current.route.stack?.key === next.key)
+
+      if (isBack) {
+        urlObj = toUrlObj(this.current.route.stack?.path as any)
+        next = this.find(urlObj)
+      }
+
+      if (!isClear && next.isStack && next.stackHistory?.length) {
+        const recall = next.stackHistory.pop()!
+        urlObj = new URL(recall.href)
+        this.scrollNext = recall.scrollTop
+        next = this.find(urlObj)
+      }
+
+      if (!isClear && !isBack) {
         this.current.route.stack?.stackHistory?.push({
           href: location.href,
           scrollTop:
@@ -288,6 +308,7 @@ export class Router<
       replaceStateOrig(date, unused, urlObj)
     }
 
+    /* Listen for back/forward event. Sadly we can't detect back vs forward */
     addEventListener('popstate', () => {
       this.previous?.route.stack?.stackHistory?.pop()
       this.scrollNext = this.previous?.scrollTop || 0

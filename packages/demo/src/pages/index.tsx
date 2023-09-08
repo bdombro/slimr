@@ -2,6 +2,7 @@ import {Markdown} from '@slimr/markdown'
 import {setPageMeta} from '@slimr/util'
 
 import {Layout} from '~/comps/layout-default'
+import {router as r} from '~/router'
 import {Icon} from '~/util/icons'
 
 /**
@@ -14,6 +15,11 @@ export default function Index() {
       <Layout.Section>
         <h1>{title}</h1>
         <p>{description}</p>
+        <p>
+          <a href={r.routes.stack1Inner.path + '/inner'}>
+            Goto inner stack page to test that it clears the stack
+          </a>
+        </p>
         <fieldset style={{marginBottom: 20}}>
           <legend>Icons:</legend>
           <Icon name="alert" />
