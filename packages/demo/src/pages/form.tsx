@@ -1,5 +1,6 @@
 import {FormError, OnSubmit, useForm} from '@slimr/forms'
-import {mergeRefs, numericStringMask} from '@slimr/util'
+import {mergeRefs} from '@slimr/react'
+import {numericStringMask} from '@slimr/util'
 import {forwardRef, useEffect, useRef, useState} from 'react'
 
 import {Layout} from '~/comps/layout-default'

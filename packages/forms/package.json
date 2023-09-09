@@ -1,6 +1,6 @@
 {
   "name": "@slimr/forms",
-  "version": "4.1.44",
+  "version": "4.1.48",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -32,7 +32,8 @@
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
   "dependencies": {
-    "@slimr/util": "^3.2.36"
+    "@slimr/react": "^2.1.48",
+    "@slimr/util": "^3.2.39"
   },
   "peerDependencies": {
     "@types/react": "*",

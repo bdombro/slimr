@@ -4,17 +4,7 @@ A collection of useful 1st and third party react components, hooks, and util. In
 
 ## Context
 
-`@slimr` is a set of slim React (hence '@slimr') libs:
-
-- [@slimr/css](https://www.npmjs.com/package/@slimr/css) - Framework agnostic css-in-js features inspired by the popular Emotion lib
-- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - A minimalistic form hook
-- [@slimr/hooks](https://www.npmjs.com/package/@slimr/hooks) - A collection of useful 1st and third party react hooks
-- [@slimr/markdown](https://www.npmjs.com/package/@slimr/markdown) - A simple component and slim markdown-to-html parser
-- [@slimr/mdi-paths](https://www.npmjs.com/package/@slimr/mdi-paths) - A basic Icon component and Material Design icon svg paths, code-split by path.
-- [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
-- [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
-- [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
-- [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
+`@slimr` is a set of slim React (hence '@slimr') libs. Check them all out on [github](https://github.com/bdombro/slimr)!
 
 ## Setup
 
@@ -40,50 +30,25 @@ export default defineConfig({
 - [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
 - [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
-- [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
 - [react-use](https://www.npmjs.com/package/react-use) - an excellent collection of hooks
+
+### mergeRefs
+
+Merge React refs so that multiple refs can be used on a single element. Is
+used to merge refs from a forwardRef and a local ref from useRef.
+
+Credits: react-merge-refs
+
+```typescript
+const MyComponent = forwardRef((props, ref1) => {
+ const ref2 = useRef(null)
+ return (<div ref={mergeRefs([ref1, ref2])} />)
+})
+```
 
 ### useDeepCompareMemo and useShallowCompareMemo
 
 like react-use's useDeepEffects, but for memos
-
-### useForm, FormError
-
-A hook and custom Error from [@slimr/forms](https://www.npmjs.com/package/@slimr/forms), which returns a Form component and reactive form state.
-
-```tsx
-import {FormError, useForm} from '@slimr/forms'
-import {formToValues} from '@slimr/util'
-
-function MyForm() {
-  const { Form, submitting, submitted, accepted, errors} = useForm()
-
-  const onSubmit = async (e: React.FormEventHandler<HTMLFormElement> => {
-    const vals = formToJson(e.target as HTMLFormElement)
-    const errors: Record<string, string> = {}
-    if (!vals.name) {
-      errors.name = 'Name is required'
-    }
-    if (!vals.terms) {
-      errors.checkbox = 'You must agree to the terms'
-    }
-    if (Object.keys(errors).length) {
-      throw new FormError(errors)
-    }
-  }
-
-  return (
-    <Form onSubmit={onSubmit}>
-      <input disabled={submitting || accepted} name="name" />
-      <div>{errors.name}<div>
-      <input disabled={submitting || accepted} name="terms" type="checkbox" />
-      <div>{errors.terms}<div>
-      <button type="submit">Submit</button>
-      <button type="reset">Reset</button>
-    </Form>
-  )
-}
-```
 
 ### useSet2
 

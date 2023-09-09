@@ -1,5 +1,5 @@
+import {mergeRefs} from '@slimr/react'
 import {FormValue, FormValues, formToValues} from '@slimr/util'
-import {mergeRefs} from '@slimr/util'
 import React, {forwardRef, useRef, useState} from 'react'
 
 type ReactFormEvent = React.FormEvent<HTMLFormElement>
