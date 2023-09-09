@@ -1,10 +1,11 @@
-import {FormError, useForm} from '@slimr/hooks'
 import type {RouteMatch} from '@slimr/router'
 import {formToValues, setPageMeta} from '@slimr/util'
 import {useEffect, useRef} from 'react'
 
 import {CheckboxInput, GenericError, TextInput} from '~/comps/forms'
 import {Layout} from '~/comps/layout-default'
+
+import {FormError, useForm} from '../../../react/esm'
 
 /**
  * A demo of route with url params

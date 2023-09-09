@@ -1,4 +1,4 @@
-import {useEvent, useUpdate} from '@slimr/hooks'
+import {useEvent, useUpdate} from 'react-use'
 
 import {RouteMatch} from './router-class.js'
 

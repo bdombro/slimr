@@ -1,4 +1,3 @@
-import {useSWR} from '@slimr/hooks'
 import type {RouteMatch} from '@slimr/router'
 import {setPageMeta} from '@slimr/util'
 import {Fragment as F} from 'react'
@@ -6,6 +5,8 @@ import {Fragment as F} from 'react'
 import {Layout} from '~/comps/layout-default'
 import {router} from '~/router'
 import * as sw from '~/util/swapi'
+
+import {useSWR} from '../../../react/esm'
 
 /**
  * A demo of a route stack and data fetching with swr

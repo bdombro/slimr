@@ -1,5 +1,9 @@
 export * from '@slimr/forms'
+export * from '@slimr/markdown'
+export * from '@slimr/router'
+export * from '@slimr/styled'
 export * from '@slimr/swr'
+export * from '@slimr/util'
 export * from 'react-use'
 
 export * from './useMemos.js'

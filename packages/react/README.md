@@ -1,6 +1,6 @@
-# 🪶 @slimr/hooks [![npm package](https://img.shields.io/npm/v/@slimr/hooks.svg?style=flat-square)](https://npmjs.org/package/@slimr/hooks)
+# 🪶 @slimr/react [![npm package](https://img.shields.io/npm/v/@slimr/react.svg?style=flat-square)](https://npmjs.org/package/@slimr/react)
 
-A collection of tiny, useful react hooks
+A collection of useful 1st and third party react components, hooks, and util. Includes several other @slimr libs for convenience
 
 ## Context
 
@@ -33,9 +33,15 @@ export default defineConfig({
 
 ## API
 
-### [npm:react-use](https://www.npmjs.com/package/react-use)
+### Bundled from other libs
 
-All of the hooks from [npm:react-use](https://www.npmjs.com/package/react-use), which are excellent
+- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - A minimalistic form hook
+- [@slimr/markdown](https://www.npmjs.com/package/@slimr/markdown) - A simple component and slim markdown-to-html parser
+- [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
+- [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
+- [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
+- [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
+- [react-use](https://www.npmjs.com/package/react-use) - an excellent collection of hooks
 
 ### useDeepCompareMemo and useShallowCompareMemo
 
