@@ -10,6 +10,7 @@ export type FormValues = Record<string, FormValue>
  *   - For example, FormData has not great way to enumerate all fields (even ones with undefined
  *     values) or multiple checkboxes or multi selects.
  * - Handles text, number, checkboxes, radio buttons, textarea, select
+ * - Converts US phone numbers to international format
  * - Value = array if multiple inputs with same 'name', such as checkboxes
  * - Limitation: Can't handle complex forms (multipart/form-data encoding)
  *
@@ -50,9 +51,19 @@ export function formToValues(formElement: HTMLFormElement): FormValues {
           .map(o => o.value)
         break
       default: {
-        const val = e.type === 'number' ? Number(e.value) : e.value
+        let val: FormValue = e.value
+        if (e.type === 'number') {
+          val = Number(e.value)
+        }
+        /** Normalizes a phone number to intl +XYYYZZZAAAA */
+        if (e.type === 'tel') {
+          val = String(val)
+          if (val.startsWith('(')) {
+            val = '+1' + val.replace(/[^\d]/g, '')
+          }
+        }
         if (isGroup) {
-          if (e.value !== '') {
+          if (val !== '') {
             // @ts-expect-error -- ts gets confused about being an array
             reqBody[e.name].push(val)
           }

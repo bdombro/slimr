@@ -2,6 +2,13 @@ import {mergeRefs} from '@slimr/react'
 import {FormValue, FormValues, formToValues} from '@slimr/util'
 import React, {forwardRef, useRef, useState} from 'react'
 
+declare global {
+  interface EventTarget {
+    disabledBefore: boolean
+    error?: string | null
+  }
+}
+
 type ReactFormEvent = React.FormEvent<HTMLFormElement>
 
 type Fnc = (...args: any[]) => any
@@ -49,13 +56,6 @@ export interface OnChange {
 
 export interface OnSubmit {
   (event: ReactFormEvent, values: FormValues): any
-}
-
-declare global {
-  interface EventTarget {
-    disabledBefore: boolean
-    error?: string | null
-  }
 }
 
 /**

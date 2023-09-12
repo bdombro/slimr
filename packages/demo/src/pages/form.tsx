@@ -65,10 +65,6 @@ export default function Form() {
               maxWidth: 300,
             }}
           >
-            <input name="text1" placeholder="text field" type="text" />
-            {errors['text1'] && <p style={{color: 'red'}}>{errors['text1']}</p>}
-            <input name="number1" placeholder="number field" step="1" type="number" />
-            {errors['number1'] && <p style={{color: 'red'}}>{errors['number1']}</p>}
             <fieldset>
               <legend>Validator Inputs</legend>
               <Input
@@ -76,6 +72,7 @@ export default function Form() {
                 error={errors['email']}
                 name="email"
                 placeholder="sue@sue.com"
+                required
                 type="email"
                 validator={str => (emailRegex.test(str) ? null : 'Invalid email')}
               />
@@ -85,12 +82,25 @@ export default function Form() {
                 name="phone"
                 onChange={onPhoneChange}
                 placeholder="(xxx)xxx-xxxx"
+                required
                 type="tel"
                 validator={str =>
                   phoneNumberRegex.test(str) ? null : 'Please enter a valid USA phone number'
                 }
               />
+              <Textarea
+                eagerValidate={submitted}
+                error={errors['textarea2']}
+                name="textarea2"
+                placeholder="textarea2"
+                required
+              />
             </fieldset>
+
+            <input name="text1" placeholder="text field" type="text" />
+            {errors['text1'] && <p style={{color: 'red'}}>{errors['text1']}</p>}
+            <input name="number1" placeholder="number field" step="1" type="number" />
+            {errors['number1'] && <p style={{color: 'red'}}>{errors['number1']}</p>}
             <fieldset>
               <legend>Input Group</legend>
               <input name="text-group1" placeholder="text-group field" type="text" />
@@ -161,15 +171,18 @@ export default function Form() {
   )
 }
 
-type HtmlInputProps = JSX.IntrinsicElements['input']
-interface InputProps extends HtmlInputProps {
+type Els = JSX.IntrinsicElements
+type InputProps = BaseProps & Els['input']
+type TextareaProps = BaseProps & Els['textarea']
+
+interface BaseProps {
   eagerValidate?: boolean
   error?: string
-  validator?: (val: string) => string | null
+  validator?: (val: string) => string | null | false | undefined
 }
 
-const Input = forwardRef(function Input(
-  {eagerValidate, error: errorForwarded, onBlur, onChange, validator, ...props}: InputProps,
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  {eagerValidate, error: errorForwarded, onBlur, onChange, required, validator, ...props},
   refForwarded
 ) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -187,10 +200,15 @@ const Input = forwardRef(function Input(
 
   const onValidate = () => {
     const input = inputRef.current
-    if (input && validator) {
-      input.error = validator(input.value)
-      setErrorLocal(input.error)
+    if (!input) return
+    if (required && !input.value) {
+      input.error = 'This field is required.'
+    } else if (validator) {
+      input.error = validator(input.value) || null
+    } else {
+      input.error = null
     }
+    setErrorLocal(input.error)
   }
 
   useEffect(() => {
@@ -202,8 +220,8 @@ const Input = forwardRef(function Input(
       if (input) {
         input.error = errorForwarded
       }
+      setErrorLocal(errorForwarded)
     }
-    setErrorLocal(errorForwarded)
   }, [errorForwarded])
 
   return (
@@ -214,6 +232,62 @@ const Input = forwardRef(function Input(
           if (props.type === 'tel') {
             onPhoneChange(e)
           }
+          onChange?.(e)
+        }}
+        onBlur={e => {
+          onValidate()
+          setHasBlurred(true)
+          onBlur?.(e)
+        }}
+        ref={mergeRefs([inputRef, refForwarded])}
+        {...props}
+      />
+      {(eagerValidate || hasBlurred) && errorLocal && (
+        <div style={{color: 'red'}}>{errorLocal}</div>
+      )}
+    </div>
+  )
+})
+
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  {eagerValidate, error: errorForwarded, onBlur, onChange, required, validator, ...props},
+  refForwarded
+) {
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [errorLocal, setErrorLocal] = useState<string | null | undefined>(errorForwarded)
+  const [hasBlurred, setHasBlurred] = useState(false)
+
+  const onValidate = () => {
+    const input = inputRef.current
+    if (!input) return
+    if (required && !input.value) {
+      input.error = 'This field is required.'
+    } else if (validator) {
+      input.error = validator(input.value) || null
+    } else {
+      input.error = null
+    }
+    setErrorLocal(input.error)
+  }
+
+  useEffect(() => {
+    onValidate()
+  }, [])
+  useEffect(() => {
+    if (errorForwarded) {
+      const input = inputRef.current
+      if (input) {
+        input.error = errorForwarded
+      }
+      setErrorLocal(errorForwarded)
+    }
+  }, [errorForwarded])
+
+  return (
+    <div>
+      <textarea
+        onChange={e => {
+          onValidate()
           onChange?.(e)
         }}
         onBlur={e => {

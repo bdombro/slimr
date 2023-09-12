@@ -94,6 +94,7 @@ Extracts form values from a `form` element, such as e.target from form.onSubmit
     values) or multiple checkboxes or multi selects.
 - Handles text, number, checkboxes, radio buttons, textarea, select
 - Value = array if multiple inputs with same 'name', such as checkboxes
+- Converts US phone numbers to international format
 - Usage: [Code Sandbox](https://codesandbox.io/s/form-to-json-y7cs3t?file=/src/App.tsx)
 - Limitation: Can't handle complex forms (multipart/form-data encoding)
 - Dependencies: `./src/form-to-values.ts`
