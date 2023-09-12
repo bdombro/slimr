@@ -1,30 +1,21 @@
 # 🪶 @slimr/forms [![npm package](https://img.shields.io/npm/v/@slimr/forms.svg?style=flat-square)](https://npmjs.org/package/@slimr/forms)
 
-A slim (< 1kB), minimalistic form hook that returns a Form component and reactive form state.
-
-The Form component:
+A slim (< 1kB), enhanced HTML form with auto-disabling, auto-reset, error handling, more JS events, and context to its children.
 
 - optimizes for vanilla, uncontrolled input elements
+- does not cause re-renders
+- disables form elements while submitting
+- can auto-reset the form is desired
+- uses browser accessibility APIs to share errors to form elements
 - wraps onSubmit to
   - auto call event.preventsDefault()
-  - track submitting, error, submitted, accepted state
-  - auto catches errors if elements have an `error` attribute
+  - pass form values as an Object
+- provide JS events and React context for rejected, submitted, accepted states
 - < 1kB when bundled+gzipped with a broader application
 
 ## Context
 
-`@slimr` is a set of slim React (hence '@slimr') libs:
-
-- [@slimr/css](https://www.npmjs.com/package/@slimr/css) - Framework agnostic css-in-js features inspired by the popular Emotion lib
-- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - A minimalistic form hook
-- [@slimr/markdown](https://www.npmjs.com/package/@slimr/markdown) - A simple component and slim markdown-to-html parser
-- [@slimr/mdi-paths](https://www.npmjs.com/package/@slimr/mdi-paths) - A basic Icon component and Material Design icon svg paths, code-split by path.
-- [@slimr/react](https://www.npmjs.com/package/@slimr/react) - A collection of useful 1st and third party react components, hooks, and util. Includes
-  several other @slimr libs for convenience
-- [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
-- [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
-- [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
-- [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
+`@slimr` is a set of slim React (hence '@slimr') libs. Check them all out on [github](https://github.com/bdombro/slimr)!
 
 ## Usage
 
@@ -34,14 +25,18 @@ The Form component:
 
 ## API
 
-### FormError
+### SForm
 
-An extension of Error that accepts an `errorSet` as a constructor property. It is used to share error context with `useForm`. When thrown from within an onSubmit handler, `useForm` will set `errorSet` to the `error` state.
+An enhanced HTML form with auto-disabling, auto-reset, error handling, more JS events, and context to its children.
+
+### SFormError
+
+An extension of Error that accepts an `errorSet` as a constructor property. It is used to share errors to form elements
 
 ```typescript
-throw new FormError({form: 'Please add a value for the name field', name: 'This field is required'})
+throw new FormError({field1: 'This field is invalid'})
 ```
 
-### useForm
+### useSFormContext
 
-A hook that returns a Form component and reactive form state.
+A hook to get the current state of the form

@@ -3,7 +3,7 @@
 `@slimr` is a set of slim React (hence '@slimr') libs:
 
 - [@slimr/css](https://www.npmjs.com/package/@slimr/css) - Framework agnostic css-in-js features inspired by the popular Emotion lib
-- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - A minimalistic form hook
+- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - An enhanced HTML form with auto-disabling, auto-reset, error handling, more JS events, and context to its children.
 - [@slimr/markdown](https://www.npmjs.com/package/@slimr/markdown) - A simple component and slim markdown-to-html parser
 - [@slimr/mdi-paths](https://www.npmjs.com/package/@slimr/mdi-paths) - A basic Icon component and Material Design icon svg paths, code-split by path.
 - [@slimr/react](https://www.npmjs.com/package/@slimr/react) - A collection of useful 1st and third party react components, hooks, and util. Includes

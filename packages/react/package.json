@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "2.1.49",
+  "version": "3.0.4",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -32,7 +32,7 @@
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
   "dependencies": {
-    "@slimr/forms": "^4.1.49",
+    "@slimr/forms": "^5.0.2",
     "@slimr/markdown": "^2.1.36",
     "@slimr/router": "^2.1.52",
     "@slimr/styled": "^2.1.43",

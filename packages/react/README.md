@@ -25,7 +25,7 @@ export default defineConfig({
 
 ### Bundled from other libs
 
-- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - A minimalistic form hook
+- [@slimr/forms](https://www.npmjs.com/package/@slimr/forms) - An enhanced HTML form with auto-disabling, auto-reset, error handling, more JS events, and context to its children.
 - [@slimr/markdown](https://www.npmjs.com/package/@slimr/markdown) - A simple component and slim markdown-to-html parser
 - [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
 - [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
