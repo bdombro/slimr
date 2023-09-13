@@ -1,6 +1,5 @@
 import type {RouteMatch} from '@slimr/router'
 import {setPageMeta} from '@slimr/util'
-import {Fragment as F} from 'react'
 
 import {Layout} from '~/comps/layout-default'
 import {router} from '~/router'
@@ -27,6 +26,7 @@ export default function PlanetsByPage({route}: {route: RouteMatch}) {
         <h1>{title}</h1>
         <p>{description}</p>
         <button
+          className="tertiary left"
           id="refetch-page"
           onClick={() => data.refresh()}
           disabled={data.loading}
@@ -35,6 +35,7 @@ export default function PlanetsByPage({route}: {route: RouteMatch}) {
           Refetch
         </button>
         <button
+          className="middle"
           id="goto-prior-page"
           disabled={page === '1'}
           onClick={() => {
@@ -45,6 +46,7 @@ export default function PlanetsByPage({route}: {route: RouteMatch}) {
           Prior Page
         </button>
         <button
+          className="right"
           id="goto-next-page"
           onClick={() => {
             router.goto(route, {page: `${Number(page) + 1}`})

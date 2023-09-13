@@ -1,0 +1,153 @@
+.checkbox-div {
+  margin-bottom: 1rem;
+
+  > .error {
+    display: none;
+  }
+
+  > input:disabled + label {
+    color: var(--input-disabled-color);
+  }
+
+  &.show-error {
+    > input {
+      outline: 1px solid var(--color-danger);
+    }
+    > .error {
+      color: red;
+      color: var(--color-danger);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+
+.generic-error {
+  color: red;
+  color: var(--color-danger);
+  margin-bottom: 0.4rem;
+}
+
+.input-div {
+  position: relative;
+  margin-bottom: 0.8rem;
+
+  > label {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-size: 0.75rem;
+    left: 8px;
+    padding: 1px 3px;
+    position: absolute;
+    top: -8px;
+  }
+  > .error {
+    display: none;
+  }
+
+  input:disabled,
+  textarea:disabled,
+  label:has(+ input:disabled),
+  label:has(+ textarea:disabled) {
+    color: var(--input-disabled-color);
+  }
+
+  &.show-error {
+    > label {
+      color: var(--color-danger);
+    }
+    > input,
+    > textarea {
+      border-color: var(--color-danger);
+    }
+    > .error {
+      color: red;
+      color: var(--color-danger);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+
+.radio-div {
+  margin-bottom: 1rem;
+  > label {
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  > div:first-of-type {
+    margin-bottom: 0.3rem;
+    /* Radios share the checkbox class and have an inner div */
+    > div {
+      margin-bottom: 0.4em;
+      margin-top: 0.4em;
+    }
+  }
+
+  label:has(+ div input:disabled),
+  input:disabled + label {
+    color: var(--input-disabled-color);
+  }
+
+  > .error {
+    display: none;
+  }
+
+  &.show-error {
+    > div:first-of-type {
+      outline: 1px solid var(--color-danger);
+      padding-bottom: 0.2rem;
+      padding-top: 0.2rem;
+    }
+    > .error {
+      color: red;
+      color: var(--color-danger);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+
+.select-div {
+  margin-bottom: 0.6rem;
+  > label {
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  > .tip {
+    color: var(--color-gray8);
+    font-size: var(--step--2);
+    margin-bottom: 0.3rem;
+  }
+  > .error {
+    display: none;
+  }
+
+  label:has(+ select:disabled),
+  select:disabled {
+    color: var(--input-disabled-color);
+  }
+
+  &.show-error {
+    > label {
+      color: var(--color-danger);
+    }
+    > select {
+      border-color: var(--color-danger);
+    }
+    > .error {
+      color: red;
+      color: var(--color-danger);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+.os-mac,
+.os-linux,
+.os-windows {
+  .select-div {
+    margin-bottom: 1.6rem;
+  }
+}

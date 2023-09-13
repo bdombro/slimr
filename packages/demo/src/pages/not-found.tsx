@@ -1,7 +1,6 @@
 import {setPageMeta} from '@slimr/util'
 
 import {Layout} from '~/comps/layout-default'
-import {Icon} from '~/util/icons'
 
 /**
  * A page shown when a route is not found

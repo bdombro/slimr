@@ -36,9 +36,7 @@ export const SForm = memo(
       formEvent.preventDefault()
       const form = formEvent.currentTarget
 
-      const formElements = [...(form.elements as unknown as HTMLInputElement[])].filter(
-        e => e.type !== 'reset'
-      )
+      const formElements = [...(form.elements as unknown as HTMLInputElement[])]
 
       if (disableWhileSubmitting) {
         formElements.forEach(e => {

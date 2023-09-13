@@ -1,0 +1,440 @@
+/* @custom-selector :--heading h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6; */
+
+/* Colors */
+
+:root {
+  --color-primary: hsl(199, 84%, 30%);
+  --color-primary-darker: hsl(199, 84%, 20%);
+  --color-secondary: hsl(178, 40%, 44%);
+  --color-tertiary: #696969;
+  --color-success: green;
+  --color-danger: #cc0000;
+  --color-alert: orange;
+  --color-fg: black;
+  --color-bg: white;
+  --color-black: black;
+  --color-white: white;
+
+  --color-gray1: hsl(0, 0%, 97%);
+  --color-gray2: hsl(0, 0%, 93%);
+  --color-gray3: hsl(0, 0%, 88%);
+  --color-gray4: hsl(0, 0%, 80%);
+  --color-gray5: hsl(0, 0%, 68%);
+  --color-gray6: hsl(0, 0%, 55%);
+  --color-gray7: hsl(0, 0%, 46%);
+  --color-gray8: hsl(0, 0%, 34%);
+  --color-gray9: hsl(0, 0%, 26%);
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+    --color-primary-darker: hsl(199, 84%, 60%);
+    --color-danger: #ff7070;
+    --color-tertiary: #696969;
+    --color-fg: white;
+    --color-black: white;
+    --color-white: black;
+    --color-bg: #111;
+    --color-gray1: hsl(0, 0%, 16%);
+    --color-gray2: hsl(0, 0%, 21%);
+    --color-gray3: hsl(0, 0%, 25%);
+    --color-gray4: hsl(0, 0%, 29%);
+    --color-gray5: hsl(0, 0%, 35%);
+    --color-gray6: hsl(0, 0%, 45%);
+    --color-gray7: hsl(0, 0%, 54%);
+    --color-gray8: hsl(0, 0%, 66%);
+    --color-gray9: hsl(0, 0%, 74%);
+  }
+
+  --button-shadow-color: var(--color-gray2);
+  --button-border-radius: 4px;
+  --input-border-color: var(--color-gray8);
+  --input-disabled-color: var(--color-gray5);
+}
+
+/** Typography */
+:root {
+  /* @link https://utopia.fyi/type/calculator?c=320,18,1.2,1240,20,1.25,6,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+  --step--2: clamp(0.7rem, calc(0.7rem + 0.03vw), 0.8rem);
+  --step--1: clamp(0.9rem, calc(0.9rem + 0.1vw), 1rem);
+  --step-0: clamp(1.1rem, calc(1.1rem + 0.25vw), 1.3rem);
+  --step-1: clamp(1.3rem, calc(1.3rem + 0.4vw), 1.6rem);
+  --step-2: clamp(1.6rem, calc(1.5rem + 0.6vw), 2rem);
+  --step-3: clamp(2rem, calc(1.8rem + 0.9vw), 2.4rem);
+  --step-4: clamp(2.3rem, calc(2.1rem + 1.3vw), 3rem);
+  --step-5: clamp(2.8rem, calc(2.5rem + 1.8vw), 3.8rem);
+  --step-6: clamp(3.3rem, calc(2.9rem + 2.5vw), 4.7rem);
+}
+
+/* :--heading, */
+p {
+  margin: 0;
+  padding: 0.7em 0 0.5em;
+}
+
+h1,
+.h1 {
+  font-size: var(--step-5);
+}
+h2,
+.h2 {
+  font-size: var(--step-4);
+}
+h3,
+.h3 {
+  font-size: var(--step-3);
+}
+h4,
+.h4 {
+  font-size: var(--step-2);
+}
+h5,
+.h5 {
+  font-size: var(--step-1);
+}
+h6,
+.h6 {
+  font-size: var(--step-0);
+}
+
+p,
+.p {
+  font-size: var(--step-0);
+}
+
+/** JS Supported globals */
+:root {
+  /**
+    * Set the CSS variable `--dvh` to the height of the viewport.
+    *
+    * Is more reliable than `100vh` because it takes into account the height of
+    * the browser's UI elements (e.g. address bar, status bar, etc).
+    *
+    * Is set in ./index.ts
+    */
+  --dvh: 100vh; /* Firefox + Webkit doesn't yet support dvh */
+  &.browser-chrome {
+    --dvh: 100dvh; /* Chrome is the only browser that supports dvh reliably atm */
+  }
+
+  /**
+    * Nots and onlys
+    */
+  &.touch .not-touch {
+    display: none;
+  }
+  &:not(.touch) .only-touch {
+    display: none;
+  }
+  &.os-android .not-android {
+    display: none;
+  }
+  &:not(.os-android) .only-android {
+    display: none;
+  }
+  &.os-iphone {
+    .not-ios {
+      display: none;
+    }
+    .not-iphone {
+      display: none;
+    }
+  }
+  &:not(.os-iphone) {
+    .only-ios {
+      display: none;
+    }
+    .only-iphone {
+      display: none;
+    }
+  }
+  &.os-ipad {
+    .not-ios {
+      display: none;
+    }
+    .not-ipad {
+      display: none;
+    }
+  }
+  &:not(.os-ipad) {
+    .only-ios {
+      display: none;
+    }
+    .only-ipad {
+      display: none;
+    }
+  }
+  &.os-linux,
+  &.os-unix {
+    .not-linux {
+      display: none;
+    }
+  }
+  &:not(.os-linux):not(.os-unix) .only-linux {
+    display: none;
+  }
+  &.os-mac .not-mac {
+    display: none;
+  }
+  &:not(.os-mac) .only-mac {
+    display: none;
+  }
+  &.os-windows .not-windows {
+    display: none;
+  }
+  &:not(.os-windows) .only-windows {
+    display: none;
+  }
+
+  &.browser-chrome .not-chrome {
+    display: none;
+  }
+  &:not(.browser-chrome) .only-chrome {
+    display: none;
+  }
+  &.browser-webkit .not-webkit {
+    display: none;
+  }
+  &:not(.browser-webkit) .only-webkit {
+    display: none;
+  }
+  &.browser-unknown .not-unknown {
+    display: none;
+  }
+  &:not(.browser-unknown) .only-unknown {
+    display: none;
+  }
+}
+
+/* Scrollbar styling */
+
+:root {
+  --scrollbarWidth: 14px;
+  --scrollbarBg: var(--color-gray4);
+  --scrollbarThumb: var(--color-gray7);
+}
+* {
+  scrollbar-width: var(--scrollbarWidth);
+  scrollbar-color: var(--scrollbarThumb) var(--scrollbarBg);
+}
+::-webkit-scrollbar {
+  width: var(--scrollbarWidth);
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbarBg);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbarThumb);
+  border-radius: 6px;
+  border: 3px solid var(--scrollbarBg);
+}
+
+/* Component styles */
+
+* {
+  box-sizing: border-box;
+  line-height: 1em;
+}
+
+body {
+  font-size: var(--step-0);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  margin: 0;
+  overflow: hidden;
+}
+
+a,
+.a {
+  color: currentColor;
+  text-decoration: none;
+}
+p a,
+.pa,
+table a {
+  text-decoration: underline;
+  color: var(--color-primary);
+  &:visited {
+    color: var(--color-secondary);
+  }
+  @media (prefers-color-scheme: dark) {
+    color: var(--color-primary-darker);
+  }
+}
+
+button,
+.button {
+  --button-color: var(--color-primary);
+  --border: 2px solid var(--button-shadow-color);
+  @media (prefers-color-scheme: dark) {
+    --button-shadow-color: #b1b1b1;
+  }
+
+  background-color: var(--button-color);
+  border: var(--border);
+  border-radius: var(--button-border-radius);
+  color: white;
+  cursor: pointer;
+  font-size: var(--step--1);
+  padding: 0.4rem 0.7rem;
+  position: relative;
+
+  &:hover,
+  &.hover,
+  &:active,
+  &.active,
+  &[aria-pressed='true'],
+  &[aria-selected='true'] {
+    box-shadow: 0 0 0 3px var(--button-shadow-color);
+    z-index: 1;
+  }
+
+  &:active,
+  &.active,
+  &[aria-pressed='true'],
+  &:disabled,
+  &[disabled],
+  &.disabled {
+    background-image: linear-gradient(rgb(0 0 0/40%) 0 0);
+  }
+
+  &[disabled],
+  &.disabled {
+    cursor: not-allowed;
+  }
+
+  &.secondary {
+    --button-color: var(--color-secondary);
+  }
+
+  &.tertiary {
+    --button-color: #b1b1b1;
+    @media (prefers-color-scheme: dark) {
+      --button-color: #696969;
+    }
+  }
+
+  &.md {
+    font-size: var(--step-0);
+    padding: 0.6rem 1rem;
+  }
+
+  &.lg {
+    font-size: var(--step-1);
+    padding: 0.95rem 1.5rem;
+  }
+
+  &.left {
+    border-radius: var(--button-border-radius) 0 0 var(--button-border-radius);
+    border-right: none;
+    &:hover {
+      border-right: var(--border);
+      margin-right: -2px;
+    }
+  }
+
+  &.middle {
+    border-radius: 0;
+    border-right: none;
+    &:hover {
+      border-right: var(--border);
+      margin-right: -2px;
+    }
+  }
+
+  &.right {
+    border-radius: 0 var(--button-border-radius) var(--button-border-radius) 0;
+  }
+}
+
+/** Forms */
+
+fieldset {
+  border: 1px solid var(--color-fg);
+}
+
+input,
+.input,
+textarea,
+.textarea {
+  background: var(--color-bg);
+  border: 1px solid var(--input-border-color);
+  color: var(--color-fg);
+  outline-color: var(--color-primary);
+
+  &:not([type='checkbox']):not([type='radio']) {
+    display: block;
+    font-size: var(--step-0);
+    margin-bottom: 0.2rem;
+    min-height: 3rem;
+    &:not([type='color']) {
+      padding-left: 0.8rem;
+    }
+    padding-top: 0.3rem;
+    width: 100%;
+  }
+
+  &[type='checkbox'],
+  &[type='radio'] {
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    margin-right: 0.8rem;
+    min-height: unset;
+  }
+
+  &:disabled {
+    border-color: var(--input-border-color);
+  }
+
+  &[data-error='true'] {
+    border-color: var(--color-danger);
+  }
+}
+
+/* Checkboxes appear to be too low on Safari */
+.browser-webkit input[type='checkbox'] {
+  position: relative;
+  top: -2px;
+}
+
+select,
+.select {
+  background: var(--color-bg);
+  border: 1px solid var(--input-border-color);
+  color: var(--color-fg);
+  font-size: var(--step--1);
+  outline-color: var(--color-primary);
+  margin-bottom: 0.2rem;
+  min-height: 2.4rem;
+  padding-left: 0.4rem;
+  width: 100%;
+
+  &[multiple] {
+    padding-left: 0;
+  }
+
+  > option {
+    padding: 0.4em 0.4rem;
+  }
+
+  &[disabled] {
+    border-color: var(--color-gray4);
+  }
+
+  &[data-error='true'] {
+    border-color: var(--text-error-color);
+  }
+}
+
+small,
+.small {
+  font-size: var(--step--1);
+}
+
+.tiny {
+  font-size: var(--step--2);
+}
+
+textarea,
+.textarea {
+  font-size: var(--step-0);
+}

@@ -1,5 +1,3 @@
-import {A, Div, Nav, Section} from '@slimr/styled'
-
 import {router as r} from '~/router'
 
 /**
@@ -8,7 +6,6 @@ import {router as r} from '~/router'
 export function Layout({children}: {children: React.ReactNode}) {
   const navitems = [
     {name: 'Home', path: r.routes.index.path, exact: true},
-    {name: 'Hello', path: r.routes.hello.toPath({name: 'world'})},
     {name: 'Form', path: r.routes.form.path, exact: true},
     {name: 'Stack1', path: r.routes.stack1.path},
     {name: 'Planets', path: r.routes.planets.path},

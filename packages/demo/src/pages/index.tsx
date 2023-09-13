@@ -3,7 +3,6 @@ import {setPageMeta} from '@slimr/util'
 
 import {Layout} from '~/comps/layout-default'
 import {router as r} from '~/router'
-import {Icon} from '~/util/icons'
 
 /**
  * A demo of a home page

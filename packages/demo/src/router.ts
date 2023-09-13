@@ -1,13 +1,13 @@
 import {Router} from '@slimr/router'
 
 import Form from './pages/form'
-import Hello from './pages/hello'
 import Home from './pages/index'
 import NotFound from './pages/not-found'
 import Planets from './pages/planets'
 import PlanetsByPage from './pages/planets-by-page'
 import StackTest from './pages/stack-test'
 
+// FIXME: maybe if component = () => Home(), we could avoid cyclic dependencies
 export const router = new Router(
   {
     index: {
@@ -17,10 +17,6 @@ export const router = new Router(
     form: {
       component: Form,
       path: '/form',
-    },
-    hello: {
-      component: Hello,
-      path: '/hello/:name',
     },
     planets: {
       isStack: true,

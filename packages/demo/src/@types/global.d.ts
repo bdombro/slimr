@@ -1,3 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/** Super sany -- avoids eslint errors. Use sparingly! */
+type sany = any
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/** Should be fixed at some point */
+type TSFIXME = sany
+
 type Fnc = (...args: any[]) => any
 
 type PromiseFnc = (...args: any[]) => Promise<any>
@@ -34,4 +42,3 @@ type NonArray =
   | number
   | boolean
 
-type TSFIXME = any
