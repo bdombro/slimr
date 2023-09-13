@@ -1,16 +1,13 @@
 // deno-lint-ignore-file require-await no-explicit-any
-import {parser as argParser} from 'https://deno.land/x/args_command_parser@v1.2.4/mod.js'
-import {globber} from 'https://deno.land/x/globber@0.1.0/mod.ts'
+import {npm, process} from './util/index.ts'
+
+export const argv = import.meta.main && process.argParser().data
 
 /************************************************************************
  * Globals
 /************************************************************************/
 
-const argv = import.meta.main && argParser().data
-// const gitStaged = await spawn('git diff --name-only --cached')
-const gitChanged = await spawn('git diff --name-only HEAD')
-const rootConfig = await readJson('package.json')
-const workspaces: Record<string, Workspace> = await getWorkspaces()
+const workspaces = await npm.getWorkspaces()
 
 const usage = `
 Usage: deno run --allow-read --allow-write scripts/bump-changed-workspaces.ts [options]
@@ -25,16 +22,6 @@ Options:
 /************************************************************************
  * Types
 /************************************************************************/
-
-interface Workspace {
-  bumped: boolean
-  staged: boolean
-  config: {version: string; private: boolean; dependencies: Record<string, string>}
-  name: string
-  path: string
-  save: () => Promise<void>
-  skip: boolean
-}
 
 /************************************************************************
  * Entry point(s)
@@ -62,7 +49,7 @@ export async function bumpChangedWorkspaces({
   console.log('VERSION-BUMP:start')
 
   if (publish) {
-    const user = (await spawn('npm whoami')).trim()
+    const user = (await process.spawn('npm whoami')).trim()
     if (!user) {
       console.log('Must be logged in to npm to publish')
       console.log('VERSION-BUMP:end')
@@ -85,7 +72,7 @@ export async function bumpChangedWorkspaces({
     await Promise.all(
       Object.values(workspaces)
         .filter(w => w.bumped)
-        .map(async w => console.log(await spawn('npm publish', w.path)))
+        .map(async w => console.log(await process.spawn('npm publish', w.path)))
     )
   }
 
@@ -107,26 +94,14 @@ export async function bumpChangedWorkspaces({
 
 /** The entrypoint if called directly (aka import.meta.main = true) */
 async function main() {
-  /** Find an arg and remove it from argv */
-  function pluckArg(short: string, long: string): string[]
-  function pluckArg(short: string, long: string, boolean: boolean): boolean
-  // eslint-disable-next-line require-jsdoc
-  function pluckArg(short: string, long: string, boolean?: boolean): any {
-    if (short in argv.shortSwitches || long in argv.longSwitches) {
-      const values = [...(argv.shortSwitches?.[short] ?? []), ...(argv.longSwitches?.[long] ?? [])]
-      delete argv.shortSwitches?.[short]
-      delete argv.longSwitches?.[long]
-      return boolean ? true : values
-    }
-    return boolean ? false : []
-  }
-  const exclude = pluckArg('e', 'exclude')
-  const publish = pluckArg('p', 'publish', true)
-  const reset = pluckArg('r', 'reset', true)
+  const _argv = structuredClone(argv)
+  const exclude = process.pluckArg(argv, 'e', 'exclude')
+  const publish = process.pluckArg(argv, 'p', 'publish', true)
+  const reset = process.pluckArg(argv, 'r', 'reset', true)
   if (
     argv.commands.legnth ||
-    Object.keys(argv.shortSwitches).length ||
-    Object.keys(argv.longSwitches).length
+    Object.keys(_argv.shortSwitches).length ||
+    Object.keys(_argv.longSwitches).length
   ) {
     console.log(usage)
     Deno.exit(1)
@@ -143,7 +118,11 @@ if (import.meta.main && argv) {
 /************************************************************************/
 
 /** Bumps the version of a workspace if not already bumped, and any dependencies recursively */
-async function bumpVersion(workspace: Workspace, dependency?: string, dependencyVersion?: string) {
+async function bumpVersion(
+  workspace: npm.Workspace,
+  dependency?: string,
+  dependencyVersion?: string
+) {
   if (workspace.skip) return
 
   if (dependency && dependencyVersion) {
@@ -172,74 +151,4 @@ async function bumpVersion(workspace: Workspace, dependency?: string, dependency
       await bumpVersion(workspace2, workspace.name, '^' + workspace.config.version)
     }
   }
-}
-
-/** Get workspaces from workspacePaths */
-async function getWorkspaces() {
-  // Get the workspaces from the root package.json
-  if (!rootConfig.workspaces) throwError('No workspaces found in root package.json')
-  const workspacePaths: Set<string> = new Set()
-  for (const path of rootConfig.workspaces) {
-    if (path.includes('*')) {
-      for await (const entry of globber({include: path})) {
-        workspacePaths.add(entry.relative.slice(0, -1))
-      }
-    } else {
-      workspacePaths.add(path)
-    }
-  }
-
-  const workspaces: Record<string, Workspace> = {}
-  for (const path of workspacePaths) {
-    const config = await readJson(path + '/package.json')
-    const workspace: Workspace = {
-      bumped: false,
-      staged: gitChanged.includes(path),
-      config,
-      name: config.name,
-      path,
-      save: async () => writeJson(path + '/package.json', workspace.config),
-      skip: false,
-    }
-    workspaces[workspace.name] = workspace
-  }
-
-  return workspaces
-}
-
-/** Read a file from the fs */
-async function read(path: string) {
-  return Deno.readTextFile(path).catch(() => throwError(`${path} read failed`))
-}
-
-/** Read a package.json file from the fs */
-async function readJson(from: string) {
-  return JSON.parse(await read(from))
-}
-
-/** Spawns a process and returns the output */
-async function spawn(cmd: string, cwd?: string) {
-  const p = Deno.run({
-    cmd: cmd.split(' '),
-    cwd,
-    // stderr: 'piped',
-    stdout: 'piped',
-  })
-  const out = new TextDecoder().decode(await p.output())
-  return out
-}
-
-/** Throw an error */
-function throwError(e: Error | string): never {
-  throw e
-}
-
-/** Write to a file */
-export async function write(path: string, content: string) {
-  return Deno.writeTextFile(path, content)
-}
-
-/** Write a package.json file */
-export async function writeJson(to: string, json: any) {
-  return write(to, JSON.stringify(json, null, 2) + '\n')
 }

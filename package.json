@@ -5,6 +5,10 @@
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdombro/slimr.git"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -17,6 +21,7 @@
     "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "publish:changed": "deno run -A scripts/bump-changed-workspaces.ts -p -e demo",
+    "publish:demo": "deno run -A scripts/deploy-demo.ts",
     "start": "npm run -w @slimr/demo start",
     "test": "vitest"
   },
