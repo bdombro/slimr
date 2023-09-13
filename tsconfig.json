@@ -9,16 +9,16 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "declaration": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "sourceMap": true
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   },
-  "include": [],
+  "include": ["src"],
   "references": [{"path": "./tsconfig.node.json"}]
 }
