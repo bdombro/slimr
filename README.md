@@ -13,6 +13,10 @@
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
 - [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills
 
+## Demo
+
+See [packages/demo/README.md](packages/demo/README.md)
+
 ## Publishing
 
 - `npm publish` is usually done manually and per package.

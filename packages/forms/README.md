@@ -19,9 +19,61 @@ A slim (< 1kB), enhanced HTML form with auto-disabling, auto-reset, error handli
 
 ## Usage
 
-- [Code Sandbox - sleek login form](https://codesandbox.io/s/phone-tel-input-hjr27s?file=/src/App.tsx)
-- [Code Sandbox - kitchen sink](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
-- kitchen sink - `../demo/src/pages/form.tsx`
+- From the [demo app](../packages/demo/src/pages/form.tsx):
+
+```tsx
+<SForm onSubmit={(_, vals) => console.log(vals)}>
+  {[
+    'checkbox',
+    'color',
+    'date',
+    'email',
+    'number',
+    'password',
+    'search',
+    'text',
+    'textarea',
+    'tel',
+    'url',
+  ].map(type => (
+    <InputBox key={type} label={type} name={type} type={type} required />
+  ))}
+  <RadioBox
+    label="Radios"
+    name="radio1"
+    options={[
+      {label: 'Choice 1', value: 'choice1'},
+      {label: 'Choice 2', value: 'choice2'},
+      {label: 'Choice 3', value: 'choice3'},
+    ]}
+    required
+  />
+  <SelectBox
+    label={'Select Single'}
+    name="select1"
+    options={[
+      {label: '--', value: ''},
+      {label: 'Choice 1', value: 'choice1'},
+      {label: 'Choice 2', value: 'choice2'},
+      {label: 'Choice 3', value: 'choice3'},
+    ]}
+    required
+  />
+  <SelectBox
+    label={'Select multiple'}
+    multiple
+    name="select2"
+    options={[
+      {label: 'Choice 1', value: 'choice1'},
+      {label: 'Choice 2', value: 'choice2'},
+      {label: 'Choice 3', value: 'choice3'},
+    ]}
+    required
+  />
+  <FormFooter />
+  <RenderCheck />
+</SForm>
+```
 
 ## API
 

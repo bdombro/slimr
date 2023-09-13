@@ -17,13 +17,21 @@ export function pluckArg(argv: Argv, short: string, long: string, boolean?: bool
 }
 
 /** Spawns a process and returns the output */
-export async function spawn(cmd: string, cwd?: string) {
+export async function spawn(cmd: string | string[], cwd?: string) {
+  if (spawn.debug) console.log('SPAWN: `' + cmd + '`')
   const p = Deno.run({
-    cmd: cmd.split(' '),
+    cmd: Array.isArray(cmd) ? cmd : cmd.split(' '),
     cwd,
-    // stderr: 'piped',
+    stderr: 'piped',
     stdout: 'piped',
   })
   const out = new TextDecoder().decode(await p.output())
+  const err = new TextDecoder().decode(await p.stderrOutput())
+  const status = await p.status()
+  if (status.code !== 0) {
+    console.log({err, out})
+    throw new Error(`${cmd} exited with code ${status.code}\n${out}`)
+  }
   return out
 }
+spawn.debug = false

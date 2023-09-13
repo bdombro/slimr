@@ -15,7 +15,7 @@ import React, {
  * @ref
  * https://www.npmjs.com/package/@slimr/forms
  *
- * @usage [Code Sandbox](https://codesandbox.io/s/useform-4sncgj?file=/src/App.tsx)
+ * @usage [demo app](../packages/demo/src/pages/form.tsx)
  */
 export const SForm = memo(
   forwardRef<HTMLFormElement, SFormProps>(function FormComponent(

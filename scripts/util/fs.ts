@@ -12,8 +12,23 @@ export const copyDirSync = mod.copySync
 export const copyFile = Deno.copyFile
 export const copyFileSync = Deno.copyFileSync
 
-export const readDir = Deno.readDirSync
+export const cp = mod.copy
+export const cpSync = mod.copySync
+
+export const readDir = Deno.readDir
 export const readDirSync = Deno.readDirSync
+
+export const removeFile = (dir: string) => Deno.remove(dir)
+export const rmFile = removeFile
+export const removeFileSync = (dir: string) => Deno.removeSync(dir)
+export const rmFileSync = removeFileSync
+
+export const removeDir = (dir: string) => Deno.remove(dir, {recursive: true})
+export const rmDir = removeDir
+export const removeDirSync = (dir: string) => Deno.removeSync(dir, {recursive: true})
+export const rmDirSync = removeDirSync
+export const rm = removeDir
+export const rmSync = removeDirSync
 
 export async function readFileSync(path: string) {
   return Deno.readTextFile(path).catch(() => throwError(`${path} read failed`))

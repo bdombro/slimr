@@ -1,6 +1,8 @@
 // deno-lint-ignore-file require-await no-explicit-any
 import {fs, process} from './util/index.ts'
 
+process.spawn.debug = true
+
 /************************************************************************
  * Globals
 /************************************************************************/
@@ -23,38 +25,28 @@ Options:
 /************************************************************************/
 
 /**
- * Bumps the version of any changed packages and their dependencies
+ * Updates the demo branch, which is just packages/demo, and pushes it to github.
  */
 export async function deploy() {
   console.log('DEPLOY:start')
 
-  // FIXME:
-  // - Delete to demo branch
-  // - Create to demo branch
-  // - Move .git to packages/demo
-  // - Change working directory to packages/demo
-  // - Run `npm i @slimr/forms @slimr/markdown @slimr/mdi-paths @slimr/react @slimr/router @slimr/styled @slimr/swr @slimr/util`
-  // - Run `npm run build`
-  // - Run `git add -A`
-  // - Run `git commit -m "chore: deploy demo"`
-  // - Run `git push -f origin demo`
-  // - Run `npm remove @slimr/forms @slimr/markdown @slimr/mdi-paths @slimr/react @slimr/router @slimr/styled @slimr/swr @slimr/util`
-  // - Change working directory back to root
-  // - Run `git checkout main`
-
-  await process.spawn('git checkout -b demo')
-  await fs.copyDirSync('.git', './packages/demo/.git')
+  await fs.rm('./packages/demo/.git').catch(() => {})
+  await fs.cp('.git', './packages/demo/.git')
   Deno.chdir('./packages/demo')
+  await process.spawn('git checkout -b demo')
+  await fs.rm('package-lock.json').catch(() => {})
+  await process.spawn('npm i')
   await process.spawn(
-    'npm i @slimr/forms @slimr/markdown @slimr/mdi-paths @slimr/react @slimr/router @slimr/styled @slimr/swr @slimr/util'
+    'npm i @slimr/forms @slimr/markdown @slimr/mdi-paths @slimr/router @slimr/styled @slimr/swr @slimr/util'
   )
-  await process.spawn('npm run build')
   await process.spawn('git add -A')
-  await process.spawn('git commit -m "chore: deploy demo"')
+  await process.spawn(['git', 'commit', '--no-verify', '-m', 'chore: deploy demo'])
   await process.spawn('git push -f origin demo')
-  await Deno.removeSync('.git')
+  await fs.rm('.git')
+  await process.spawn(
+    'npm remove @slimr/forms @slimr/markdown @slimr/mdi-paths @slimr/router @slimr/styled @slimr/swr @slimr/util'
+  )
   Deno.chdir('../..')
-  await process.spawn('git checkout packages/demo')
   await process.spawn('npm i')
 
   console.log('DEPLOY:end')
