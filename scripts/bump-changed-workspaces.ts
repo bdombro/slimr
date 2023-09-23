@@ -95,11 +95,11 @@ export async function bumpChangedWorkspaces({
 /** The entrypoint if called directly (aka import.meta.main = true) */
 async function main() {
   const _argv = structuredClone(argv)
-  const exclude = process.pluckArg(argv, 'e', 'exclude')
-  const publish = process.pluckArg(argv, 'p', 'publish', true)
-  const reset = process.pluckArg(argv, 'r', 'reset', true)
+  const exclude = process.pluckArg(_argv, 'e', 'exclude')
+  const publish = process.pluckArg(_argv, 'p', 'publish', true)
+  const reset = process.pluckArg(_argv, 'r', 'reset', true)
   if (
-    argv.commands.legnth ||
+    _argv.commands.length ||
     Object.keys(_argv.shortSwitches).length ||
     Object.keys(_argv.longSwitches).length
   ) {
