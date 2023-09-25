@@ -1,6 +1,6 @@
 {
   "name": "@slimr/mdi-paths",
-  "version": "2.1.40",
+  "version": "2.1.43",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -25,8 +25,8 @@
     "@mdi/svg": "7.1.96"
   },
   "optionalDependencies": {
-    "react": "^16.8  || ^17 || ^18",
-    "react-dom": "^16.8  || ^17 || ^18"
+    "react": "*",
+    "react-dom": "*"
   },
   "dependencies": {
     "@slimr/util": "^3.2.39"

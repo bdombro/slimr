@@ -25,10 +25,12 @@ appendStyle({
  * @param IconSvg props excluding `d` and `path`
  */
 export function LazyIconSvg({pathImporter, ...props}) {
-  const [svgPath, setSvgPath] = useState('')
+  const [svgPath, setSvgPath] = useState(LazyIconSvg.cache[pathImporter] || '')
   useEffect(() => {
+    if (svgPath) return
     pathImporter().then(module => {
       setSvgPath(module.default)
+      LazyIconSvg.cache[pathImporter] = module.default
     })
   }, [])
   // return <IconSvg d={svgPath} {...props} />
@@ -37,6 +39,7 @@ export function LazyIconSvg({pathImporter, ...props}) {
     d: svgPath,
   })
 }
+LazyIconSvg.cache = {}
 
 /**
  * A non-lazy icon component that renders an SVG with a path `d` attribute.
