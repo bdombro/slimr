@@ -100,19 +100,27 @@ function expandArrayValues(css: string) {
     .split('\n')
     .map(l => {
       // eslint-disable-next-line no-useless-escape
-      const [, prop, vals] = [...l.matchAll(/([A-Za-z\-]*):[ ]*\[([^\]]+)\]/g)]?.[0] ?? []
-      if (vals) {
-        return vals
-          .split(',')
-          .map((val, i) => {
-            val = val.trim()
-            if (!val || val === 'null' || val === 'undefined') return ''
-            if (i === 0) {
-              return `${prop}: ${val};`
-            }
-            return `@media (min-width: ${createClass.breakPoints[i - 1]}) { ${prop}: ${val}; }`
-          })
-          .join('\n')
+      const [, prop, valArrayStr] = [...l.matchAll(/([A-Za-z\-]*):[ ]*\[([^\]]+)\]/g)]?.[0] ?? []
+      if (valArrayStr) {
+        return (
+          valArrayStr
+            // Replace commas inside css functions with a magic char (§) to prevent
+            // erroneous splitting
+            .replace(/\([^),]*,/g, m => m.replace(/,/g, '§'))
+            .replace(/\([^),]*,/g, m => m.replace(/,/g, '§'))
+            .replace(/\([^),]*,/g, m => m.replace(/,/g, '§'))
+            .split(',')
+            .map((val, i) => {
+              val = val.trim()
+              if (!val || val === 'null' || val === 'undefined') return ''
+              val = val.replace(/§/g, ',')
+              if (i === 0) {
+                return `${prop}: ${val};`
+              }
+              return `@media (min-width: ${createClass.breakPoints[i - 1]}) { ${prop}: ${val}; }`
+            })
+            .join('\n')
+        )
       }
       return l
     })
