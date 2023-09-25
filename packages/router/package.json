@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.53",
+  "version": "2.1.55",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -32,8 +32,8 @@
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
   "peerDependencies": {
-    "@types/react": "^16.8  || ^17 || ^18",
-    "@types/react-dom": "^16.8  || ^17 || ^18"
+    "@types/react": "*",
+    "@types/react-dom": "*"
   },
   "dependencies": {
     "react-use": "17"

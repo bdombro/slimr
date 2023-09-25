@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "3.0.10",
+  "version": "3.0.12",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -33,17 +33,17 @@
   },
   "dependencies": {
     "@slimr/forms": "^5.0.6",
-    "@slimr/markdown": "^2.1.36",
-    "@slimr/router": "^2.1.53",
+    "@slimr/markdown": "^2.1.38",
+    "@slimr/router": "^2.1.55",
     "@slimr/styled": "^2.1.46",
-    "@slimr/swr": "^2.1.35",
+    "@slimr/swr": "^2.1.37",
     "@slimr/util": "^3.2.40",
     "react-use": "17"
   },
   "peerDependencies": {
-    "@types/react": "^16.8  || ^17 || ^18",
-    "@types/react-dom": "^16.8  || ^17 || ^18",
-    "react": "^16.8  || ^17 || ^18",
-    "react-dom": "^16.8  || ^17 || ^18"
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "*",
+    "react-dom": "*"
   }
 }
