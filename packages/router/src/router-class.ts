@@ -330,8 +330,9 @@ export class Router<
 
     /** intercept anchor tag clicks */
     addEventListener('click', (e: any) => {
+      if (e.metaKey || e.ctrlKey) return
       const ln = findLinkTagInParents(e.target) // aka linkNode
-      if (ln) {
+      if (ln && ln.target !== '_blank') {
         e.preventDefault()
         history.pushState(Date.now(), '', ln.href)
       }
