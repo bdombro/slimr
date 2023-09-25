@@ -12,7 +12,6 @@ Features:
 - Zx/Css shorthand props like [chakra-ui](https://chakra-ui.com/docs/styled-system/style-props)
 - Concise responsive CSS syntax Breakpoints shorthand similar to [chakra-ui](https://chakra-ui.com/docs/styled-system/responsive-styles)
 - Import pre-enhanced HTML Elements like `Div` or `A` for profit
-- Experimental: Will favor inline-style for performance reasons, if basic.
 
 ## Context
 

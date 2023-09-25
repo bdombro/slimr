@@ -1,7 +1,7 @@
 /* eslint-disable prefer-const */
-import {ShorthandProps, classJoin, css, shorthandPropsMap} from '@slimr/css'
+import {ShorthandProps, classJoin, css} from '@slimr/css'
 
-import {toCamelCase, toKebabCase} from '@slimr/util'
+import {toKebabCase} from '@slimr/util'
 import {CSSProperties, FC, HTMLAttributes, createElement, forwardRef} from 'react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,14 +168,7 @@ export function styledBase<C extends FC<allowableAny>>(Component: C) {
         `
       }
 
-      const hasMediaQuery = Object.values(_zx).some(v => Array.isArray(v))
-      // If has media query styles, use css class. Otherwise favor inline styles
-      if (hasMediaQuery || cssStr) {
-        cssStr = zxToCss(_zx) + cssStr
-      } else {
-        _zx = expandShorthandProps(_zx)
-        rest.style = {...rest.style, ..._zx} as CSSProperties
-      }
+      cssStr = zxToCss(_zx) + cssStr
 
       return createElement(Component, {
         ref,
@@ -196,33 +189,6 @@ export function styledBase<C extends FC<allowableAny>>(Component: C) {
 /**********************
  * Helper Functions
  **********************/
-
-/** Expands the shorthand props of a zx prop into css full */
-function expandShorthandProps(zx: Zx) {
-  return Object.entries(zx).reduce(
-    (acc, [k, v]) => {
-      if (k === 'mx') {
-        acc.marginLeft = v
-        acc.marginRight = v
-      } else if (k === 'my') {
-        acc.marginTop = v
-        acc.marginBottom = v
-      } else if (k === 'px') {
-        acc.paddingLeft = v
-        acc.paddingRight = v
-      } else if (k === 'py') {
-        acc.paddingTop = v
-        acc.paddingBottom = v
-      } else if (k in shorthandPropsMap) {
-        acc[toCamelCase(shorthandPropsMap[k as keyof typeof shorthandPropsMap])] = v
-      } else {
-        acc[k] = v
-      }
-      return acc
-    },
-    {} as Record<string, allowableAny>
-  )
-}
 
 /** Converts a zx prop into css string */
 function zxToCss(zx: Zx): string {

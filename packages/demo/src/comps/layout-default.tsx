@@ -11,8 +11,8 @@ export function Layout({children}: {children: React.ReactNode}) {
     {name: 'Planets', path: r.routes.planets.path},
   ]
   return (
-    <div style={{display: 'flex', flexDirection: 'column', height: 'var(--dvh)'}}>
-      <header style={{flex: 0, width: '100%'}}>
+    <Div _d="flex" _flexDirection="column" _h="var(--dvh)">
+      <Header _flex={0} _w="100%">
         <Nav
           _bg="#aaa"
           _border="8px solid #ffffff77"
@@ -44,12 +44,12 @@ export function Layout({children}: {children: React.ReactNode}) {
             </A>
           ))}
         </Nav>
-      </header>
+      </Header>
 
-      <main style={{flex: 1, opacity: 0, overflowY: 'auto', transition: 'opacity .05s'}}>
+      <Main _flex={1} _opacity={0} _overflowY="auto" _transition="opacity .05s">
         {children}
-      </main>
-    </div>
+      </Main>
+    </Div>
   )
 }
 

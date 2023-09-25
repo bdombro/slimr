@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "3.0.8",
+  "version": "3.0.10",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -35,7 +35,7 @@
     "@slimr/forms": "^5.0.6",
     "@slimr/markdown": "^2.1.36",
     "@slimr/router": "^2.1.53",
-    "@slimr/styled": "^2.1.44",
+    "@slimr/styled": "^2.1.46",
     "@slimr/swr": "^2.1.35",
     "@slimr/util": "^3.2.40",
     "react-use": "17"
