@@ -15,6 +15,8 @@
 
 ## Demo
 
+`npm run build && npm start`
+
 See [packages/demo/README.md](packages/demo/README.md)
 
 ## Publishing

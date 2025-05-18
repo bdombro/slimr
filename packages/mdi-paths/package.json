@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "run-s clean && node scripts/generate.js && cp components/* .",
-    "clean": "find -E . -maxdepth 1 -regex '.*(\\.js|\\.jsx|\\.ts)' -delete",
+    "clean": "find . -maxdepth 1 \\( -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" \\) -delete",
     "prepack": "run-s build"
   },
   "devDependencies": {
