@@ -1,4 +1,4 @@
-// Vitest Snapshot v1
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`parses correctly 1`] = `
 "
@@ -8,67 +8,60 @@ exports[`parses correctly 1`] = `
 <h4>H4</h4>
 <h5>H5</h5>
 <h6>H6</h6>
-this text should not interfere with the above<br /><br />
+<p>this text should not interfere with the above</p>
+
 <h1>Alt-H1</h1>
 <h2>Alt-H2</h2>
-this text should not interfere with the above<br />
-<br />
-<b>Bold</b> <i>Italic</i> <strike>Strikethrough</strike><br />
-<br />
-<a href='https://google.com'>Link</a>  <a href='https://google.com' title='title'>Link with title</a> <a href='http://google.com'>@not-an-email</a><br />
-<br />
+<p>this text should not interfere with the above</p>
+<p>soft return</p>
+<p><b>Bold</b> <em>Italic</em> <strike>Strikethrough</strike></p>
+<p><a href='https://google.com'>Link</a>  <a href='https://google.com' title='title'>Link with title</a> <a href='http://google.com'>@not-an-email</a></p>
 <img alt='Image' src='https://google.com'/>  <img alt='Image with title' src='https://google.com' title='title'/>
-<br />
-<img src=\\"https://google.com\\" alt=\\"alt\\" title=\\"title\\" />
-<br />
+
+<img src="https://google.com" alt="alt" title="title" />
+
 <div>
 <p>
-Most html is left alone, so long as lines end with a tag or '$'.&npsp;
-Otherwise, the parser will inject <br/>s.
+Most html is left alone.
 </p>
 </div>
-<br />
-Puting a $ at the end of the line prevents a <br/> from being added
-<br />
-<a href='mailto:email@email.com'>email@email.com</a> notemail@emailcom <a href='mailto:email@email.com'>email@email.com</a><br />
+
+<p><a href='mailto:email@email.com'>email@email.com</a> notemail@emailcom <a href='mailto:email@email.com'>email@email.com</a></p>
 <hr/>
 <hr/>
 <hr/>
 <hr/>
-this text should not interfere with the above<br />
-<br />
+<p>this text should not interfere with the above</p>
 <blockquote>Blockquote</blockquote>
-<br />
-<pre><code style=\\"padding-top:0\\">
+
+<pre><code style="padding-top:0">
 // unknown
 multi
 \`line\`
 generic code
 </code></pre>
-<br />
-<pre><code class=\\"language-bash\\" style=\\"padding-top:0\\">
+
+<pre><code class="language-bash" style="padding-top:0">
 # bash
 multi
 \`line\`
 bash code
 </code></pre>
-<br />
-Here is <code>Inline Code</code>.<br />
-<br />
-Reference links <a href=\\"/link1\\">link1-text</a> <a href=\\"/link2\\" title='title2'>link2-text</a> <a href=\\"/link3\\" title=\\"title3\\">link3-text</a><br /><br />
+
+<p>Here is <code>Inline Code</code>.</p>
+<p>Reference links <a href="/link1">link1-text</a> <a href="/link2" title='title2'>link2-text</a> <a href="/link3" title="title3">link3-text</a></p>
 <ul>
 <li>li1</li>
 <li>li2</li>
 <li>li3</li>
 </ul>
-<br />
 <ol>
 <li>li4</li>
 <li>li5</li>
 <li>li6</li>
 </ol>
-<br />
-&lt;script&gt;This script tag is HTML encoded for security&lt;/script&gt;<br />
-&lt;style&gt;This style tag is HTML encoded for security&lt;/style&gt;<br />
+
+<p>&lt;script&gt;This script tag is HTML encoded for security&lt;/script&gt;</p>
+<p>&lt;style&gt;This style tag is HTML encoded for security&lt;/style&gt;</p>
 "
 `;

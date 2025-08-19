@@ -9,9 +9,6 @@
     "preview": "vite preview",
     "start": "vite"
   },
-  "engines": {
-    "node": "18"
-  },
   "postcss": {
     "map": true,
     "plugins": {

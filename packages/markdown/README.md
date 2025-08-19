@@ -32,6 +32,8 @@ Supported Syntax
 - code blocks
 - Most HTML is passed through without modification, except scripts/style which will be HTML encoded
 
+Common alternatives: snarkdown, markdown-it, marked
+
 ```typescript
 import {parse} from '@slimr/markdown'
 

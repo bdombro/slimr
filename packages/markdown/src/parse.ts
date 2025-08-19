@@ -15,6 +15,8 @@
  * - code blocks
  * - Most HTML is passed through without modification, except scripts/style which will be HTML encoded
  *
+ * Common alternatives: snarkdown, markdown-it, marked
+ *
  * @param md
  * A string containing valid markdown text
  *
@@ -34,10 +36,11 @@
 export const parse = (md: string) => {
   const trashgc: string[] = []
 
-  md = md
-    .trim()
-    .replace(/\n[ \t]+/gm, '\n') // trim indentation
-    .replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;') // Encode any script and style tags
+  md = md.trim().replace(/\n[ \t]+/gm, '\n') // trim indentation
+
+  if (!md) return ''
+
+  md = md.replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;') // Encode any script and style tags
 
   // an array to store the intermediate placeholders
   // Create keys and add chunks to it that we don't want mangle
@@ -55,7 +58,7 @@ export const parse = (md: string) => {
       if (code.includes('\n')) {
         code = `<pre>${code}</pre>`
       }
-      const key = 'codechunk' + placeholders.length + '$'
+      const key = 'ỻ' + placeholders.length
       placeholders.push([key, code])
       return key
     })
@@ -74,7 +77,7 @@ export const parse = (md: string) => {
     // if a line ends with a space, replace with &nbsp;
     .replace(/ $/gm, '&nbsp;')
     .replace(/\*\*(.*?)\*\*/gm, '<b>$1</b>') // bold
-    .replace(/\*(.*?)\*/gm, '<i>$1</i>') // italic
+    .replace(/\*(.*?)\*/gm, '<em>$1</em>') // italic
     .replace(/~~(.*?)~~/gm, '<strike>$1</strike>') // deleted text
     // images
     .replace(/!\[(.*?)\]\(([^ ]*)\)/gm, "<img alt='$1' src='$2'/>")
@@ -109,11 +112,11 @@ export const parse = (md: string) => {
       } else return _
     })
     // unordered lists i.e. - listitem
-    .replace(/\n\n+(- (.*))$/gm, '\n\n<ul>\n$1')
+    .replace(/\n\n+(- (.*))$/gm, '\n<ul>\n$1')
     .replace(/^(- (.*))\n\n/gm, '$1\n</ul>\n\n')
     .replace(/^- (.*)$/gm, '<li>$1</li>')
     // ordered lists i.e. 1. listitem
-    .replace(/\n\n+(\d\. (.*))$/gm, '\n\n<ol>\n$1')
+    .replace(/\n\n+(\d\. (.*))$/gm, '\n<ol>\n$1')
     .replace(/^(\d\. (.*))\n\n/gm, '$1\n</ol>\n\n')
     .replace(/^\d\. (.*)$/gm, '<li>$1</li>')
 
@@ -122,21 +125,18 @@ export const parse = (md: string) => {
     md = md.replace(s, '')
   }
 
+  if (!md.endsWith('\n')) {
+    md += '\n'
+  }
+
   md = md
-    // Add breaks
-    .replace(/\n\n/gm, '\n<br />\n')
-    .replace(/([^>$])$/gm, '$1<br />')
-    .replace(/(<\/([abi]|strike)>)$/gm, '$1<br />')
-    // Remove excessive breaks in a row
-    .replace(/\n<br \/>(\n?<br \/>)+/gm, '<br />')
+    .replace(/([\w '"])\n([\w '"])/gm, '$1 $2') // replace newlines between words with a space
+    .replace(/^((\w|'|"|&|<b>|<s>|<a>|<a\s|<strong>|<strike>|<i>)[^\n]+)\n$/gm, '<p>$1</p>')
 
   // Add placeholders back
   for (const [key, value] of placeholders) {
     md = md.replace(key, value)
   }
-
-  // Remove the no-newline character $ from the end lines
-  md = md.replace(/\$$/gm, '')
 
   md = '\n' + md.trim() + '\n'
 
