@@ -34,17 +34,22 @@
  * ```
  */
 export const parse = (md: string) => {
+  // an array to store the intermediate placeholders
+  // Create keys and add chunks to it that we don't want mangle
+  const placeholders: [key: string, value: string][] = []
+  // a temporary array to store reference links that we want to trash collect later
   const trashgc: string[] = []
 
   md = md.trim().replace(/\n[ \t]+/gm, '\n') // trim indentation
 
   if (!md) return ''
 
+  if (!md.endsWith('\n')) {
+    md += '\n'
+  }
+
   md = md.replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;') // Encode any script and style tags
 
-  // an array to store the intermediate placeholders
-  // Create keys and add chunks to it that we don't want mangle
-  const placeholders: [key: string, value: string][] = []
 
   // code blocks i.e. ```code```
   // transpile and remove before others to prevent interference
@@ -77,7 +82,7 @@ export const parse = (md: string) => {
     // if a line ends with a space, replace with &nbsp;
     .replace(/ $/gm, '&nbsp;')
     .replace(/\*\*(.*?)\*\*/gm, '<b>$1</b>') // bold
-    .replace(/\*(.*?)\*/gm, '<em>$1</em>') // italic
+    .replace(/\*(.*?)\*/gm, '<i>$1</i>') // italic
     .replace(/~~(.*?)~~/gm, '<strike>$1</strike>') // deleted text
     // images
     .replace(/!\[(.*?)\]\(([^ ]*)\)/gm, "<img alt='$1' src='$2'/>")
@@ -125,10 +130,6 @@ export const parse = (md: string) => {
     md = md.replace(s, '')
   }
 
-  if (!md.endsWith('\n')) {
-    md += '\n'
-  }
-
   md = md
     .replace(/([\w '"])\n([\w '"])/gm, '$1 $2') // replace newlines between words with a space
     .replace(/^((\w|'|"|&|<b>|<s>|<a>|<a\s|<strong>|<strike>|<i>)[^\n]+)\n$/gm, '<p>$1</p>')
@@ -137,8 +138,6 @@ export const parse = (md: string) => {
   for (const [key, value] of placeholders) {
     md = md.replace(key, value)
   }
-
-  md = '\n' + md.trim() + '\n'
 
   return md
 }

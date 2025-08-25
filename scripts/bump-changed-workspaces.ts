@@ -47,46 +47,38 @@ export async function bumpChangedWorkspaces({
   reset?: boolean
 } = {}) {
   console.log('VERSION-BUMP:start')
+  // console.debug(JSON.stringify({exclude, publish, reset}))
 
   if (publish) {
     const user = (await process.spawn('npm whoami')).trim()
     if (!user) {
-      console.log('Must be logged in to npm to publish')
-      console.log('VERSION-BUMP:end')
-      Deno.exit(1)
+      throw new Error('Must be logged in to npm to publish')
     }
+    // console.debug(`Logged in to npm as ${user}`)
   }
 
   for (const workspace of Object.values(workspaces)) {
-    if (exclude && exclude.some(e => workspace.name.includes(e))) {
-      workspace.skip = true
-    }
+    workspace.skip = exclude?.some(e => workspace.name.includes(e)) ?? false
   }
+  
   for (const workspace of Object.values(workspaces)) {
     if (workspace.staged || reset) {
       await bumpVersion(workspace)
     }
   }
 
+  const bumped = Object.values(workspaces).filter(w => w.bumped)
+
+  console.log('VERSION-BUMP:result: ' + bumped.length ? bumped.map(w => `${w.name}@${w.config.version}`).join(', ') : 'No packages bumped')
+
   if (publish) {
+    console.log(`VERSION-BUMP:publish`)
     await Promise.all(
-      Object.values(workspaces)
-        .filter(w => w.bumped)
-        .map(async w => console.log(await process.spawn('npm publish', w.path)))
+      bumped.map(async w => console.log(
+        await process.spawn('npm publish', w.path))
+      )
     )
   }
-
-  const bumped = Object.values(workspaces)
-    .filter(w => w.bumped)
-    .map(w => ({name: w.name, path: w.path, version: w.config.version}))
-
-  if (!bumped.length && import.meta.main) {
-    console.log('No packages bumped')
-    console.log('VERSION-BUMP:end')
-    Deno.exit(1)
-  }
-
-  console.log('Bump Result: ' + bumped.map(w => `${w.name}@${w.version}`).join(', '))
 
   console.log('VERSION-BUMP:end')
   return bumped
