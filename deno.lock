@@ -150,7 +150,7 @@
         "packageJson": {
           "dependencies": [
             "npm:@slimr/forms@^5.0.6",
-            "npm:@slimr/markdown@^2.1.41",
+            "npm:@slimr/markdown@^2.1.43",
             "npm:@slimr/router@^2.1.55",
             "npm:@slimr/styled@^2.1.49",
             "npm:@slimr/swr@^2.1.37",

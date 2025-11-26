@@ -18,8 +18,11 @@ Alt-H2
 -------------
 this text should not interfere with the above
 
-soft
-return
+this line will combine
+with this line + a space in between
+
+this line ends with two spaces, so will combine  
+with this line with a line break
 
 **Bold** *Italic* ~~Strikethrough~~
 

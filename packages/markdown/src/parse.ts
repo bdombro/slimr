@@ -69,6 +69,7 @@ export const parse = (md: string) => {
     })
 
   md = md
+    .replace(/ {2}\n/g, '<br/>') // line breaks (two spaces at end of line)
     .replace(/\n\n(\*\*\*+|---*|___*)$/gm, '\n<hr/>') // Horizontal rule/lines, i.e. *** --- ___
     .replace(/^###### (.*$)(\n*)/gm, '<h6>$1</h6>\n')
     .replace(/^##### (.*$)(\n*)/gm, '<h5>$1</h5>\n')
