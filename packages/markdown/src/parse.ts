@@ -44,11 +44,12 @@ export const parse = (md: string) => {
 
   if (!md) return ''
 
-  if (!md.endsWith('\n')) {
+  while (!md.endsWith('\n\n')) {
     md += '\n'
   }
 
-  md = md.replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;') // Encode any script and style tags
+  // Encode any script and style tags
+  md = md.replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;')
 
   // code blocks i.e. ```code```
   // transpile and remove before others to prevent interference
@@ -67,24 +68,39 @@ export const parse = (md: string) => {
       return key
     })
 
+  // Hard line breaks (two spaces at end of line)
+  // - concats two lines with a <br/>
+  // - must come before handlers that wrap their children
+  md = md.replace(/ {2}\n/g, '<br/>')
+
+  // if a line ends with a space, replace with &nbsp;
+  // - must come before handlers that wrap their children
+  md = md.replace(/ $/gm, '&nbsp;')
+
+  // Horizontal rule/lines (i.e. *** --- ___) -- must come before other syntax that uses * - _ to prevent interference
+  md = md.replace(/\n\n(\*\*\*+|---*|___*)$/gm, '\n<hr/>\n')
+
+  // Headings
   md = md
-    .replace(/ {2}\n/g, '<br/>') // line breaks (two spaces at end of line)
-    .replace(/\n\n(\*\*\*+|---*|___*)$/gm, '\n<hr/>') // Horizontal rule/lines, i.e. *** --- ___
-    .replace(/^###### (.*$)(\n*)/gm, '<h6>$1</h6>\n')
-    .replace(/^##### (.*$)(\n*)/gm, '<h5>$1</h5>\n')
-    .replace(/^#### (.*$)(\n*)/gm, '<h4>$1</h4>\n')
-    .replace(/^### (.*$)(\n*)/gm, '<h3>$1</h3>\n')
-    .replace(/^## (.*$)(\n*)/gm, '<h2>$1</h2>\n')
-    .replace(/^# (.*$)(\n*)/gm, '<h1>$1</h1>\n')
-    .replace(/^(.*$)\n===+\n\n*/gm, '<h1>$1</h1>\n') // alt h1
-    .replace(/^(.*$)\n---+\n\n*/gm, '<h2>$1</h2>\n') // alt h2
-    .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>') // blockquotes i.e. '> quote'
-    // if a line ends with a space, replace with &nbsp;
-    .replace(/ $/gm, '&nbsp;')
+    .replace(/^###### (.*$)(\n*)/gm, '<h6>$1</h6>\n\n')
+    .replace(/^##### (.*$)(\n*)/gm, '<h5>$1</h5>\n\n')
+    .replace(/^#### (.*$)(\n*)/gm, '<h4>$1</h4>\n\n')
+    .replace(/^### (.*$)(\n*)/gm, '<h3>$1</h3>\n\n')
+    .replace(/^## (.*$)(\n*)/gm, '<h2>$1</h2>\n\n')
+    .replace(/^# (.*$)(\n*)/gm, '<h1>$1</h1>\n\n')
+    .replace(/^(.*$)\n===+\n\n*/gm, '<h1>$1</h1>\n\n') // alt h1
+    .replace(/^(.*$)\n---+\n\n*/gm, '<h2>$1</h2>\n\n') // alt h2
+    // blockquotes i.e. '> quote'
+    .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
+
+  // Font styles
+  md = md
     .replace(/\*\*(.*?)\*\*/gm, '<b>$1</b>') // bold
     .replace(/\*(.*?)\*/gm, '<i>$1</i>') // italic
     .replace(/~~(.*?)~~/gm, '<strike>$1</strike>') // deleted text
-    // images
+
+  // images
+  md = md
     .replace(/!\[(.*?)\]\(([^ ]*)\)/gm, "<img alt='$1' src='$2'/>")
     .replace(
       /!\[(.*?)\]\(([^ ]*)( [('"][^)'"]+[)'"])*\)/gm,
@@ -96,12 +112,14 @@ export const parse = (md: string) => {
 
   // links
   md = md
+    // simple links
     .replace(
       /\[(.*?)\]\(([^ ]*)( [('"][^)'"]+[)'"])*\)/gm,
       (_, ...args) =>
         `<a href='${args[1]}'${args[2] ? ` title='${args[2].slice(2, -1)}'` : ''}>${args[0]}</a>`
     )
-    .replace(/([^ \n]+@[^. \n]+\.[^ \n]+)/gm, "<a href='mailto:$1'>$1</a>") // emails
+    // emails
+    .replace(/([^ \n]+@[^. \n]+\.[^ \n]+)/gm, "<a href='mailto:$1'>$1</a>")
     // reference links
     .replace(/\[([^\]]+)\]\[([^\]]+)\]/gm, (_, ...args) => {
       const refValue = new RegExp('\\[' + args[1] + '\\]: ([^ \n]+)( [^\n]*)?\n', 'gim').exec(md)
@@ -119,18 +137,25 @@ export const parse = (md: string) => {
       } else return _
     })
 
-    // lists
-    md = md
-      // unordered lists i.e. - listitem
-      .replace(/\n\n+([-+*] (.*))$/gm, '\n<ul>\n$1')
-      .replace(/^([-+*] (.*))\n\n/gm, '$1\n</ul>\n\n')
-      .replace(/^[-+*] (.*)$/gm, '<li>$1</li>')
-      // unescape escaped list markers at start of lines which indicate non-lists
-      .replace(/\\([-+*]) /g, '$1 ')
-      // ordered lists i.e. 1. listitem
-      .replace(/\n\n+(\d\. (.*))$/gm, '\n<ol>\n$1')
-      .replace(/^(\d\. (.*))\n\n/gm, '$1\n</ol>\n\n')
-      .replace(/^\d\. (.*)$/gm, '<li>$1</li>')
+  // Unordered lists
+  // add a blank line between list items if those items are using different list symbols -- to prevent interference
+  md = md
+    .replace(/(\n[-].+)(\n[+*])/gm, '$1\n$2')
+    .replace(/(\n[*].+)(\n[-+])/gm, '$1\n$2')
+    .replace(/(\n[+].+)(\n[-*])/gm, '$1\n$2')
+  // convert to html
+  md = md.replace(/(^|\n\n)((?:^[-+*] .+(?:\n|$))+)/gm, function (_, prefix, listBlock) {
+    const items = listBlock.replace(/^[-+*] (.*)$/gm, '<li>$1</li>')
+    return prefix + '<ul>\n' + items + '</ul>\n'
+  })
+  // unescape escaped list item markers
+  md = md.replace(/\\([-+*])/g, '$1')
+
+  // Ordered lists
+  md = md.replace(/(^|\n\n)((?:^\d+\. .+(?:\n|$))+)/gm, function (_, prefix, listBlock) {
+    const items = listBlock.replace(/^\d+\. (.*)$/gm, '<li>$1</li>')
+    return prefix + '<ol>\n' + items + '</ol>\n'
+  })
 
   // Trash collect
   for (const s of trashgc) {
@@ -138,8 +163,17 @@ export const parse = (md: string) => {
   }
 
   md = md
-    .replace(/([\w '"])\n([\w '"])/gm, '$1 $2') // replace newlines between words with a space
-    .replace(/^(([^<\nỻ]|<b>|<s>|<a>|<a\s|<strong>|<strike>|<i>)[^\n]+)\n$/gm, '<p>$1</p>')
+    // wrap blocks which are not full width in <p> tags
+    .split('\n\n')
+    .map(block => {
+      // if the block starts with any of these tags, return as is
+      if (!block.trim() || /^(ỻ|<blockquote|<div|<h|<ul|<ol|<li|<img)/.test(block.trim())) {
+        return block
+      } else {
+        return `<p>${block}</p>`
+      }
+    })
+    .join('\n\n')
 
   // Add placeholders back
   for (const [key, value] of placeholders) {

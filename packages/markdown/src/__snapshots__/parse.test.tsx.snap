@@ -2,20 +2,36 @@
 
 exports[`parses correctly 1`] = `
 "<h1>H1</h1>
+
 <h2>H2</h2>
+
 <h3>H3</h3>
+
 <h4>H4</h4>
+
 <h5>H5</h5>
+
 <h6>H6</h6>
+
 <p>this text should not interfere with the above</p>
 
+
 <h1>Alt-H1</h1>
+
 <h2>Alt-H2</h2>
+
 <p>this text should not interfere with the above</p>
-<p>this line will combine with this line + a space in between</p>
+
+<p>this line will combine
+with this line*
+and this line + a space in between</p>
+
 <p>this line ends with two spaces, so will combine<br/>with this line with a line break</p>
+
 <p><b>Bold</b> <i>Italic</i> <strike>Strikethrough</strike></p>
+
 <p><a href='https://google.com'>Link</a>  <a href='https://google.com' title='title'>Link with title</a> <a href='http://google.com'>@not-an-email</a></p>
+
 <img alt='Image' src='https://google.com'/>  <img alt='Image with title' src='https://google.com' title='title'/>
 
 <img src="https://google.com" alt="alt" title="title" />
@@ -27,11 +43,17 @@ Most html is left alone.
 </div>
 
 <p><a href='mailto:email@email.com'>email@email.com</a> notemail@emailcom <a href='mailto:email@email.com'>email@email.com</a></p>
+
 <hr/>
+
 <hr/>
+
 <hr/>
+
 <hr/>
+
 <p>this text should not interfere with the above</p>
+
 <blockquote>Blockquote</blockquote>
 
 <pre><code style="padding-top:0">
@@ -49,21 +71,51 @@ bash code
 </code></pre>
 
 <p>Here is <code>Inline Code</code>.</p>
+
 <p>Reference links <a href="/link1">link1-text</a> <a href="/link2" title='title2'>link2-text</a> <a href="/link3" title="title3">link3-text</a></p>
+
+
 <ul>
-<li>li1</li>
-<li>li2</li>
-<li>li3</li>
+<li>ul1li1</li>
+<li>ul1li2</li>
+<li>ul1li3</li>
 </ul>
+
+<ul>
+<li>ul2li1</li>
+<li>ul2li2</li>
+</ul>
+
+<ul>
+<li>ul3li1</li>
+<li>ul3li2</li>
+</ul>
+
+<ul>
+<li>ul4li1</li>
+</ul>
+
+<ul>
+<li>ul5li1</li>
+</ul>
+
+<ul>
+<li>ul6li1</li>
+</ul>
+
 <ol>
-<li>li4</li>
-<li>li5</li>
-<li>li6</li>
+<li>olli1</li>
+<li>olli2</li>
+<li>olli3</li>
 </ol>
 
-<p>- a line starting with an escaped list symbol should be unescaped and interpretted as a non-list</p>
-<p>a line with an inner escaped list symbol (\\-) should not be unescaped</p>
+<p>-+* escaped list symbols should be unescaped and interpretted as a non-list symbols</p>
+
 <p>$ lines starting with a non-word symbol should be paragraphs</p>
+
 <p>&lt;script&gt;This script tag is HTML encoded for security&lt;/script&gt;</p>
-<p>&lt;style&gt;This style tag is HTML encoded for security&lt;/style&gt;</p>"
+
+<p>&lt;style&gt;This style tag is HTML encoded for security&lt;/style&gt;</p>
+
+"
 `;

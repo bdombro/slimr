@@ -19,7 +19,8 @@ Alt-H2
 this text should not interfere with the above
 
 this line will combine
-with this line + a space in between
+with this line*
+and this line + a space in between
 
 this line ends with two spaces, so will combine  
 with this line with a line break
@@ -74,17 +75,25 @@ Reference links [link1-text][link1] [link2-text][link2] [link3-text][link3]
 [link2]: /link2 'title2'
 [link3]: /link3 (title3)
 
-- li1
-- li2
-- li3
+- ul1li1
+- ul1li2
+- ul1li3
 
-1. li4
-2. li5
-3. li6
+* ul2li1
+* ul2li2
 
-\\- a line starting with an escaped list symbol should be unescaped and interpretted as a non-list
++ ul3li1
++ ul3li2
 
-a line with an inner escaped list symbol (\\-) should not be unescaped
+- ul4li1
++ ul5li1
+* ul6li1
+
+1. olli1
+2. olli2
+3. olli3
+
+\\-\\+\\* escaped list symbols should be unescaped and interpretted as a non-list symbols
 
 $ lines starting with a non-word symbol should be paragraphs
 
