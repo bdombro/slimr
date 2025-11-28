@@ -60,7 +60,7 @@ export async function bumpChangedWorkspaces({
   for (const workspace of Object.values(workspaces)) {
     workspace.skip = exclude?.some(e => workspace.name.includes(e)) ?? false
   }
-  
+
   for (const workspace of Object.values(workspaces)) {
     if (workspace.staged || reset) {
       await bumpVersion(workspace)
@@ -69,14 +69,16 @@ export async function bumpChangedWorkspaces({
 
   const bumped = Object.values(workspaces).filter(w => w.bumped)
 
-  console.log('VERSION-BUMP:result: ' + bumped.length ? bumped.map(w => `${w.name}@${w.config.version}`).join(', ') : 'No packages bumped')
+  console.log(
+    'VERSION-BUMP:result: ' + bumped.length
+      ? bumped.map(w => `${w.name}@${w.config.version}`).join(', ')
+      : 'No packages bumped'
+  )
 
   if (publish) {
     console.log(`VERSION-BUMP:publish`)
     await Promise.all(
-      bumped.map(async w => console.log(
-        await process.spawn('npm publish', w.path))
-      )
+      bumped.map(async w => console.log(await process.spawn('npm publish', w.path)))
     )
   }
 

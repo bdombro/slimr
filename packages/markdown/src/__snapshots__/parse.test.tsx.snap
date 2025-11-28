@@ -61,6 +61,9 @@ bash code
 <li>li6</li>
 </ol>
 
+<p>- a line starting with an escaped list symbol should be unescaped and interpretted as a non-list</p>
+<p>a line with an inner escaped list symbol (\\-) should not be unescaped</p>
+<p>$ lines starting with a non-word symbol should be paragraphs</p>
 <p>&lt;script&gt;This script tag is HTML encoded for security&lt;/script&gt;</p>
 <p>&lt;style&gt;This style tag is HTML encoded for security&lt;/style&gt;</p>"
 `;

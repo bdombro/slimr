@@ -82,6 +82,12 @@ Reference links [link1-text][link1] [link2-text][link2] [link3-text][link3]
 2. li5
 3. li6
 
+\\- a line starting with an escaped list symbol should be unescaped and interpretted as a non-list
+
+a line with an inner escaped list symbol (\\-) should not be unescaped
+
+$ lines starting with a non-word symbol should be paragraphs
+
 <script>This script tag is HTML encoded for security</script>
 
 <style>This style tag is HTML encoded for security</style>

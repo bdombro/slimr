@@ -50,7 +50,6 @@ export const parse = (md: string) => {
 
   md = md.replace(/<(\/)?(script|style)>/gim, '&lt;$1$2&gt;') // Encode any script and style tags
 
-
   // code blocks i.e. ```code```
   // transpile and remove before others to prevent interference
   md = md
@@ -94,7 +93,9 @@ export const parse = (md: string) => {
           args[2] ? ` title='${args[2].slice(2, -1)}'` : ''
         }/>`
     )
-    // links
+
+  // links
+  md = md
     .replace(
       /\[(.*?)\]\(([^ ]*)( [('"][^)'"]+[)'"])*\)/gm,
       (_, ...args) =>
@@ -117,14 +118,19 @@ export const parse = (md: string) => {
         )
       } else return _
     })
-    // unordered lists i.e. - listitem
-    .replace(/\n\n+(- (.*))$/gm, '\n<ul>\n$1')
-    .replace(/^(- (.*))\n\n/gm, '$1\n</ul>\n\n')
-    .replace(/^- (.*)$/gm, '<li>$1</li>')
-    // ordered lists i.e. 1. listitem
-    .replace(/\n\n+(\d\. (.*))$/gm, '\n<ol>\n$1')
-    .replace(/^(\d\. (.*))\n\n/gm, '$1\n</ol>\n\n')
-    .replace(/^\d\. (.*)$/gm, '<li>$1</li>')
+
+    // lists
+    md = md
+      // unordered lists i.e. - listitem
+      .replace(/\n\n+([-+*] (.*))$/gm, '\n<ul>\n$1')
+      .replace(/^([-+*] (.*))\n\n/gm, '$1\n</ul>\n\n')
+      .replace(/^[-+*] (.*)$/gm, '<li>$1</li>')
+      // unescape escaped list markers at start of lines which indicate non-lists
+      .replace(/\\([-+*]) /g, '$1 ')
+      // ordered lists i.e. 1. listitem
+      .replace(/\n\n+(\d\. (.*))$/gm, '\n<ol>\n$1')
+      .replace(/^(\d\. (.*))\n\n/gm, '$1\n</ol>\n\n')
+      .replace(/^\d\. (.*)$/gm, '<li>$1</li>')
 
   // Trash collect
   for (const s of trashgc) {
@@ -133,7 +139,7 @@ export const parse = (md: string) => {
 
   md = md
     .replace(/([\w '"])\n([\w '"])/gm, '$1 $2') // replace newlines between words with a space
-    .replace(/^((\w|'|"|&|<b>|<s>|<a>|<a\s|<strong>|<strike>|<i>)[^\n]+)\n$/gm, '<p>$1</p>')
+    .replace(/^(([^<\nỻ]|<b>|<s>|<a>|<a\s|<strong>|<strike>|<i>)[^\n]+)\n$/gm, '<p>$1</p>')
 
   // Add placeholders back
   for (const [key, value] of placeholders) {
