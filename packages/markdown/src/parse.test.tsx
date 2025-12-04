@@ -25,7 +25,7 @@ and this line + a space in between
 this line ends with two spaces, so will combine  
 with this line with a line break
 
-**Bold** *Italic* ~~Strikethrough~~
+**Bold** *Italic* ***Bold Italic*** ~~Strikethrough~~ ~~**Bold** in Strikethrough~~
 
 [Link](https://google.com)  [Link with title](https://google.com 'title') [@not-an-email](http://google.com)
 

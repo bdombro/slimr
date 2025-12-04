@@ -95,6 +95,7 @@ export const parse = (md: string) => {
 
   // Font styles
   md = md
+    .replace(/\*\*\*(.*?)\*\*\*/gm, '<b><i>$1</i></b>') // bold italic
     .replace(/\*\*(.*?)\*\*/gm, '<b>$1</b>') // bold
     .replace(/\*(.*?)\*/gm, '<i>$1</i>') // italic
     .replace(/~~(.*?)~~/gm, '<strike>$1</strike>') // deleted text

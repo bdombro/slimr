@@ -28,7 +28,7 @@ and this line + a space in between</p>
 
 <p>this line ends with two spaces, so will combine<br/>with this line with a line break</p>
 
-<p><b>Bold</b> <i>Italic</i> <strike>Strikethrough</strike></p>
+<p><b>Bold</b> <i>Italic</i> <b><i>Bold Italic</i></b> <strike>Strikethrough</strike> <strike><b>Bold</b> in Strikethrough</strike></p>
 
 <p><a href='https://google.com'>Link</a>  <a href='https://google.com' title='title'>Link with title</a> <a href='http://google.com'>@not-an-email</a></p>
 
