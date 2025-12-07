@@ -7,8 +7,8 @@ export interface UseSet2<T> extends Set<T> {
   _delete: Set<T>['delete']
   toggle(v: T): void
   reset(): void
-  _union(other: Set<T>): Set<T>
-  union(other: Set<T>): Set<T>
+  _union<U>(other: ReadonlySetLike<U>): Set<T | U>
+  union<U>(other: ReadonlySetLike<U>): Set<T | U>
 }
 
 /**
@@ -66,14 +66,14 @@ export function useSet2<T>(initial: Set<T> = new Set()) {
       return set
     }
 
-    set._union = (other: Set<T>) => {
-      for (const elem of other) {
+    set._union = <U>(other: ReadonlySetLike<U>): Set<T | U> => {
+      for (const elem of other as unknown as Set<T>) {
         set._add(elem)
       }
       return set
     }
 
-    set.union = (other: Set<T>) => {
+    set.union = <U>(other: ReadonlySetLike<U>): Set<T | U> => {
       set._union(other)
       rerender()
       return set

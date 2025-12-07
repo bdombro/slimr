@@ -93,7 +93,7 @@
         "npm:nodemon@^3.0.1",
         "npm:npm-run-all@^4.1.5",
         "npm:prettier@^3.0.3",
-        "npm:typescript@^5.2.2",
+        "npm:typescript@^5.9.3",
         "npm:vite@4",
         "npm:vitest@3.2.4"
       ]
@@ -150,7 +150,7 @@
         "packageJson": {
           "dependencies": [
             "npm:@slimr/forms@^5.0.6",
-            "npm:@slimr/markdown@^2.1.46",
+            "npm:@slimr/markdown@^2.1.47",
             "npm:@slimr/router@^2.1.55",
             "npm:@slimr/styled@^2.1.49",
             "npm:@slimr/swr@^2.1.37",
