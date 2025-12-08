@@ -14,45 +14,45 @@
 export {}
 
 declare global {
-  // interface StringConstructor {
-  //   /**
-  //    * Create a unique id string
-  //    */
-  //   uid(): string
-  // }
-  interface String {
-    copy(): string
+	// interface StringConstructor {
+	//   /**
+	//    * Create a unique id string
+	//    */
+	//   uid(): string
+	// }
+	interface String {
+		copy(): string
 
-    /**
-     * Checks if a string is in an array or object
-     */
-    isIn(arrOrObj: sany): boolean
-    /**
-     * Checks if a string is not in an array or object
-     */
-    isNotIn(arrOrObj: sany): boolean
-  }
+		/**
+		 * Checks if a string is in an array or object
+		 */
+		isIn(arrOrObj: sany): boolean
+		/**
+		 * Checks if a string is not in an array or object
+		 */
+		isNotIn(arrOrObj: sany): boolean
+	}
 }
 
 Object.defineProperties(String.prototype, {
-  copy: {
-    value: function () {
-      return this + ''
-    },
-    enumerable: false,
-  },
+	copy: {
+		value: function () {
+			return `${this}`
+		},
+		enumerable: false,
+	},
 
-  isIn: {
-    value: function (arrOrObj: sany) {
-      return Array.isArray(arrOrObj) ? arrOrObj.includes(this) : (this as string) in arrOrObj
-    },
-    enumerable: false,
-  },
+	isIn: {
+		value: function (arrOrObj: sany) {
+			return Array.isArray(arrOrObj) ? arrOrObj.includes(this) : (this as string) in arrOrObj
+		},
+		enumerable: false,
+	},
 
-  isNotIn: {
-    value: function (arrOrObj: sany) {
-      return !this.isIn(arrOrObj)
-    },
-    enumerable: false,
-  },
+	isNotIn: {
+		value: function (arrOrObj: sany) {
+			return !this.isIn(arrOrObj)
+		},
+		enumerable: false,
+	},
 })

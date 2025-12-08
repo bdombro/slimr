@@ -1,1 +1,1 @@
-export * from 'is-what'
+export * from "is-what"

@@ -14,41 +14,41 @@
 export {}
 
 declare global {
-  interface DateConstructor {
-    ONE_DAY_MS: number
-    /**
-     * Returns the epoch time adjusted for timezone and daylight savings.
-     * Inspired by https://stackoverflow.com/a/39584529/1202757
-     */
-    getUtcTime(date: Date | string | number): number
-    /**
-     * Calculates the number of days between two dates or date strings
-     */
-    daysBetween(date1: Date | string | number, date2: Date | string | number): number
-  }
-  interface Date {
-    copy(): Date
-  }
+	interface DateConstructor {
+		ONE_DAY_MS: number
+		/**
+		 * Returns the epoch time adjusted for timezone and daylight savings.
+		 * Inspired by https://stackoverflow.com/a/39584529/1202757
+		 */
+		getUtcTime(date: Date | string | number): number
+		/**
+		 * Calculates the number of days between two dates or date strings
+		 */
+		daysBetween(date1: Date | string | number, date2: Date | string | number): number
+	}
+	interface Date {
+		copy(): Date
+	}
 }
 
 Object.defineProperties(Date.prototype, {
-  copy: {
-    value: function () {
-      return new Date(this)
-    },
-    enumerable: false,
-  },
+	copy: {
+		value: function () {
+			return new Date(this)
+		},
+		enumerable: false,
+	},
 })
 
 Date.ONE_DAY_MS = 86400000
 
 Date.getUtcTime = (date: Date | string | number) => {
-  const result = new Date(date)
-  result.setMinutes(result.getMinutes() - result.getTimezoneOffset())
-  return result.getTime()
+	const result = new Date(date)
+	result.setMinutes(result.getMinutes() - result.getTimezoneOffset())
+	return result.getTime()
 }
 
 Date.daysBetween = (date1: Date | string | number, date2: Date | string | number) => {
-  const res = Math.floor((Date.getUtcTime(date1) - Date.getUtcTime(date2)) / Date.ONE_DAY_MS)
-  return res
+	const res = Math.floor((Date.getUtcTime(date1) - Date.getUtcTime(date2)) / Date.ONE_DAY_MS)
+	return res
 }

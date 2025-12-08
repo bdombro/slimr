@@ -5,12 +5,12 @@
  * @param attrs - The attributes to set on the element. Tip: use innerHTML to set content
  */
 export function appendElement(type: string, attrs: Record<string, string>) {
-  if (!('document' in globalThis)) return
-  // check if already added
-  const key = JSON.stringify({type, ...attrs})
-  if (appendElement.cache.has(key)) return
-  appendElement.cache.add(key)
-  document.head.appendChild(Object.assign(document.createElement(type), attrs))
+	if (!("document" in globalThis)) return
+	// check if already added
+	const key = JSON.stringify({ type, ...attrs })
+	if (appendElement.cache.has(key)) return
+	appendElement.cache.add(key)
+	document.head.appendChild(Object.assign(document.createElement(type), attrs))
 }
 appendElement.cache = new Set()
 
@@ -20,7 +20,7 @@ appendElement.cache = new Set()
  * @param attrs - The attributes, excluding rel, to set on the element
  */
 export function appendLink(attrs: Record<string, string>) {
-  appendElement('link', {...attrs, rel: 'stylesheet'})
+	appendElement("link", { ...attrs, rel: "stylesheet" })
 }
 
 /**
@@ -29,7 +29,7 @@ export function appendLink(attrs: Record<string, string>) {
  * @param attrs - The attributes, excluding rel, to set on the element. Tip: use innerHTML to set content
  */
 export function appendStyle(attrs: Record<string, string>) {
-  appendElement('style', attrs)
+	appendElement("style", attrs)
 }
 
 /**
@@ -38,5 +38,5 @@ export function appendStyle(attrs: Record<string, string>) {
  * @param attrs - The attributes to set on the element. Tip: use innerHTML to set content
  */
 export function appendScript(attrs: Record<string, string>) {
-  appendElement('script', attrs)
+	appendElement("script", attrs)
 }

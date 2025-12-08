@@ -1,46 +1,43 @@
-import * as r from 'react'
-
-// You must export something or TS gets confused.
-export {}
+import * as r from "react"
 
 declare global {
-  var cloneElement: typeof r.cloneElement
-  var createContext: typeof r.createContext
-  var createElement: typeof r.createElement
-  var createRef: typeof r.createRef
+	var cloneElement: typeof r.cloneElement
+	var createContext: typeof r.createContext
+	var createElement: typeof r.createElement
+	var createRef: typeof r.createRef
 
-  var F: typeof r.Fragment
-  var Fragment: typeof r.Fragment
+	var F: typeof r.Fragment
+	var Fragment: typeof r.Fragment
 
-  function memo<P extends object>(
-    Component: r.FunctionComponent<P>,
-    propsAreEqual?: (prevProps: Readonly<P>, nextProps: Readonly<P>) => boolean
-  ): r.NamedExoticComponent<P>
-  function memo<T extends r.ComponentType<sany>>(
-    Component: T,
-    propsAreEqual?: (
-      prevProps: Readonly<r.ComponentProps<T>>,
-      nextProps: Readonly<r.ComponentProps<T>>
-    ) => boolean
-  ): r.MemoExoticComponent<T>
+	function memo<P extends object>(
+		Component: r.FunctionComponent<P>,
+		propsAreEqual?: (prevProps: Readonly<P>, nextProps: Readonly<P>) => boolean,
+	): r.NamedExoticComponent<P>
+	function memo<T extends r.ComponentType<sany>>(
+		Component: T,
+		propsAreEqual?: (
+			prevProps: Readonly<r.ComponentProps<T>>,
+			nextProps: Readonly<r.ComponentProps<T>>,
+		) => boolean,
+	): r.MemoExoticComponent<T>
 
-  var Suspense: typeof r.Suspense
+	var Suspense: typeof r.Suspense
 
-  var useCallback: typeof r.useCallback
-  var useContext: typeof r.useContext
-  var useDebugValue: typeof r.useDebugValue
-  var useDeferredValue: typeof r.useDeferredValue
-  var useEffect: typeof r.useEffect
-  var useId: typeof r.useId
-  var useImperativeHandle: typeof r.useImperativeHandle
-  var useInsertionEffect: typeof r.useInsertionEffect
-  var useLayoutEffect: typeof r.useLayoutEffect
-  var useMemo: typeof r.useMemo
-  var useReducer: typeof r.useReducer
-  var useRef: typeof r.useRef
-  var useState: typeof r.useState
-  var useSyncExternalStore: typeof r.useSyncExternalStore
-  var useTransition: typeof r.useTransition
+	var useCallback: typeof r.useCallback
+	var useContext: typeof r.useContext
+	var useDebugValue: typeof r.useDebugValue
+	var useDeferredValue: typeof r.useDeferredValue
+	var useEffect: typeof r.useEffect
+	var useId: typeof r.useId
+	var useImperativeHandle: typeof r.useImperativeHandle
+	var useInsertionEffect: typeof r.useInsertionEffect
+	var useLayoutEffect: typeof r.useLayoutEffect
+	var useMemo: typeof r.useMemo
+	var useReducer: typeof r.useReducer
+	var useRef: typeof r.useRef
+	var useState: typeof r.useState
+	var useSyncExternalStore: typeof r.useSyncExternalStore
+	var useTransition: typeof r.useTransition
 }
 
 globalThis.cloneElement = r.cloneElement

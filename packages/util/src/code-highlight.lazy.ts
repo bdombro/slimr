@@ -8,5 +8,5 @@
  * to avoid loading highlight.js on pages that don't need it.
  */
 export function highlightCodeElements() {
-  return import('./code-highlight.js').then(m => m.highlightCodeElements())
+	return import("./code-highlight.js").then((m) => m.highlightCodeElements())
 }

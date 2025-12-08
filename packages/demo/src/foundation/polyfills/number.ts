@@ -14,16 +14,16 @@
 export {}
 
 declare global {
-  interface Number {
-    copy(): number
-  }
+	interface Number {
+		copy(): number
+	}
 }
 
 Object.defineProperties(Number.prototype, {
-  copy: {
-    value: function () {
-      return new Number(this)
-    },
-    enumerable: false,
-  },
+	copy: {
+		value: function () {
+			return new Number(this)
+		},
+		enumerable: false,
+	},
 })

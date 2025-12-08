@@ -1,126 +1,44 @@
 {
-  "name": "@slimr/monorepo",
-  "version": "0.0.0",
-  "type": "module",
-  "author": "Brian Dombrowski",
-  "license": "ISC",
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bdombro/slimr.git"
-  },
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "build": "deno run -A scripts/build.ts -a -e demo",
-    "build:changed": "deno run -A scripts/build.ts -c -e demo",
-    "clean": "npm run -ws clean",
-    "format": "prettier --cache -w .",
-    "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
-    "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-    "update": "npx npm-check-updates",
-    "precommit": "npm i && run-s build format lint 'test -- --run'",
-    "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "publish:all": "deno run -A scripts/publish.ts --bump --all --exclude demo",
-    "publish:dirty": "deno run -A scripts/publish.ts --bump --dirty --exclude demo",
-    "publish:demo": "deno run -A scripts/deploy-demo.ts",
-    "start": "npm run -w @slimr/demo start",
-    "test": "vitest"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^14.4.3",
-    "@trivago/prettier-plugin-sort-imports": "^4.2.0",
-    "@typescript-eslint/eslint-plugin": "^6.6.0",
-    "@typescript-eslint/parser": "^6.6.0",
-    "@vitejs/plugin-react": "^3.0.0",
-    "eslint": "^8.48.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-react": "^7.33.2",
-    "jsdom": "^21.1.0",
-    "nodemon": "^3.0.1",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^3.0.3",
-    "typescript": "^5.9.3",
-    "vite": "^4.0.0",
-    "vitest": "3.2.4"
-  },
-  "eslintConfig": {
-    "env": {
-      "browser": true,
-      "es2021": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "plugin:react/recommended",
-      "plugin:@typescript-eslint/recommended",
-      "prettier"
-    ],
-    "ignorePatterns": [
-      "cjs",
-      "esm",
-      "dist"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "ecmaVersion": "latest",
-      "sourceType": "module"
-    },
-    "plugins": [
-      "react",
-      "@typescript-eslint"
-    ],
-    "rules": {
-      "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/ban-types": "off",
-      "@typescript-eslint/no-empty-function": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/no-unused-vars": "error",
-      "no-prototype-builtins": "off",
-      "no-var": "off",
-      "react/button-has-type": "error",
-      "react/jsx-no-undef": "off",
-      "react/no-unescaped-entities": "off",
-      "react/prop-types": "off"
-    },
-    "overrides": [
-      {
-        "files": [
-          "packages/demo/src/**/*.tsx"
-        ],
-        "rules": {
-          "react/react-in-jsx-scope": "off"
-        }
-      }
-    ],
-    "settings": {
-      "react": {
-        "version": "18"
-      }
-    }
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "semi": false,
-    "singleQuote": true,
-    "arrowParens": "avoid",
-    "bracketSpacing": false,
-    "printWidth": 100,
-    "plugins": [
-      "@trivago/prettier-plugin-sort-imports"
-    ],
-    "importOrder": [
-      ".pcss$",
-      ".css$",
-      "polyfills",
-      "<THIRD_PARTY_MODULES>",
-      "~/(.*)$",
-      "^[./]"
-    ],
-    "importOrderSeparation": true,
-    "importOrderSortSpecifiers": true
-  }
+	"name": "@slimr/monorepo",
+	"version": "0.0.0",
+	"type": "module",
+	"author": "Brian Dombrowski",
+	"license": "ISC",
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/bdombro/slimr.git"
+	},
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"build": "deno run -A scripts/build.ts -a -e demo",
+		"build:changed": "deno run -A scripts/build.ts -c -e demo",
+		"clean": "npm run -ws clean",
+		"lint": "biome check",
+		"lint:fix": "biome check --write",
+		"lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
+		"update": "npx npm-check-updates",
+		"precommit": "npm i && run-s build lint 'test -- --run'",
+		"preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
+		"publish:all": "deno run -A scripts/publish.ts --bump --all --exclude demo",
+		"publish:dirty": "deno run -A scripts/publish.ts --bump --dirty --exclude demo",
+		"publish:demo": "deno run -A scripts/deploy-demo.ts",
+		"start": "npm run -w @slimr/demo start",
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.8",
+		"@testing-library/jest-dom": "^5.16.5",
+		"@testing-library/react": "^13.4.0",
+		"@testing-library/user-event": "^14.4.3",
+		"@vitejs/plugin-react": "^3.0.0",
+		"jsdom": "^21.1.0",
+		"nodemon": "^3.0.1",
+		"npm-run-all": "^4.1.5",
+		"typescript": "^5.9.3",
+		"vite": "^4.0.0",
+		"vitest": "3.2.4"
+	}
 }

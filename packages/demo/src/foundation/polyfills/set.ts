@@ -14,27 +14,27 @@
 export {}
 
 declare global {
-  interface Set<T> {
-    /** Return a deep clone */
-    copy(): Set<T>
-    /**
-     * Convert to a plain array
-     */
-    toArray(): T
-  }
+	interface Set<T> {
+		/** Return a deep clone */
+		copy(): Set<T>
+		/**
+		 * Convert to a plain array
+		 */
+		toArray(): T
+	}
 }
 
 Object.defineProperties(Set.prototype, {
-  copy: {
-    value: function () {
-      return Object.copy(this)
-    },
-    enumerable: false,
-  },
-  toArray: {
-    value: function () {
-      return Array.from(this)
-    },
-    enumerable: false,
-  },
+	copy: {
+		value: function () {
+			return Object.copy(this)
+		},
+		enumerable: false,
+	},
+	toArray: {
+		value: function () {
+			return Array.from(this)
+		},
+		enumerable: false,
+	},
 })

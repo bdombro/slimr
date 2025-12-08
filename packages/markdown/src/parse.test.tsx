@@ -1,7 +1,7 @@
-import {parse} from './parse.js'
+import { parse } from "./parse.js"
 
-it('parses correctly', () => {
-  const markdown = `
+it("parses correctly", () => {
+	const markdown = `
 # H1
 ## H2
 ### H3
@@ -101,7 +101,7 @@ $ lines starting with a non-word symbol should be paragraphs
 
 <style>This style tag is HTML encoded for security</style>
 `
-  const parsed = parse(markdown)
-  // console.log(parsed)
-  expect(parsed).toMatchSnapshot()
+	const parsed = parse(markdown)
+	// console.log(parsed)
+	expect(parsed).toMatchSnapshot()
 })

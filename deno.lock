@@ -79,20 +79,14 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@biomejs/biome@2.3.8",
         "npm:@testing-library/jest-dom@^5.16.5",
         "npm:@testing-library/react@^13.4.0",
         "npm:@testing-library/user-event@^14.4.3",
-        "npm:@trivago/prettier-plugin-sort-imports@^4.2.0",
-        "npm:@typescript-eslint/eslint-plugin@^6.6.0",
-        "npm:@typescript-eslint/parser@^6.6.0",
         "npm:@vitejs/plugin-react@3",
-        "npm:eslint-config-prettier@9",
-        "npm:eslint-plugin-react@^7.33.2",
-        "npm:eslint@^8.48.0",
         "npm:jsdom@^21.1.0",
         "npm:nodemon@^3.0.1",
         "npm:npm-run-all@^4.1.5",
-        "npm:prettier@^3.0.3",
         "npm:typescript@^5.9.3",
         "npm:vite@4",
         "npm:vitest@3.2.4"
@@ -102,7 +96,7 @@
       "packages/css": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/util@^3.2.68"
+            "npm:@slimr/util@^3.2.70"
           ]
         }
       },
@@ -127,7 +121,7 @@
       "packages/markdown": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/util@^3.2.68"
+            "npm:@slimr/util@^3.2.70"
           ]
         }
       },
@@ -141,12 +135,12 @@
       "packages/react": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/forms@^5.0.39",
-            "npm:@slimr/markdown@^2.1.81",
-            "npm:@slimr/router@^2.1.68",
-            "npm:@slimr/styled@^2.1.79",
-            "npm:@slimr/swr@^2.1.67",
-            "npm:@slimr/util@^3.2.68",
+            "npm:@slimr/forms@^5.0.41",
+            "npm:@slimr/markdown@^2.1.83",
+            "npm:@slimr/router@^2.1.70",
+            "npm:@slimr/styled@^2.1.81",
+            "npm:@slimr/swr@^2.1.69",
+            "npm:@slimr/util@^3.2.70",
             "npm:react-use@17"
           ]
         }
@@ -161,15 +155,15 @@
       "packages/styled": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/css@^2.1.74",
-            "npm:@slimr/util@^3.2.68"
+            "npm:@slimr/css@^2.1.76",
+            "npm:@slimr/util@^3.2.70"
           ]
         }
       },
       "packages/swr": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/util@^3.2.68"
+            "npm:@slimr/util@^3.2.70"
           ]
         }
       },

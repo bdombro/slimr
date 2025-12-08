@@ -1,5 +1,5 @@
-import {areNotEqualDeep} from '@slimr/util'
-import {useEffect, useMemo, useState} from 'react'
+import { areNotEqualDeep } from "@slimr/util"
+import { useEffect, useMemo, useState } from "react"
 
 type Fnc = (...args: any[]) => any
 
@@ -9,13 +9,13 @@ type Fnc = (...args: any[]) => any
  * so use it intensionally.
  */
 export function useDeepCompareMemo(callback: Fnc, varsToWatch: any[]) {
-  const [lastSeenProps, setLastSeenProps] = useState(varsToWatch)
-  useEffect(() => {
-    if (areNotEqualDeep(varsToWatch, lastSeenProps)) {
-      setLastSeenProps(varsToWatch)
-    }
-  }, varsToWatch)
-  return useMemo(callback, [lastSeenProps])
+	const [lastSeenProps, setLastSeenProps] = useState(varsToWatch)
+	useEffect(() => {
+		if (areNotEqualDeep(varsToWatch, lastSeenProps)) {
+			setLastSeenProps(varsToWatch)
+		}
+	}, varsToWatch)
+	return useMemo(callback, [lastSeenProps])
 }
 
 /**
@@ -24,11 +24,11 @@ export function useDeepCompareMemo(callback: Fnc, varsToWatch: any[]) {
  * less than useDeepCompareMemo, so use it intentionally.
  */
 export function useShallowCompareMemo(callback: Fnc, varsToWatch: any[]) {
-  const [lastSeenProps, setLastSeenProps] = useState(varsToWatch)
-  useEffect(() => {
-    if (areNotEqualDeep(varsToWatch, lastSeenProps)) {
-      setLastSeenProps(varsToWatch)
-    }
-  }, varsToWatch)
-  return useMemo(callback, [lastSeenProps])
+	const [lastSeenProps, setLastSeenProps] = useState(varsToWatch)
+	useEffect(() => {
+		if (areNotEqualDeep(varsToWatch, lastSeenProps)) {
+			setLastSeenProps(varsToWatch)
+		}
+	}, varsToWatch)
+	return useMemo(callback, [lastSeenProps])
 }

@@ -1,5 +1,5 @@
 /* eslint-disable require-jsdoc */
-import {stringify} from './stringify.js'
+import { stringify } from "./stringify.js"
 
 /**
  * Quickly converts any plain object, string, number, and more to a 32bit hash number or string
@@ -33,12 +33,12 @@ import {stringify} from './stringify.js'
 export function hash32(obj: any, asString?: false, seed?: number): number
 export function hash32(obj: any, asString: true, seed?: number): string
 export function hash32(obj: any, asString = false, seed = 0x811c9dc5) {
-  const str = typeof obj === 'string' ? obj : stringify(obj)
-  const hash = str
-    .split('')
-    .reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, seed)
-  if (asString) return hash.toString(36)
-  return hash
+	const str = typeof obj === "string" ? obj : stringify(obj)
+	const hash = str
+		.split("")
+		.reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, seed)
+	if (asString) return hash.toString(36)
+	return hash
 }
 
 /**
@@ -75,9 +75,9 @@ export function hash32(obj: any, asString = false, seed = 0x811c9dc5) {
 export function hash64(obj: any, asString?: false, seed?: number): number
 export function hash64(obj: any, asString: true, seed?: number): string
 export function hash64(obj: any, asString = false, seed = 0x811c9dc5) {
-  const str = typeof obj === 'string' ? obj : stringify(obj)
-  let hash = hash32(str, false, seed)
-  hash = hash + hash32(hash + str, false, seed)
-  if (asString) return hash.toString(36)
-  return hash
+	const str = typeof obj === "string" ? obj : stringify(obj)
+	let hash = hash32(str, false, seed)
+	hash = hash + hash32(hash + str, false, seed)
+	if (asString) return hash.toString(36)
+	return hash
 }

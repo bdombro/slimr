@@ -1,5 +1,5 @@
-import {diff} from 'deep-object-diff'
-import fde from 'fast-deep-equal'
+import { diff } from "deep-object-diff"
+import fde from "fast-deep-equal"
 
 /**
  * Checks if two values are deeply equal, and logs the diff to the console
@@ -9,9 +9,9 @@ import fde from 'fast-deep-equal'
  * @param b - The second value to compare.
  */
 export function areEqualDebug(a: any, b: any): boolean {
-  const equal = fde(a, b)
-  console.debug(equal ? '[]' : diff(a, b))
-  return equal
+	const equal = fde(a, b)
+	console.debug(equal ? "[]" : diff(a, b))
+	return equal
 }
 
 /**

@@ -17,61 +17,61 @@ export type FormValues = Record<string, FormValue>
  * @usage [Code Sandbox](https://codesandbox.io/s/form-to-json-y7cs3t?file=/src/App.tsx)
  */
 export function formToValues(formElement: HTMLFormElement): FormValues {
-  const reqBody: FormValues = {}
-  // formElement.elements is an HTMLFormElement special attribute that includes
-  // all of the form's inputs and textarea elements
-  const formElements = [...(formElement.elements as unknown as HTMLInputElement[])]
-  for (const e of formElements) {
-    if (!e.name) {
-      continue
-    }
+	const reqBody: FormValues = {}
+	// formElement.elements is an HTMLFormElement special attribute that includes
+	// all of the form's inputs and textarea elements
+	const formElements = [...(formElement.elements as unknown as HTMLInputElement[])]
+	for (const e of formElements) {
+		if (!e.name) {
+			continue
+		}
 
-    const isGroup = formElements.filter(e2 => e2.name === e.name).length > 1
-    if (isGroup && e.type !== 'radio' && !Array.isArray(reqBody[e.name])) {
-      reqBody[e.name] = []
-    }
+		const isGroup = formElements.filter((e2) => e2.name === e.name).length > 1
+		if (isGroup && e.type !== "radio" && !Array.isArray(reqBody[e.name])) {
+			reqBody[e.name] = []
+		}
 
-    switch (e.type) {
-      case 'checkbox':
-        if (isGroup) {
-          if (e.checked) {
-            // @ts-expect-error -- ts gets confused about being an array
-            reqBody[e.name].push(e.value)
-          }
-        } else {
-          reqBody[e.name] = e.checked && (e.value || true)
-        }
-        break
-      case 'radio':
-        reqBody[e.name] = reqBody[e.name] || (e.checked ? e.value : '')
-        break
-      case 'select-multiple':
-        reqBody[e.name] = Array.from((e as unknown as HTMLSelectElement).options)
-          .filter(o => o.selected)
-          .map(o => o.value)
-        break
-      default: {
-        let val: FormValue = e.value
-        if (e.type === 'number') {
-          val = Number(e.value)
-        }
-        /** Normalizes a phone number to intl +XYYYZZZAAAA */
-        if (e.type === 'tel') {
-          val = String(val)
-          if (val.startsWith('(')) {
-            val = '+1' + val.replace(/[^\d]/g, '')
-          }
-        }
-        if (isGroup) {
-          if (val !== '') {
-            // @ts-expect-error -- ts gets confused about being an array
-            reqBody[e.name].push(val)
-          }
-        } else {
-          reqBody[e.name] = val
-        }
-      }
-    }
-  }
-  return reqBody
+		switch (e.type) {
+			case "checkbox":
+				if (isGroup) {
+					if (e.checked) {
+						// @ts-expect-error -- ts gets confused about being an array
+						reqBody[e.name].push(e.value)
+					}
+				} else {
+					reqBody[e.name] = e.checked && (e.value || true)
+				}
+				break
+			case "radio":
+				reqBody[e.name] = reqBody[e.name] || (e.checked ? e.value : "")
+				break
+			case "select-multiple":
+				reqBody[e.name] = Array.from((e as unknown as HTMLSelectElement).options)
+					.filter((o) => o.selected)
+					.map((o) => o.value)
+				break
+			default: {
+				let val: FormValue = e.value
+				if (e.type === "number") {
+					val = Number(e.value)
+				}
+				/** Normalizes a phone number to intl +XYYYZZZAAAA */
+				if (e.type === "tel") {
+					val = String(val)
+					if (val.startsWith("(")) {
+						val = `+1${val.replace(/[^\d]/g, "")}`
+					}
+				}
+				if (isGroup) {
+					if (val !== "") {
+						// @ts-expect-error -- ts gets confused about being an array
+						reqBody[e.name].push(val)
+					}
+				} else {
+					reqBody[e.name] = val
+				}
+			}
+		}
+	}
+	return reqBody
 }

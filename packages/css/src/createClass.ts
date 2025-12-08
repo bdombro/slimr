@@ -1,7 +1,7 @@
-import {T2SProps, t2s} from '@slimr/util'
+import { type T2SProps, t2s } from "@slimr/util"
 
-import {addCss} from './addCss.js'
-import {expandShorthands} from './shorthandProps.js'
+import { addCss } from "./addCss.js"
+import { expandShorthands } from "./shorthandProps.js"
 
 /**
  * Joins class names and omits falsey props
@@ -18,7 +18,7 @@ import {expandShorthands} from './shorthandProps.js'
  * ```
  */
 export function classJoin(...classes: (string | 0 | null | undefined)[]) {
-  return classes.filter(c => c && typeof c === 'string').join(' ')
+	return classes.filter((c) => c && typeof c === "string").join(" ")
 }
 
 /**
@@ -43,50 +43,50 @@ export function classJoin(...classes: (string | 0 | null | undefined)[]) {
  * ...and the queue will be executed next javascript tick
  */
 export function createClass(...p: T2SProps) {
-  let css = t2s(...p)
-  if (!css) return ''
-  let className = createClass.history.get(css)
-  if (!className) {
-    className = 's' + createClass.count++
-    createClass.history.set(css, className)
+	let css = t2s(...p)
+	if (!css) return ""
+	let className = createClass.history.get(css)
+	if (!className) {
+		className = `s${createClass.count++}`
+		createClass.history.set(css, className)
 
-    css = deleteComments(css)
-    css = expandShorthands(css)
-    css = expandArrayValues(css)
-    const qs = findQueries(css)
+		css = deleteComments(css)
+		css = expandShorthands(css)
+		css = expandArrayValues(css)
+		const qs = findQueries(css)
 
-    for (const q of qs.reverse()) {
-      css = css.slice(0, q.start) + css.slice(q.end)
-    }
-    qs.reverse()
+		for (const q of qs.reverse()) {
+			css = css.slice(0, q.start) + css.slice(q.end)
+		}
+		qs.reverse()
 
-    css = `.${className}{\n${css}\n}\n`
-    css += qs
-      .map(q => {
-        if (q.query.startsWith('&')) {
-          return `.${className}${q.query.slice(1)}{\n${q.innerBody}\n}`
-        }
-        if (q.query.startsWith('@keyframes')) {
-          return q.outerBody
-        }
-        return `${q.query}{\n.${className}{${q.innerBody}\n}\n}`
-      })
-      .join('\n')
+		css = `.${className}{\n${css}\n}\n`
+		css += qs
+			.map((q) => {
+				if (q.query.startsWith("&")) {
+					return `.${className}${q.query.slice(1)}{\n${q.innerBody}\n}`
+				}
+				if (q.query.startsWith("@keyframes")) {
+					return q.outerBody
+				}
+				return `${q.query}{\n.${className}{${q.innerBody}\n}\n}`
+			})
+			.join("\n")
 
-    css = trimByLine(css) + '\n\n'
+		css = `${trimByLine(css)}\n\n`
 
-    addCss(css)
-  }
-  return className
+		addCss(css)
+	}
+	return className
 }
 /** Breakpoints like chakra */
-createClass.breakPoints = ['30em', '48em', '62em', '80em', '96em']
+createClass.breakPoints = ["30em", "48em", "62em", "80em", "96em"]
 createClass.count = 0
 createClass.history = new Map<string, string>()
 
 /** delete css comments **/
 function deleteComments(css: string) {
-  return css.replace(/{\/\*[\s\S]*?(?=\*\/})\*\/}/gm, '')
+	return css.replace(/{\/\*[\s\S]*?(?=\*\/})\*\/}/gm, "")
 }
 
 /**
@@ -95,82 +95,82 @@ function deleteComments(css: string) {
  * Inspired by https://chakra-ui.com/docs/styled-system/responsive-styles
  */
 function expandArrayValues(css: string) {
-  if (!css.includes('[')) return css
-  return css
-    .split('\n')
-    .map(l => {
-      // eslint-disable-next-line no-useless-escape
-      const [, prop, valArrayStr] = [...l.matchAll(/([A-Za-z\-]*):[ ]*\[([^\]]+)\]/g)]?.[0] ?? []
-      if (valArrayStr) {
-        return (
-          valArrayStr
-            // Replace commas inside css functions with a magic char (§) to prevent
-            // erroneous splitting
-            .replace(/\([^),]*,/g, m => m.replace(/,/g, '§'))
-            .replace(/\([^),]*,/g, m => m.replace(/,/g, '§'))
-            .replace(/\([^),]*,/g, m => m.replace(/,/g, '§'))
-            .split(',')
-            .map((val, i) => {
-              val = val.trim()
-              if (!val || val === 'null' || val === 'undefined') return ''
-              val = val.replace(/§/g, ',')
-              if (i === 0) {
-                return `${prop}: ${val};`
-              }
-              return `@media (min-width: ${createClass.breakPoints[i - 1]}) { ${prop}: ${val}; }`
-            })
-            .join('\n')
-        )
-      }
-      return l
-    })
-    .join('\n')
+	if (!css.includes("[")) return css
+	return css
+		.split("\n")
+		.map((l) => {
+			// eslint-disable-next-line no-useless-escape
+			const [, prop, valArrayStr] = [...l.matchAll(/([A-Za-z-]*):[ ]*\[([^\]]+)\]/g)]?.[0] ?? []
+			if (valArrayStr) {
+				return (
+					valArrayStr
+						// Replace commas inside css functions with a magic char (§) to prevent
+						// erroneous splitting
+						.replace(/\([^),]*,/g, (m) => m.replace(/,/g, "§"))
+						.replace(/\([^),]*,/g, (m) => m.replace(/,/g, "§"))
+						.replace(/\([^),]*,/g, (m) => m.replace(/,/g, "§"))
+						.split(",")
+						.map((val, i) => {
+							val = val.trim()
+							if (!val || val === "null" || val === "undefined") return ""
+							val = val.replace(/§/g, ",")
+							if (i === 0) {
+								return `${prop}: ${val};`
+							}
+							return `@media (min-width: ${createClass.breakPoints[i - 1]}) { ${prop}: ${val}; }`
+						})
+						.join("\n")
+				)
+			}
+			return l
+		})
+		.join("\n")
 }
 
 /** Find @keyframes, @media, @container queries in css **/
 function findQueries(css: string) {
-  const queries: {
-    start: number
-    end: number
-    query: string
-    outerBody: string
-    innerBody: string
-  }[] = []
-  for (const m of css.matchAll(/[@&]/gm)) {
-    let query = ''
-    let bodyStart = 0
-    let openCount = 0
-    for (let i = m.index!; i < css.length; i++) {
-      if (css[i] === '{') {
-        if (openCount === 0) {
-          query = css.slice(m.index, i).trim()
-          bodyStart = i + 1
-        }
-        openCount++
-      } else if (css[i] === '}') {
-        openCount--
-        if (openCount === 0) {
-          queries.push({
-            start: m.index!,
-            end: i + 1,
-            query,
-            outerBody: css.slice(m.index, i + 1),
-            innerBody: css.slice(bodyStart, i),
-          })
-          break
-        }
-      }
-    }
-    if (openCount !== 0) console.error(`${query} not closed: "${css}"`)
-  }
-  return queries
+	const queries: {
+		start: number
+		end: number
+		query: string
+		outerBody: string
+		innerBody: string
+	}[] = []
+	for (const m of css.matchAll(/[@&]/gm)) {
+		let query = ""
+		let bodyStart = 0
+		let openCount = 0
+		for (let i = m.index!; i < css.length; i++) {
+			if (css[i] === "{") {
+				if (openCount === 0) {
+					query = css.slice(m.index, i).trim()
+					bodyStart = i + 1
+				}
+				openCount++
+			} else if (css[i] === "}") {
+				openCount--
+				if (openCount === 0) {
+					queries.push({
+						start: m.index!,
+						end: i + 1,
+						query,
+						outerBody: css.slice(m.index, i + 1),
+						innerBody: css.slice(bodyStart, i),
+					})
+					break
+				}
+			}
+		}
+		if (openCount !== 0) console.error(`${query} not closed: "${css}"`)
+	}
+	return queries
 }
 
 /** Trims whitespace for every line */
 function trimByLine(css: string) {
-  return css
-    .split('\n')
-    .map(l => l.trim())
-    .filter(l => l)
-    .join('\n')
+	return css
+		.split("\n")
+		.map((l) => l.trim())
+		.filter((l) => l)
+		.join("\n")
 }

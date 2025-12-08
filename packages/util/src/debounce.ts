@@ -8,18 +8,18 @@
  * @slimr/util/memoize
  */
 export function debounce<T extends (...args: any) => any>(
-  fnc: T,
-  delay = 250
+	fnc: T,
+	delay = 250,
 ): (...args: Parameters<T>) => void {
-  let timeout: any
-  return (...args: Parameters<T>) => {
-    return new Promise(resolve => {
-      if (timeout) {
-        clearTimeout(timeout)
-      }
-      timeout = setTimeout(() => {
-        resolve(fnc(...(args as any)))
-      }, delay)
-    })
-  }
+	let timeout: any
+	return (...args: Parameters<T>) => {
+		return new Promise((resolve) => {
+			if (timeout) {
+				clearTimeout(timeout)
+			}
+			timeout = setTimeout(() => {
+				resolve(fnc(...(args as any)))
+			}, delay)
+		})
+	}
 }

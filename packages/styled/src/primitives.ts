@@ -1,4 +1,4 @@
-import {styled} from './styled.js'
+import { styled } from "./styled.js"
 
 /** A decorated HTML Element. See [npm](https://www.npmjs.com/package/@slimr/styled) for more info. */
 export const A = styled.a``

@@ -1,4 +1,4 @@
-import {customAlphabet} from 'nanoid'
+import { customAlphabet } from "nanoid"
 
 /**
  * Generate a random string of 12 characters, provided by [npm:nanoid](https://www.npmjs.com/package/nanoid).
@@ -11,6 +11,6 @@ import {customAlphabet} from 'nanoid'
  *```
  */
 export const createUid = customAlphabet(
-  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
-  12
+	"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+	12,
 )

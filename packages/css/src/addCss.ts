@@ -1,4 +1,4 @@
-import {appendStyle} from '@slimr/util'
+import { appendStyle } from "@slimr/util"
 
 /**
  * Injects css to the page head
@@ -19,16 +19,16 @@ import {appendStyle} from '@slimr/util'
  * // ...and the queue will be executed next javascript tick
  */
 export function addCss(css: string) {
-  addCss.que.add(css)
-  setTimeout(() => {
-    if (addCss.que.size) {
-      appendStyle({
-        id: `u${addCss.count++}`,
-        innerHTML: [...addCss.que].join('\n'),
-      })
-      addCss.que.clear()
-    }
-  }, 0)
+	addCss.que.add(css)
+	setTimeout(() => {
+		if (addCss.que.size) {
+			appendStyle({
+				id: `u${addCss.count++}`,
+				innerHTML: [...addCss.que].join("\n"),
+			})
+			addCss.que.clear()
+		}
+	}, 0)
 }
 addCss.que = new Set<string>()
 addCss.count = 0

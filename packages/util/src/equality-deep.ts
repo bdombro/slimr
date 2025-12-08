@@ -1,4 +1,4 @@
-import fde from 'fast-deep-equal'
+import fde from "fast-deep-equal"
 
 /**
  * Checks if two values are deeply equal.

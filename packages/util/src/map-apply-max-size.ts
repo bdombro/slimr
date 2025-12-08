@@ -1,10 +1,10 @@
 interface MapReturnType extends Map<any, any> {
-  /** The max size of the map */
-  max: number
-  /** The raw map setter */
-  _set: (key: any, val: any) => any
-  /** The raw map getter */
-  _get: (key: any) => any
+	/** The max size of the map */
+	max: number
+	/** The raw map setter */
+	_set: (key: any, val: any) => any
+	/** The raw map getter */
+	_get: (key: any) => any
 }
 
 /**
@@ -39,41 +39,41 @@ interface MapReturnType extends Map<any, any> {
  * ```
  */
 export function mapApplyMaxSize(
-  /** The map to limit */
-  map: Map<any, any>,
-  /** The max size of the map */
-  maxSize: number
+	/** The map to limit */
+	map: Map<any, any>,
+	/** The max size of the map */
+	maxSize: number,
 ): MapReturnType {
-  if ('_set' in map) return map as MapReturnType // seems like we've already applied max to this
-  const _map = map as MapReturnType
-  _map.max = maxSize
-  _map._set = _map.set
-  _map._get = _map.get
-  _map.set = (key: any, val: any) => {
-    // if key exists, delete it so it can be re-added at end of map
-    if (_map.has(key)) {
-      _map.delete(key)
-    } else {
-      if (_map.size >= _map.max) {
-        // evict top of map (aka oldest)
-        _map.delete(_map.keys().next().value)
-      }
-    }
+	if ("_set" in map) return map as MapReturnType // seems like we've already applied max to this
+	const _map = map as MapReturnType
+	_map.max = maxSize
+	_map._set = _map.set
+	_map._get = _map.get
+	_map.set = (key: any, val: any) => {
+		// if key exists, delete it so it can be re-added at end of map
+		if (_map.has(key)) {
+			_map.delete(key)
+		} else {
+			if (_map.size >= _map.max) {
+				// evict top of map (aka oldest)
+				_map.delete(_map.keys().next().value)
+			}
+		}
 
-    // Now add key to end of map
-    _map._set(key, val)
-    return val
-  }
-  _map.get = (key: any) => {
-    const item = _map._get(key)
-    if (item) {
-      setTimeout(() => {
-        // put key at end of map
-        _map.delete(key)
-        _map._set(key, item)
-      })
-    }
-    return item
-  }
-  return _map
+		// Now add key to end of map
+		_map._set(key, val)
+		return val
+	}
+	_map.get = (key: any) => {
+		const item = _map._get(key)
+		if (item) {
+			setTimeout(() => {
+				// put key at end of map
+				_map.delete(key)
+				_map._set(key, item)
+			})
+		}
+		return item
+	}
+	return _map
 }

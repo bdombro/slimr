@@ -24,27 +24,27 @@
  * ```
  */
 export function numericStringMask(
-  /** The string to apply the mask to */
-  str: string,
-  /** The mask to apply to the string */
-  mask: string
+	/** The string to apply the mask to */
+	str: string,
+	/** The mask to apply to the string */
+	mask: string,
 ) {
-  if (!mask) return str
+	if (!mask) return str
 
-  const numeric = str.replaceAll(/[^\d]/g, '')
+	const numeric = str.replaceAll(/[^\d]/g, "")
 
-  let idx = 0
+	let idx = 0
 
-  const formated = mask
-    .split('')
-    .map(el => {
-      if (el === '#') {
-        el = numeric[idx]
-        idx++
-      }
-      return el
-    })
-    .join('')
+	const formated = mask
+		.split("")
+		.map((el) => {
+			if (el === "#") {
+				el = numeric[idx]
+				idx++
+			}
+			return el
+		})
+		.join("")
 
-  return formated
+	return formated
 }

@@ -12,7 +12,7 @@
  * myFoo(`hello ${name}`) => 'hello world'
  */
 export function t2s(...tsp: T2SProps) {
-  const [s, ...p] = tsp
-  return typeof s === 'string' ? s : s.map((s, i) => s + (p?.[i] ?? '')).join('')
+	const [s, ...p] = tsp
+	return typeof s === "string" ? s : s.map((s, i) => s + (p?.[i] ?? "")).join("")
 }
 export type T2SProps = [strings: TemplateStringsArray | string, ...placeHolders: string[]]

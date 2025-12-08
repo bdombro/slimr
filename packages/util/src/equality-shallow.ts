@@ -1,5 +1,5 @@
-// @ts-ignore - no types available
-import fse from 'fast-shallow-equal'
+// @ts-expect-error - no types available
+import fse from "fast-shallow-equal"
 
 type Fse = (a: any, b: any) => boolean
 

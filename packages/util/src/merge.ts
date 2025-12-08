@@ -1,1 +1,1 @@
-export * from 'merge-anything'
+export * from "merge-anything"

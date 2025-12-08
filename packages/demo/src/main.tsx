@@ -16,8 +16,8 @@
  * )
  * ```
  */
-import {render} from 'preact'
+import { render } from "preact"
 
-import {App} from './app'
+import { App } from "./app"
 
-render(<App />, document.querySelector('#root')!)
+render(<App />, document.querySelector("#root")!)

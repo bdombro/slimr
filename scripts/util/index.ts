@@ -1,5 +1,5 @@
-export * from './errors.ts'
-export * as fs from './fs.ts'
-export * as git from './git.ts'
-export * as npm from './npm.ts'
-export * as process from './process.ts'
+export * from "./errors.ts"
+export * as fs from "./fs.ts"
+export * as git from "./git.ts"
+export * as npm from "./npm.ts"
+export * as process from "./process.ts"
