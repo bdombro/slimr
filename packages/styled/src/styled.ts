@@ -1,5 +1,5 @@
 import {T2SProps} from '@slimr/util'
-import {FC} from 'react'
+import {FC, JSX} from 'react'
 
 import {styledBase as s} from './core.js'
 

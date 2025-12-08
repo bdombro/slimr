@@ -102,7 +102,7 @@
       "packages/css": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/util@^3.2.51"
+            "npm:@slimr/util@^3.2.68"
           ]
         }
       },
@@ -127,7 +127,7 @@
       "packages/markdown": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/util@^3.2.51"
+            "npm:@slimr/util@^3.2.68"
           ]
         }
       },
@@ -141,12 +141,12 @@
       "packages/react": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/forms@^5.0.17",
-            "npm:@slimr/markdown@^2.1.47",
-            "npm:@slimr/router@^2.1.55",
-            "npm:@slimr/styled@^2.1.60",
-            "npm:@slimr/swr@^2.1.48",
-            "npm:@slimr/util@^3.2.51",
+            "npm:@slimr/forms@^5.0.39",
+            "npm:@slimr/markdown@^2.1.81",
+            "npm:@slimr/router@^2.1.68",
+            "npm:@slimr/styled@^2.1.79",
+            "npm:@slimr/swr@^2.1.67",
+            "npm:@slimr/util@^3.2.68",
             "npm:react-use@17"
           ]
         }
@@ -161,15 +161,15 @@
       "packages/styled": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/css@^2.1.52",
-            "npm:@slimr/util@^3.2.51"
+            "npm:@slimr/css@^2.1.74",
+            "npm:@slimr/util@^3.2.68"
           ]
         }
       },
       "packages/swr": {
         "packageJson": {
           "dependencies": [
-            "npm:@slimr/util@^3.2.51"
+            "npm:@slimr/util@^3.2.68"
           ]
         }
       },

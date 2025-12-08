@@ -57,7 +57,7 @@ export async function publishWorkspaces(
   }
 
   // If no flags, default to nothing
-  if (!p.all && !p.irty && !p.include) {
+  if (!p.all && !p.dirty && !p.include) {
     console.log('[PUBLISH]: No packages selected for publish. Use --all, --dirty, or --include.')
     return []
   }
@@ -69,6 +69,11 @@ export async function publishWorkspaces(
     const isIncluded = p.include?.some(i => workspace.name.includes(i))
 
     if (isExcluded) {
+      continue
+    }
+
+    if (workspace.name === '@slimr/mdi-paths') {
+      console.warn(`[BUILD]: Skipping mdi-paths because it's heavy`)
       continue
     }
 
@@ -94,17 +99,19 @@ export async function publishWorkspaces(
 
   console.log(`[PUBLISH]: Packages to publish: ${toPublish.map(w => w.name).join(', ')}`)
 
-  // Build packages needing publish
   console.log(`[PUBLISH]:build\n`)
   await buildWorkspaces({include: toPublish.map(w => w.name)})
 
-  // Publish packages
+  if (p.bump) {
+    console.log(`[PUBLISH]:bump\n`)
+    // Note: DONT parallelize this or your will get race conditions
+    for (const workspace of toPublish) {
+      await bumpVersion(workspace)
+    }
+  }
+  
   console.log(`[PUBLISH]:publish\n`)
   for (const workspace of toPublish) {
-    if (workspace.name === '@slimr/mdi-paths') {
-      console.warn(`[PUBLISH]: Skipping publishing of mdi-paths because npm publish chokes on it.`)
-      continue
-    }
     if (p.bump) await bumpVersion(workspace)
     console.log(`[PUBLISH]: Publishing ${workspace.name}@${workspace.config.version}...`)
     console.log(await process.spawn('npm publish --access public', workspace.path))
@@ -141,11 +148,20 @@ if (import.meta.main && argv) {
  * Helper functions in alphabetical order
 /************************************************************************/
 
-/** Bumps the version of a workspace if not already bumped, and any dependencies recursively */
+/** Bumps the version of a workspace and update children to use the new version */
 async function bumpVersion(workspace: npm.Workspace) {
   workspace.config.version = workspace.config.version
     .split('.')
     .map((v: string, i: number) => (i === 2 ? Number(v) + 1 : v))
     .join('.')
   await workspace.save()
+
+  // update the children to the new version
+  for (const childName of workspace.wsChildrenAll) {
+    const child = workspaces[childName]
+    if (child.config.dependencies && child.config.dependencies[workspace.name]) {
+      child.config.dependencies[workspace.name] = `^${workspace.config.version}`
+      await child.save()
+    }
+  }
 }

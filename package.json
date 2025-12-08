@@ -22,7 +22,8 @@
     "update": "npx npm-check-updates",
     "precommit": "npm i && run-s build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "publish:dirty": "deno run -A scripts/publish.ts -b -d -e demo",
+    "publish:all": "deno run -A scripts/publish.ts --bump --all --exclude demo",
+    "publish:dirty": "deno run -A scripts/publish.ts --bump --dirty --exclude demo",
     "publish:demo": "deno run -A scripts/deploy-demo.ts",
     "start": "npm run -w @slimr/demo start",
     "test": "vitest"

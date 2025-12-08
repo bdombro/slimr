@@ -1,6 +1,6 @@
 {
   "name": "@slimr/styled",
-  "version": "2.1.72",
+  "version": "2.1.79",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -40,7 +40,7 @@
     "react-dom": "*"
   },
   "dependencies": {
-    "@slimr/css": "^2.1.52",
-    "@slimr/util": "^3.2.51"
+    "@slimr/css": "^2.1.74",
+    "@slimr/util": "^3.2.68"
   }
 }

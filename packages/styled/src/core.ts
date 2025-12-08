@@ -9,7 +9,7 @@ type allowableAny = any
 
 /** A type that represents all the css properties + shorthand props + any css variable */
 export interface ZxProps
-  extends CSSProperties,
+  extends Omit<CSSProperties, 'd'>,
     ShorthandProps,
     Record<`--${string}`, number | string | undefined> {}
 type ZxP = ZxProps

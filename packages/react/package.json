@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "3.0.56",
+  "version": "3.0.65",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -31,12 +31,12 @@
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
   "dependencies": {
-    "@slimr/forms": "^5.0.17",
-    "@slimr/markdown": "^2.1.47",
-    "@slimr/router": "^2.1.55",
-    "@slimr/styled": "^2.1.60",
-    "@slimr/swr": "^2.1.48",
-    "@slimr/util": "^3.2.51",
+    "@slimr/forms": "^5.0.39",
+    "@slimr/markdown": "^2.1.81",
+    "@slimr/router": "^2.1.68",
+    "@slimr/styled": "^2.1.79",
+    "@slimr/swr": "^2.1.67",
+    "@slimr/util": "^3.2.68",
     "react-use": "17"
   },
   "peerDependencies": {
