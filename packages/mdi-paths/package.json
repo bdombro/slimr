@@ -1,6 +1,6 @@
 {
   "name": "@slimr/mdi-paths",
-  "version": "2.1.43",
+  "version": "2.1.67",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -14,12 +14,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bdombro/slimr.git"
+    "url": "git+https://github.com/bdombro/slimr.git"
   },
   "scripts": {
     "build": "run-s clean && node scripts/generate.js && cp components/* .",
-    "clean": "find . -maxdepth 1 \\( -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" \\) -delete",
-    "prepack": "run-s build"
+    "clean": "find . -maxdepth 1 \\( -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" \\) -delete"
   },
   "devDependencies": {
     "@mdi/svg": "7.1.96"
@@ -29,7 +28,7 @@
     "react-dom": "*"
   },
   "dependencies": {
-    "@slimr/util": "^3.2.39"
+    "@slimr/util": "^3.2.51"
   },
   "exports": {
     "./components": "./components/components.js",
