@@ -13,7 +13,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "deno run -A scripts/build.ts -c -e demo",
+    "build": "deno run -A scripts/build.ts -a -e demo",
+    "build:changed": "deno run -A scripts/build.ts -c -e demo",
     "clean": "npm run -ws clean",
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",

@@ -17,10 +17,10 @@ Usage: deno run --allow-read --allow-write scripts/publish.ts [options]
 
 Options:
   -h, --help        Show this help message
-  -b, --bump        Bump the version of packages before publishing
-  -e, --exclude     Exclude a workspace name, or part of, from being published
-  -d, --dirty       Only publish dirty packages
   -a, --all         Publish all packages
+  -b, --bump        Bump the version of packages before publishing
+  -d, --dirty       Only publish dirty packages
+  -e, --exclude     Exclude a workspace name, or part of, from being published
   -i, --include     Include a workspace name, or part of, for publishing
 `
 
@@ -35,24 +35,20 @@ Options:
 /**
  * Publishes packages based on flags, optionally bumping versions
  */
-export async function publishWorkspaces({
-  bump,
-  exclude,
-  dirty,
-  all,
-  include,
-}: {
-  /** Bump the version before publishing */
-  bump?: boolean
-  /** Exclude workspace names or parts */
-  exclude?: string[]
-  /** Only publish dirty packages */
-  dirty?: boolean
-  /** Publish all packages */
-  all?: boolean
-  /** Include workspace names or parts */
-  include?: string[]
-} = {}) {
+export async function publishWorkspaces(
+  p: {
+    /** Publish all packages */
+    all?: boolean
+    /** Bump the version before publishing */
+    bump?: boolean
+    /** Only publish dirty packages */
+    dirty?: boolean
+    /** Exclude workspace names or parts */
+    exclude?: string[]
+    /** Include workspace names or parts */
+    include?: string[]
+  } = {}
+) {
   console.log('[PUBLISH]:start')
 
   const user = (await process.spawn('npm whoami')).trim()
@@ -60,36 +56,37 @@ export async function publishWorkspaces({
     throw new Error('Must be logged in to npm to publish')
   }
 
+  // If no flags, default to nothing
+  if (!p.all && !p.irty && !p.include) {
+    console.log('[PUBLISH]: No packages selected for publish. Use --all, --dirty, or --include.')
+    return []
+  }
+
   // Determine which workspaces to publish
   let toPublish: npm.Workspace[] = []
   for (const workspace of Object.values(workspaces)) {
-    const isExcluded = exclude?.some(e => workspace.name.includes(e))
-    const isIncluded = include?.some(i => workspace.name.includes(i))
+    const isExcluded = p.exclude?.some(e => workspace.name.includes(e))
+    const isIncluded = p.include?.some(i => workspace.name.includes(i))
 
     if (isExcluded) {
       continue
     }
 
     // If --all, publish all
-    if (all) {
+    if (p.all) {
       toPublish.push(workspace)
       continue
     }
     // If --dirty, publish dirty
-    else if (dirty && workspace.dirty) {
+    else if (p.dirty && workspace.dirty) {
       toPublish.push(workspace, ...workspace.wsChildrenAll.map(n => workspaces[n]))
       continue
     }
     // If --include, publish included
-    else if (include && isIncluded) {
+    else if (p.include && isIncluded) {
       toPublish.push(workspace, ...workspace.wsChildrenAll.map(n => workspaces[n]))
       continue
     }
-  }
-  // If no flags, default to nothing
-  if (!all && !dirty && !include) {
-    console.log('[PUBLISH]: No packages selected for publish. Use --all, --dirty, or --include.')
-    return []
   }
 
   toPublish = [...new Set(toPublish)] // deduplicate
@@ -99,12 +96,16 @@ export async function publishWorkspaces({
 
   // Build packages needing publish
   console.log(`[PUBLISH]:build\n`)
-  await buildWorkspaces({ changed: true, exclude });
+  await buildWorkspaces({include: toPublish.map(w => w.name)})
 
   // Publish packages
   console.log(`[PUBLISH]:publish\n`)
   for (const workspace of toPublish) {
-    if (bump) await bumpVersion(workspace)
+    if (workspace.name === '@slimr/mdi-paths') {
+      console.warn(`[PUBLISH]: Skipping publishing of mdi-paths because npm publish chokes on it.`)
+      continue
+    }
+    if (p.bump) await bumpVersion(workspace)
     console.log(`[PUBLISH]: Publishing ${workspace.name}@${workspace.config.version}...`)
     console.log(await process.spawn('npm publish --access public', workspace.path))
   }
@@ -116,10 +117,10 @@ export async function publishWorkspaces({
 /** The entrypoint if called directly (aka import.meta.main = true) */
 async function main() {
   const _argv = structuredClone(argv)
-  const bump = process.pluckArg(_argv, 'b', 'bump', true)
-  const exclude = process.pluckArg(_argv, 'e', 'exclude')
-  const dirty = process.pluckArg(_argv, 'd', 'dirty', true)
   const all = process.pluckArg(_argv, 'a', 'all', true)
+  const bump = process.pluckArg(_argv, 'b', 'bump', true)
+  const dirty = process.pluckArg(_argv, 'd', 'dirty', true)
+  const exclude = process.pluckArg(_argv, 'e', 'exclude')
   const include = process.pluckArg(_argv, 'i', 'include')
   if (
     _argv.commands.length ||
@@ -129,7 +130,7 @@ async function main() {
     console.log(usage)
     Deno.exit(1)
   }
-  await publishWorkspaces({bump, exclude, dirty, all, include})
+  await publishWorkspaces({all, bump, dirty, exclude, include})
 }
 
 if (import.meta.main && argv) {
