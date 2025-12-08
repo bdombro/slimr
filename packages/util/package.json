@@ -1,6 +1,6 @@
 {
   "name": "@slimr/util",
-  "version": "3.2.40",
+  "version": "3.2.60",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bdombro/slimr.git"
+    "url": "git+https://github.com/bdombro/slimr.git"
   },
   "type": "module",
   "scripts": {
@@ -27,12 +27,9 @@
     "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
-    "prepack": "run-s build",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
   "dependencies": {
-    "@types/react": "^18.0.26",
-    "@types/react-dom": "^18.0.9",
     "copy-anything": "3.0.3",
     "deep-object-diff": "1.1.9",
     "fast-deep-equal": "3.1.3",

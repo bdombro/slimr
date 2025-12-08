@@ -13,17 +13,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "run-s build:*",
-    "build:1": "npm run -w @slimr/util build",
-    "build:2": "npm run -w @slimr/css -w @slimr/mdi-paths -w @slimr/forms -w @slimr/markdown -w @slimr/router -w @slimr/swr -w @slimr/hooks build",
-    "build:3": "npm run -w @slimr/styled build && npm run -w @slimr/react build && npm run -w @slimr/demo build",
+    "build": "deno run -A scripts/build.ts -c -e demo",
     "clean": "npm run -ws clean",
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-    "precommit": "npm i && npm-run-all build format lint 'test -- --run'",
+    "precommit": "npm i && run-s build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "publish:changed": "deno run -A scripts/bump-changed-workspaces.ts -p -e demo",
+    "publish:dirty": "deno run -A scripts/publish.ts -b -d -e demo",
     "publish:demo": "deno run -A scripts/deploy-demo.ts",
     "start": "npm run -w @slimr/demo start",
     "test": "vitest"

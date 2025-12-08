@@ -1,11 +1,5 @@
-import {appendStyle} from '@slimr/util'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, {createElement, useEffect, useState} from 'react'
-
-appendStyle({
-  id: 'mdi',
-  innerHTML: `@keyframes spin { to { transform: rotate(360deg); } } @keyframes spin-inverse { to { transform: rotate(-360deg); } }`,
-})
 
 /**
  * A component that lazily loads an icon using a cb that returns a promise.
@@ -52,8 +46,6 @@ export function IconSvg({
   horizontal,
   vertical,
   rotate = 0,
-  spin,
-  spinInverse,
   ...props
 }) {
   const style = {...props.style}
@@ -64,11 +56,6 @@ export function IconSvg({
   if (rotate !== 0) transforms.push(`rotate(${rotate}deg)`)
   if (transforms.length > 0) {
     style.transform = transforms.join(' ')
-    style.transformOrigin = 'center'
-  }
-  if (spin) {
-    const spinSec = spin === true || typeof spin !== 'number' ? 2 : spin
-    style.animation = `spin${spinInverse ? '-inverse' : ''} linear ${Math.abs(spinSec)}s infinite`
     style.transformOrigin = 'center'
   }
 
