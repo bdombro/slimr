@@ -1,6 +1,6 @@
 {
   "name": "@slimr/forms",
-  "version": "5.0.33",
+  "version": "5.0.34",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -29,9 +29,6 @@
     "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
     "clean": "rm -rf esm cjs",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
-  },
-  "dependencies": {
-    "@slimr/markdown": "^2.1.47"
   },
   "peerDependencies": {
     "@types/react": "*",

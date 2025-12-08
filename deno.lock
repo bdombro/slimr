@@ -124,13 +124,6 @@
           ]
         }
       },
-      "packages/forms": {
-        "packageJson": {
-          "dependencies": [
-            "npm:@slimr/markdown@^2.1.47"
-          ]
-        }
-      },
       "packages/markdown": {
         "packageJson": {
           "dependencies": [

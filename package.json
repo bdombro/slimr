@@ -19,6 +19,7 @@
     "format": "prettier --cache -w .",
     "lint": "eslint . --cache --cache-location=node_modules/.eslintcache && prettier --check .",
     "lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
+    "update": "npx npm-check-updates",
     "precommit": "npm i && run-s build format lint 'test -- --run'",
     "preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "publish:dirty": "deno run -A scripts/publish.ts -b -d -e demo",

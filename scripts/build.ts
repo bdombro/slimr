@@ -61,6 +61,11 @@ export async function buildWorkspaces(
       continue
     }
 
+    if (workspace.name === '@slimr/mdi-paths') {
+      console.warn(`[BUILD]: Skipping mdi-paths because it's heavy`)
+      continue
+    }
+
     // If --all, publish all
     if (p.all) {
       toBuild.push(workspace)
