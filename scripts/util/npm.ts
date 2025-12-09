@@ -1,24 +1,26 @@
-import { fs, git, throwError } from "./index.ts"
+import fs from "node:fs"
+import { throwError } from "./errors.ts"
+import { git } from "./git.ts"
+import { json } from "./json.ts"
 
 /** Get workspace meta for the current npm monorepo */
 export async function getWorkspaces(
 	props: { gitChanged?: string; packageJson?: Record<string, any> } = {},
 ): Promise<Record<string, Workspace>> {
 	const gitChanged = props.gitChanged || (await git.getChanged())
-	const packageJson =
-		props.packageJson ||
-		(await fs.readJsonSync("package.json")) ||
-		throwError("No package.json found in root package.json")
+	const packageJson = props.packageJson || (await json.readFile("package.json"))
 
 	// Get the workspaces from the root package.json
 	if (!packageJson.workspaces) throwError("No workspaces found in packageJson")
 
 	const workspacePathsSet: Set<string> = new Set()
-	for (const path of packageJson.workspaces) {
-		if (path.includes("*")) {
-			for await (const entry of fs.glob({ include: path })) {
-				workspacePathsSet.add(entry.relative.slice(0, -1))
-			}
+	for (let path of packageJson.workspaces) {
+		if (path.endsWith("/*")) {
+			path = path.slice(0, -2)
+			fs.readdirSync(path).forEach((entryName) => {
+				if (entryName.startsWith(".")) return // skip hidden folders
+				workspacePathsSet.add(`${path}/${entryName}`)
+			})
 		} else {
 			workspacePathsSet.add(path)
 		}
@@ -28,13 +30,13 @@ export async function getWorkspaces(
 
 	const workspaces: Record<string, Workspace> = {}
 	for (const path of workspacePaths) {
-		const config = await fs.readJsonSync(`${path}/package.json`)
+		const config = json.readFile(`${path}/package.json`)
 		const workspace: Workspace = {
 			config,
 			dirty: gitChanged.includes(path),
 			name: config.name,
 			path,
-			save: async () => fs.writeJsonSync(`${path}/package.json`, workspace.config),
+			save: async () => json.writeFile(`${path}/package.json`, workspace.config),
 			wsChildren: [],
 			wsChildrenAll: [],
 			wsParents: [],
@@ -81,6 +83,7 @@ export async function getWorkspaces(
 	// now update dirty status based on children
 	for (const workspace of Object.values(workspaces)) {
 		if (workspace.dirty) {
+			console.debug(`[NPM]: Workspace ${workspace.name} is dirty due to direct changes`)
 			for (const childName of workspace.wsChildrenAll) {
 				if (workspaces[childName].dirty) {
 					workspace.dirty = true

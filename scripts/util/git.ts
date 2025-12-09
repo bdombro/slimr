@@ -1,9 +1,10 @@
-import { process } from "./index.ts"
+import { execPromise } from "./process.ts"
 
-export function getChanged() {
-	return process.spawn("git diff --name-only HEAD")
-}
-
-export function gitStaged() {
-	return process.spawn("git diff --name-only --cached")
+export const git = {
+	getChanged() {
+		return execPromise("git diff --name-only HEAD")
+	},
+	getStaged() {
+		return execPromise("git diff --name-only --cached")
+	},
 }

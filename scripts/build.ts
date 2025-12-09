@@ -1,13 +1,13 @@
 // deno-lint-ignore-file require-await no-explicit-any
-import { npm, process } from "./util/index.ts"
+// import { npm } from "./util/index.ts"
 
-export const argv = import.meta.main && process.argParser().data
+import { parseArgs } from "node:util"
+import * as npm from "./util/npm"
+import { execPromise } from "./util/process"
 
 /************************************************************************
  * Globals
 /************************************************************************/
-
-const workspaces = await npm.getWorkspaces()
 
 const usage = `
 Usage: deno run --allow-read --allow-write scripts/build-workspaces.ts [options]
@@ -50,6 +50,8 @@ export async function buildWorkspaces(
 		console.log("[PUBLISH]: No packages selected for publish. Use --all, --dirty, or --include.")
 		return []
 	}
+
+	const workspaces = await npm.getWorkspaces()
 
 	// Determine which workspaces to publish
 	let toBuild: npm.Workspace[] = []
@@ -100,7 +102,7 @@ export async function buildWorkspaces(
 				})
 				.map(async (w) => {
 					console.log(`[BUILD]: ${w.name}@${w.config.version}...`)
-					console.log(await process.spawn("npm run build", w.path))
+					console.log(await execPromise("npm run build", w.path))
 					unbuilt.splice(unbuilt.indexOf(w), 1)
 				}),
 		)
@@ -112,22 +114,19 @@ export async function buildWorkspaces(
 
 /** The entrypoint if called directly (aka import.meta.main = true) */
 async function main() {
-	const _argv = structuredClone(argv)
-	const all = process.pluckArg(_argv, "a", "all", true)
-	const dirty = process.pluckArg(_argv, "d", "dirty", true)
-	const exclude = process.pluckArg(_argv, "e", "exclude")
-	const include = process.pluckArg(_argv, "i", "include")
-	if (
-		_argv.commands.length ||
-		Object.keys(_argv.shortSwitches).length ||
-		Object.keys(_argv.longSwitches).length
-	) {
+	const pa = parseArgs({
+		options: {
+			all: { type: "boolean", short: "a" },
+			dirty: { type: "boolean", short: "d" },
+			exclude: { type: "string", short: "e", multiple: true },
+			include: { type: "string", short: "i", multiple: true },
+		},
+	})
+	if (!pa.values.all && !pa.values.dirty && !pa.values.include) {
 		console.log(usage)
-		Deno.exit(1)
+		return
 	}
-	await buildWorkspaces({ all, dirty, exclude, include })
+	await buildWorkspaces(pa.values)
 }
 
-if (import.meta.main && argv) {
-	main()
-}
+if (import.meta.main) main()

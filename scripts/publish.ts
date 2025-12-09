@@ -1,14 +1,11 @@
-// deno-lint-ignore-file require-await no-explicit-any
+import { parseArgs } from "node:util"
 import { buildWorkspaces } from "./build.ts"
-import { npm, process } from "./util/index.ts"
-
-export const argv = import.meta.main && process.argParser().data
+import * as npm from "./util/npm.ts"
+import { execPromise } from "./util/process.ts"
 
 /************************************************************************
  * Globals
 /************************************************************************/
-
-const workspaces = await npm.getWorkspaces()
 
 const usage = `
 publish - publishes packages in an npm monorepo and respects inter-package dependencies
@@ -51,7 +48,8 @@ export async function publishWorkspaces(
 ) {
 	console.log("[PUBLISH]:start")
 
-	const user = (await process.spawn("npm whoami")).trim()
+	const user = (await execPromise("npm whoami")).trim()
+	console.log(`[PUBLISH]: Logged in as ${user}`)
 	if (!user) {
 		throw new Error("Must be logged in to npm to publish")
 	}
@@ -61,6 +59,8 @@ export async function publishWorkspaces(
 		console.log("[PUBLISH]: No packages selected for publish. Use --all, --dirty, or --include.")
 		return []
 	}
+
+	const workspaces = await npm.getWorkspaces()
 
 	// Determine which workspaces to publish
 	let toPublish: npm.Workspace[] = []
@@ -111,7 +111,7 @@ export async function publishWorkspaces(
 	for (const workspace of toPublish) {
 		if (p.bump) await bumpVersion(workspace)
 		console.log(`[PUBLISH]: Publishing ${workspace.name}@${workspace.config.version}...`)
-		console.log(await process.spawn("npm publish --access public", workspace.path))
+		console.log(await execPromise("npm publish --access public", workspace.path))
 	}
 
 	console.log("[PUBLISH]:end")
@@ -120,26 +120,23 @@ export async function publishWorkspaces(
 
 /** The entrypoint if called directly (aka import.meta.main = true) */
 async function main() {
-	const _argv = structuredClone(argv)
-	const all = process.pluckArg(_argv, "a", "all", true)
-	const bump = process.pluckArg(_argv, "b", "bump", true)
-	const dirty = process.pluckArg(_argv, "d", "dirty", true)
-	const exclude = process.pluckArg(_argv, "e", "exclude")
-	const include = process.pluckArg(_argv, "i", "include")
-	if (
-		_argv.commands.length ||
-		Object.keys(_argv.shortSwitches).length ||
-		Object.keys(_argv.longSwitches).length
-	) {
+	const pa = parseArgs({
+		options: {
+			all: { type: "boolean", short: "a" },
+			bump: { type: "boolean", short: "b" },
+			dirty: { type: "boolean", short: "d" },
+			exclude: { type: "string", short: "e", multiple: true },
+			include: { type: "string", short: "i", multiple: true },
+		},
+	})
+	if (!pa.values.all && !pa.values.dirty && !pa.values.include) {
 		console.log(usage)
-		Deno.exit(1)
+		return
 	}
-	await publishWorkspaces({ all, bump, dirty, exclude, include })
+	await publishWorkspaces(pa.values)
 }
 
-if (import.meta.main && argv) {
-	main()
-}
+if (import.meta.main) main()
 
 /************************************************************************
  * Helper functions in alphabetical order
