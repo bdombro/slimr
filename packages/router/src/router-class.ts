@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+
 export interface RouterOptions {
 	/**
 	 * A document.querySelector selector to be used for scroll restoration
@@ -221,6 +223,26 @@ export class Router<
 	/** Unsubscribe to changes to the route */
 	public unsubscribe = (fn: (route: RouteMatch) => any) => {
 		this.subscribers = this.subscribers.filter((l) => l !== fn)
+	}
+
+	/**
+	 * A React hook to rerender when route changes
+	 *
+	 * It does not return the value, but subscribes to changes and forces re-render
+	 * when the value changes.
+	 *
+	 * @usage
+	 * ```tsx
+	 *
+	 * function MyComponent() {
+	 *   r.use();
+	 *   return <div>{r.current.route.path}</div>;
+	 * }
+	 * ```
+	 */
+	public use() {
+		const [_, setValue] = useState(Date.now())
+		useEffect(() => this.subscribe(() => setValue(Date.now())), [])
 	}
 
 	/**

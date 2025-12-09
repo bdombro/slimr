@@ -103,13 +103,13 @@ export async function publishWorkspaces(
 		console.log(`[PUBLISH]:bump\n`)
 		// Note: DONT parallelize this or your will get race conditions
 		for (const workspace of toPublish) {
-			await bumpVersion(workspace)
+			await bumpVersion(workspaces, workspace)
 		}
 	}
 
 	console.log(`[PUBLISH]:publish\n`)
 	for (const workspace of toPublish) {
-		if (p.bump) await bumpVersion(workspace)
+		if (p.bump) await bumpVersion(workspaces, workspace)
 		console.log(`[PUBLISH]: Publishing ${workspace.name}@${workspace.config.version}...`)
 		console.log(await execPromise("npm publish --access public", workspace.path))
 	}
@@ -143,7 +143,7 @@ if (import.meta.main) main()
 /************************************************************************/
 
 /** Bumps the version of a workspace and update children to use the new version */
-async function bumpVersion(workspace: npm.Workspace) {
+async function bumpVersion(workspaces: Record<string, npm.Workspace>, workspace: npm.Workspace) {
 	workspace.config.version = workspace.config.version
 		.split(".")
 		.map((v: string, i: number) => (i === 2 ? Number(v) + 1 : v))

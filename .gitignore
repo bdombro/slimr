@@ -15,7 +15,7 @@ esm
 tgz
 *.local
 deno.lock
-package-lock.lock
+package-lock.json
 
 # Editor directories and files
 .vscode/*

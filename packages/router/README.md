@@ -107,6 +107,12 @@ export default function NotFound() {
     </p>
   )
 }
+
+// component that listens for location updates
+function LocationText() {
+  r.use()
+  return <div>Current location: {r.current.route.path}</div>
+}
 ```
 
 ## Comparisons
