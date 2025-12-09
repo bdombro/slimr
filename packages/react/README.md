@@ -46,6 +46,24 @@ const MyComponent = forwardRef((props, ref1) => {
 })
 ```
 
+### Observable
+
+Provides a variable with observable capabilities, like pub/sub and React hook integration.
+
+```tsx
+  import { Observable } from '@slimr/react';
+  const myObservable = new Observable('myObservable', 0);
+  myObservable.subscribe((newValue) => { console.log('New value:', newValue); });
+  setTimeout(() => { myObservable.val = 42; }, 1000);
+  setTimeout(() => { myObservable.set(50); }, 2000);
+  setTimeout(() => { myObservable.set(last => last + 1); }, 3000);
+
+  function MyComponent() {
+    myObservable.use();
+    return <div>{myObservable.value}</div>;
+  }
+```
+
 ### useDeepCompareMemo and useShallowCompareMemo
 
 like react-use's useDeepEffects, but for memos

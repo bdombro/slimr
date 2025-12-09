@@ -6,6 +6,7 @@ export * from "@slimr/swr"
 export * from "react-use"
 
 export * from "./merge-refs.js"
+export * from "./Observable.js"
 export * from "./useColorScheme.js"
 export * from "./useMemos.js"
 export * from "./useSet2.js"

@@ -1,40 +1,40 @@
 {
-  "name": "@slimr/swr",
-  "version": "2.1.71",
-  "author": "Brian Dombrowski",
-  "license": "ISC",
-  "private": false,
-  "sideEffects": false,
-  "keywords": [
-    "preact",
-    "react",
-    "swr"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bdombro/slimr.git"
-  },
-  "type": "module",
-  "main": "./cjs/index.js",
-  "module": "./esm/index.js",
-  "exports": {
-    ".": {
-      "require": "./cjs/index.js",
-      "import": "./esm/index.js"
-    }
-  },
-  "scripts": {
-    "build": "run-p build:*",
-    "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false && cp -r src/* $OUT",
-    "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
-    "clean": "rm -rf esm cjs",
-    "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
-  },
-  "dependencies": {
-    "@slimr/util": "^3.2.72"
-  },
-  "optionalDependencies": {
-    "react": "*",
-    "react-dom": "*"
-  }
+	"name": "@slimr/swr",
+	"version": "2.1.73",
+	"author": "Brian Dombrowski",
+	"license": "ISC",
+	"private": false,
+	"sideEffects": false,
+	"keywords": [
+		"preact",
+		"react",
+		"swr"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bdombro/slimr.git"
+	},
+	"type": "module",
+	"main": "./cjs/index.js",
+	"module": "./esm/index.js",
+	"exports": {
+		".": {
+			"require": "./cjs/index.js",
+			"import": "./esm/index.js"
+		}
+	},
+	"scripts": {
+		"build": "run-p build:*",
+		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false && cp -r src/* $OUT",
+		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
+		"clean": "rm -rf esm cjs",
+		"start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
+	},
+	"dependencies": {
+		"@slimr/util": "^3.2.74"
+	},
+	"optionalDependencies": {
+		"react": "*",
+		"react-dom": "*"
+	}
 }
