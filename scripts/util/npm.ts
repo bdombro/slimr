@@ -80,7 +80,7 @@ export async function getWorkspaces(
 
 	// now update dirty status based on children
 	for (const workspace of Object.values(workspaces)) {
-		if (!workspace.dirty) {
+		if (workspace.dirty) {
 			for (const childName of workspace.wsChildrenAll) {
 				if (workspaces[childName].dirty) {
 					workspace.dirty = true

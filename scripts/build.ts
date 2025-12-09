@@ -15,7 +15,7 @@ Usage: deno run --allow-read --allow-write scripts/build-workspaces.ts [options]
 Options:
   -h, --help        Show this help message
   -a, --all         Build all workspaces (except excluded)
-  -c, --dirty     Only build workspaces that have dirty or depend on dirty workspaces
+  -d, --dirty     Only build workspaces that have dirty or depend on dirty workspaces
   -e, --exclude     Exclude a workspace name, or part of, from being built
   -i, --include     Include a workspace name, or part of, for building
 `
@@ -114,7 +114,7 @@ export async function buildWorkspaces(
 async function main() {
 	const _argv = structuredClone(argv)
 	const all = process.pluckArg(_argv, "a", "all", true)
-	const dirty = process.pluckArg(_argv, "c", "dirty", true)
+	const dirty = process.pluckArg(_argv, "d", "dirty", true)
 	const exclude = process.pluckArg(_argv, "e", "exclude")
 	const include = process.pluckArg(_argv, "i", "include")
 	if (

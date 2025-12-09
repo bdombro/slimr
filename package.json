@@ -13,8 +13,8 @@
 		"packages/*"
 	],
 	"scripts": {
-		"build": "deno run -A scripts/build.ts -a -e demo",
-		"build:changed": "deno run -A scripts/build.ts -c -e demo",
+		"build": "deno run -A scripts/build.ts --all --exclude demo",
+		"build:dirty": "deno run -A scripts/build.ts --dirty --exclude demo",
 		"clean": "npm run -ws clean",
 		"lint": "biome check",
 		"lint:fix": "biome check --write",
