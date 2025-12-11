@@ -1,14 +1,14 @@
-import { router as r } from "~/router"
+import { router } from "~/router"
 
 /**
  * A layout with a header and a main section
  */
 export function Layout({ children }: { children: React.ReactNode }) {
 	const navitems = [
-		{ name: "Home", path: r.routes.index.path, exact: true },
-		{ name: "Form", path: r.routes.form.path, exact: true },
-		{ name: "Stack1", path: r.routes.stack1.path },
-		{ name: "Planets", path: r.routes.planets.path },
+		{ name: "Home", path: router.routes.index.path, exact: true },
+		{ name: "Form", path: router.routes.form.path, exact: true },
+		{ name: "Stack1", path: router.routes.stack1.path },
+		{ name: "Planets", path: router.routes.planets.path },
 	]
 	return (
 		<Div _d="flex" _flexDirection="column" _h="var(--dvh)">

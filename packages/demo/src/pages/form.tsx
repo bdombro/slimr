@@ -2,12 +2,14 @@ import { SForm, useSFormContext } from "@slimr/react"
 
 import { Layout } from "~/comps/layout-default"
 import { GenericError, InputBox, RadioBox, SelectBox } from "~/foundation/forms"
+import { router } from "~/router"
 
 export default function FormPage() {
 	return (
 		<Layout>
 			<Layout.Section>
 				<h1>Form Page</h1>
+				<p>Path: {router.current.path}</p>
 				<FormKitchenSink />
 			</Layout.Section>
 		</Layout>

@@ -24,6 +24,7 @@ export default function PlanetsByPage({ route }: { route: RouteMatch }) {
 			<Layout.Section>
 				<h1>{title}</h1>
 				<p>{description}</p>
+				<p>Path: {router.current.path}</p>
 				<button
 					className="tertiary left"
 					id="refetch-page"

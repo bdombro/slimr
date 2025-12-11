@@ -20,7 +20,7 @@ import { appendStyle } from "@slimr/util"
  */
 export function addCss(css: string) {
 	addCss.que.add(css)
-	setTimeout(() => {
+	requestAnimationFrame(() => {
 		if (addCss.que.size) {
 			appendStyle({
 				id: `u${addCss.count++}`,
@@ -28,7 +28,7 @@ export function addCss(css: string) {
 			})
 			addCss.que.clear()
 		}
-	}, 0)
+	})
 }
 addCss.que = new Set<string>()
 addCss.count = 0

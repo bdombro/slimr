@@ -2,7 +2,7 @@ import { Markdown } from "@slimr/markdown"
 import { setPageMeta } from "@slimr/util"
 
 import { Layout } from "~/comps/layout-default"
-import { router as r } from "~/router"
+import { router } from "~/router"
 
 /**
  * A demo of a home page
@@ -15,7 +15,39 @@ export default function Index() {
 				<h1>{title}</h1>
 				<p>{description}</p>
 				<p>
-					<a href={`${r.routes.stack1Inner.path}/inner`}>
+					<button
+						type="button"
+						onClick={() => {
+							router.goto(router.routes.planetsByPage.toPath({ page: "2" }))
+						}}
+					>
+						Test nav with string
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							router.goto(router.routes.planetsByPage, { page: "2" })
+						}}
+					>
+						Test nav with url params
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							router.goto(router.routes.form, { foo: "bar" })
+						}}
+					>
+						Test nav with query params
+					</button>
+				</p>
+				<p>
+					<a href={router.routes.planetsByPage.toPath({ page: "2" })}>
+						Goto planetsByPage 2, which should also clear the planet's stack
+					</a>
+				</p>
+				<p>
+					<a href={`${router.routes.stack1Inner.path}/inner`}>
 						Goto inner stack page to test that it clears the stack
 					</a>
 				</p>

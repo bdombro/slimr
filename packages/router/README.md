@@ -66,11 +66,11 @@ import {router as r} from '../router'
 
 export default function Index() {
   const {title, description} = setPageMeta({title: 'Home'})
-  const helloHref = r.routes.hello.toPath({name: 'world'})
+  const helloHref = router.routes.hello.toPath({name: 'world', foo: 'bar'})
   return (
     <>
       <h1>Home</h1>
-      <a href={helloHref}>Goto Hello World</a>
+      <a href={helloHref}>Goto /hello/world?foo=bar</a>
     </>
   )
 }
@@ -110,8 +110,8 @@ export default function NotFound() {
 
 // component that listens for location updates
 function LocationText() {
-  r.use()
-  return <div>Current location: {r.current.route.path}</div>
+  router.use()
+  return <div>Current location: {router.current.route.path}</div>
 }
 ```
 

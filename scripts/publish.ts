@@ -48,11 +48,12 @@ export async function publishWorkspaces(
 ) {
 	console.log("[PUBLISH]:start")
 
-	const user = (await execPromise("npm whoami")).trim()
+	const user = (
+		await execPromise("npm whoami").catch((e) => {
+			throw Object.assign(e, { message: `[PUBLISH]: Error checking npm login` })
+		})
+	).trim()
 	console.log(`[PUBLISH]: Logged in as ${user}`)
-	if (!user) {
-		throw new Error("Must be logged in to npm to publish")
-	}
 
 	// If no flags, default to nothing
 	if (!p.all && !p.dirty && !p.include) {

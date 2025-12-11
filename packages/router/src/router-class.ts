@@ -47,7 +47,7 @@ export interface Route extends RouteDef {
 	isMatch: (path: string) => false | Record<string, string>
 	/** The unique key of this route */
 	key: string
-	/** Accepts path args and returns a valid path from this routes path mask */
+	/** Accepts url path args and returns a valid path from this routes path mask. Unknown args are added as query params */
 	toPath: (urlParams?: Record<string, string>) => string
 	/** A reference to a stack route, if the current route is in a stack */
 	stack?: Route
@@ -115,6 +115,8 @@ export class Router<
 		return {
 			route: this.find(new URL(location.href)),
 			url: location.href,
+			path: location.pathname + (location.search ? location.search : ""),
+			search: location.search,
 			scrollTop:
 				(this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
 				window.scrollY,
@@ -144,7 +146,19 @@ export class Router<
 				key: k,
 				stackHistory: routeDef.isStack ? [] : undefined,
 				toPath: (urlParams = {}) => {
-					return routeDef.path.replace(/:([^/]*)/g, (_, arg) => urlParams[arg])
+					const urlParamsTodo = { ...urlParams }
+					let path = routeDef.path.replace(/:([^/]*)/g, (_, arg) => {
+						const param = urlParamsTodo[arg]
+						delete urlParamsTodo[arg]
+						return param
+					})
+					// Append any remaining urlParams as query string using URLSearchParams
+					const qs = new URLSearchParams(urlParamsTodo).toString()
+					if (qs) {
+						path += `?${qs}`
+					}
+					console.debug(`Router.toPath: ${k} => ${path}`)
+					return path
 				},
 			}
 		})
@@ -176,9 +190,20 @@ export class Router<
 	}
 
 	/** Navigate to a route */
-	public goto = (routeOrKey: Route | string, urlParams: Record<string, string> = {}) => {
-		const route = typeof routeOrKey === "string" ? this.routes[routeOrKey] : routeOrKey
-		history.pushState(Date.now(), "", route.toPath(urlParams))
+	public goto = (routeOrKeyOrPath: Route | string, urlParams: Record<string, string> = {}) => {
+		let gotoPath = ""
+		if (
+			typeof routeOrKeyOrPath === "string" &&
+			(routeOrKeyOrPath.startsWith("http") || routeOrKeyOrPath.startsWith("/"))
+		) {
+			gotoPath = routeOrKeyOrPath
+		} else {
+			const route =
+				typeof routeOrKeyOrPath === "string" ? this.routes[routeOrKeyOrPath] : routeOrKeyOrPath
+			gotoPath = route.toPath(urlParams)
+		}
+		console.debug(`Router.goto: ${gotoPath}`)
+		history.pushState(Date.now(), "", gotoPath)
 	}
 
 	/**
@@ -292,12 +317,14 @@ export class Router<
 			const navToInnerStackPageFromOutOfStack =
 				next.stack && !next.isStack && next.stack.key !== this.current.route.stack?.key
 
-			const isClear = next.stack && (urlObj.hash === "#clear" || navToInnerStackPageFromOutOfStack)
-			if (isClear) {
+			const isClear = next.stack && urlObj.hash === "#clear"
+			if (isClear || navToInnerStackPageFromOutOfStack) {
 				next.stack!.stackHistory = []
-				urlObj = toUrlObj(next.stack!.path as any)
-				next = this.find(urlObj)
 				this.scrollNext = 0
+				if (!navToInnerStackPageFromOutOfStack) {
+					urlObj = toUrlObj(next.stack!.path as any)
+					next = this.find(urlObj)
+				}
 			}
 
 			// If the next route is a stack root, treat as if it's a #back

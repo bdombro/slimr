@@ -196,10 +196,17 @@ declare global {
 globalThis.addCss = _styled.addCss
 globalThis.styled = _styled.styled
 
-globalThis.A = (p: Parameters<typeof _styled.A>[0]) => {
-	return _styled.A({
+globalThis.A = (p: _styled.AProps) => {
+	let isActive = false
+	if (!p.href || p.href.startsWith("#")) {
+		// do nothing
+	} else {
+		const pathRelative = new URL(p.href!, location.href).pathname
+		isActive = location.pathname === pathRelative
+	}
+	return (_styled.A as sany).render({
 		...p,
-		className: classJoin(p.className, location.href.includes(p.href!) ? "active" : ""),
+		className: classJoin(p.className, isActive ? "active" : ""),
 	})
 }
 globalThis.Abbr = _styled.Abbr
