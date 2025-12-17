@@ -18,6 +18,12 @@ export interface ShorthandProps {
 	f?: string
 	/** shorthand for css:flex-direction */
 	fd?: string
+	/** shorthand for css:font-size */
+	fs?: number | string
+	/** shorthand for css:font-weight */
+	fw?: number | string
+	/** shorthand for css:gap */
+	g?: number | string
 	/** shorthand for css:height */
 	h?: number | string
 	/** shorthand for css:inset */
@@ -96,6 +102,9 @@ export const shorthandPropsMap: Record<
 	d: "display",
 	f: "flex",
 	fd: "flex-direction",
+	fs: "font-size",
+	fw: "font-weight",
+	g: "gap",
 	i: "inset",
 	h: "height",
 	jc: "justify-content",
