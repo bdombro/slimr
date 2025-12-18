@@ -297,6 +297,16 @@ export class Router<
 		history.pushState = (date, unused, url) => {
 			let urlObj = toUrlObj(url as any)
 
+			if (
+				typeof url === "string" &&
+				(url.startsWith("file:") ||
+					url.startsWith("mailto:") ||
+					url.startsWith("sms:") ||
+					url.startsWith("tel:"))
+			) {
+				return pushStateOrig(date, unused, urlObj)
+			}
+
 			if (urlObj.hash === "#replace") {
 				return history.replaceState(date, unused, urlObj)
 			}
@@ -381,7 +391,10 @@ export class Router<
 		addEventListener("click", (e: any) => {
 			if (e.metaKey || e.ctrlKey) return
 			const ln = findLinkTagInParents(e.target) // aka linkNode
-			if (ln && ln.target !== "_blank") {
+			if (
+				(ln?.href.startsWith(location.origin) || ln?.href.startsWith("/")) &&
+				ln.target !== "_blank"
+			) {
 				e.preventDefault()
 				history.pushState(Date.now(), "", ln.href)
 			}
