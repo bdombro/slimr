@@ -21,12 +21,22 @@ import React, {createElement, useEffect, useState} from 'react'
 export function LazyIconSvg({pathImporter, ...props}) {
   const [svgPath, setSvgPath] = useState(LazyIconSvg.cache[pathImporter] || '')
   useEffect(() => {
-    if (svgPath) return
+    const svgPathCached = LazyIconSvg.cache[pathImporter]
+    if (svgPathCached ) {
+      if (svgPathCached === svgPath) {
+        // console.debug('svg path already set for', pathImporter)
+      } else {
+        // console.debug('using cached svg path for', pathImporter)
+        setSvgPath(svgPathCached)
+      }
+      return
+    }
+    // console.debug('importing svg path for', pathImporter)
     pathImporter().then(module => {
       setSvgPath(module.default)
       LazyIconSvg.cache[pathImporter] = module.default
     })
-  }, [])
+  }, [pathImporter])
   // return <IconSvg d={svgPath} {...props} />
   return createElement(IconSvg, {
     ...props,
