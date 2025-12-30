@@ -3,7 +3,7 @@
  *
  * Don't call a function until a certain amount of time has passed
  * without it being called.
- * 
+ *
  * In other words, we intentionally delay invoking `fnc` until after
  * `delay` milliseconds have elapsed since the last time the debounced.
  * If it gets called again, we cancel the previous call and start a new timer.

@@ -220,11 +220,17 @@ export class Router<
 		setTimeout(scrollToNext, 300)
 	}
 
+	/** history.pushState, un pony-filled */
+	public static pushStateRaw = history.pushState.bind(history)
+
 	/** Navigate to a route by replaceState */
 	public replace = (routeOrKey: Route | string, urlParams: Record<string, string> = {}) => {
 		const route = typeof routeOrKey === "string" ? this.routes[routeOrKey] : routeOrKey
 		history.replaceState(Date.now(), "", route.toPath(urlParams))
 	}
+
+	/** history.replaceState, un pony-filled */
+	public static replaceStateRaw = history.replaceState.bind(history)
 
 	/** Scroll the window or scrollElSelector if available  */
 	public scrollTo(options: ScrollToOptions) {
@@ -274,9 +280,6 @@ export class Router<
 	 * Intercept history.pushState, history.replaceState, and click events
 	 */
 	private hookHistory = () => {
-		const pushStateOrig = history.pushState.bind(history)
-		const replaceStateOrig = history.replaceState.bind(history)
-
 		/**
 		 * A custom pushState intercepts soft navigations, i.e. same origin
 		 *
@@ -304,7 +307,7 @@ export class Router<
 					url.startsWith("sms:") ||
 					url.startsWith("tel:"))
 			) {
-				return pushStateOrig(date, unused, urlObj)
+				return Router.pushStateRaw(date, unused, urlObj)
 			}
 
 			if (urlObj.hash === "#replace") {
@@ -312,7 +315,7 @@ export class Router<
 			}
 
 			if (urlObj.origin !== location.origin) {
-				return pushStateOrig(date, unused, urlObj)
+				return Router.pushStateRaw(date, unused, urlObj)
 			}
 
 			if (urlObj.href === location.href) {
@@ -367,14 +370,14 @@ export class Router<
 
 			this.subscribers.forEach((fn) => fn(next))
 			dispatchEvent(new CustomEvent("locationchange", { detail: next }))
-			pushStateOrig(date, unused, urlObj)
+			Router.pushStateRaw(date, unused, urlObj)
 		}
 		history.replaceState = (date, unused, url) => {
 			const urlObj = toUrlObj(url as any)
 			const next = this.find(urlObj)
 			this.subscribers.forEach((fn) => fn(next))
 			dispatchEvent(new CustomEvent("locationchange", { detail: next }))
-			replaceStateOrig(date, unused, urlObj)
+			Router.replaceStateRaw(date, unused, urlObj)
 		}
 
 		/* Listen for back/forward event. Sadly we can't detect back vs forward */
