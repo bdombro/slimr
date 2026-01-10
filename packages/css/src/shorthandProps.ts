@@ -45,9 +45,9 @@ export interface ShorthandProps {
 	/** shorthand for css:margin-left & margin-right */
 	mx?: number | string
 	/** shorthand for css:max-width */
-	maxW?: number | string
+	maxw?: number | string
 	/** shorthand for css:min-width */
-	minW?: number | string
+	minw?: number | string
 	/** shorthand for css:padding */
 	p?: number | string
 	/** shorthand for css:padding-left */
@@ -113,8 +113,8 @@ export const shorthandPropsMap: Record<
 	mr: "margin-right",
 	mt: "margin-top",
 	mb: "margin-bottom",
-	maxW: "max-width",
-	minW: "min-width",
+	maxw: "max-width",
+	minw: "min-width",
 	p: "padding",
 	pl: "padding-left",
 	pr: "padding-right",
