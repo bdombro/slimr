@@ -59,9 +59,6 @@ export const SForm = memo(
 				form.dispatchEvent(new Event("accepted"))
 			} catch (error: unknown) {
 				form.dispatchEvent(new Event("rejected"))
-				if (disableWhileSubmitting) {
-					formElements.forEach((e) => (e.disabled = e.disabledBefore))
-				}
 				if (error instanceof SFormError) {
 					for (const e of formElements) {
 						const fieldError = error.errorSet[e.name]
@@ -71,6 +68,10 @@ export const SForm = memo(
 					}
 				} else {
 					throw error
+				}
+			} finally {
+				if (disableWhileSubmitting) {
+					formElements.forEach((e) => (e.disabled = e.disabledBefore))
 				}
 			}
 		}
