@@ -117,6 +117,7 @@ export class Router<
 			url: location.href,
 			path: location.pathname + (location.search ? location.search : ""),
 			search: location.search,
+			searchParams: new URLSearchParams(location.search),
 			scrollTop:
 				(this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
 				window.scrollY,
