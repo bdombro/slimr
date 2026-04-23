@@ -13,20 +13,8 @@
 		"packages/*"
 	],
 	"scripts": {
-		"build": "bun scripts/build.ts --all --exclude demo",
-		"build:dirty": "bun scripts/build.ts --dirty --exclude demo",
-		"clean": "npm run -ws clean",
-		"lint": "biome check",
-		"lint:fix": "biome check --write",
-		"lint:watch": "npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'npm run lint'",
-		"update": "npx npm-check-updates",
-		"precommit": "npm i && run-s build lint 'test -- --run'",
-		"preinstall": "echo npm run precommit > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-		"publish:all": "bun scripts/publish.ts --bump --all --exclude demo",
-		"publish:dirty": "bun scripts/publish.ts --bump --dirty --exclude demo",
-		"publish:demo": "bun scripts/deploy-demo.ts",
-		"start": "npm run -w @slimr/demo start",
-		"test": "vitest"
+		"//just": "common tasks are in the justfile",
+		"preinstall": "echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.8",
