@@ -222,7 +222,9 @@ export class Router<
 	}
 
 	/** history.pushState, un pony-filled */
-	public static pushStateRaw = history.pushState.bind(history)
+	public static pushStateRaw = globalThis.history?.pushState.bind(
+		globalThis.history,
+	) as typeof history.pushState
 
 	/** Navigate to a route by replaceState */
 	public replace = (routeOrKey: Route | string, urlParams: Record<string, string> = {}) => {
@@ -231,7 +233,9 @@ export class Router<
 	}
 
 	/** history.replaceState, un pony-filled */
-	public static replaceStateRaw = history.replaceState.bind(history)
+	public static replaceStateRaw = globalThis.history?.replaceState.bind(
+		globalThis.history,
+	) as typeof history.replaceState
 
 	/** Scroll the window or scrollElSelector if available  */
 	public scrollTo(options: ScrollToOptions) {

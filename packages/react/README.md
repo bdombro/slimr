@@ -87,10 +87,9 @@ Returns a set-like object that intercepts the setter function to trigger re-rend
 ```typescript
 function MyComponent() {
   const optionalInitialValue = new Set()
-  const [set1, set1Setters] = useSet(optionalInitialValue)
-  const set2 = useSet2(optionalInitialValue)
+  const set = useSet(optionalInitialValue)
 
-  // Use set2 like you would a vanilla JS Set
+  // Use set like you would a vanilla JS Set
 ```
 
 ### useSWR

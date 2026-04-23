@@ -1,7 +1,7 @@
 import { useRef } from "react"
 import { useUpdate } from "react-use"
 
-export interface UseSet2<T> extends Set<T> {
+export interface UseSet<T> extends Set<T> {
 	_add: Set<T>["add"]
 	_clear: Set<T>["clear"]
 	_delete: Set<T>["delete"]
@@ -14,20 +14,20 @@ export interface UseSet2<T> extends Set<T> {
 /**
  * Returns a set-like object that intercepts the setter function to
  * trigger re-renders on change. Also adds a toggle and reset method.
- * 
+ *
  * @example
- * 
+ *
  * ```typescript
  * function MyComponent() {
  *   const optionalInitialValue = new Set()
- *   const set = useSet2(optionalInitialValue)
+ *   const set = useSet(optionalInitialValue)
 
  *   // ... Use set like you would a vanilla JS Set
  * ```
  */
-export function useSet2<T>(initial: Set<T> = new Set()) {
+export function useSet<T>(initial: Set<T> = new Set()) {
 	const rerender = useUpdate()
-	const setRef = useRef(initial as unknown as UseSet2<T>)
+	const setRef = useRef(initial as unknown as UseSet<T>)
 	const set = setRef.current
 
 	if (!set._add) {

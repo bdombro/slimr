@@ -20,6 +20,8 @@ clean:
 lint:
     npx biome check
 
+
+alias fmt := lint-fix
 # Auto-fix Biome lint/format violations in place
 lint-fix:
     npx biome check --write

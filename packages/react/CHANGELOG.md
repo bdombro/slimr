@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+## [4.0.2]
+
+### Changed
+
+- **Breaking:** `useSet2` / `UseSet2` renamed to `useSet` / `UseSet`. I don't normally do this with a patch version, but this is a fast-follow to the 4.0.0 release (same day), so most people will be unaffected.
+
 ## [4.0.0]
 
 ### Added
