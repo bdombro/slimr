@@ -17,7 +17,8 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "react",
-		"sourceMap": true
+		"sourceMap": true,
+		"types": ["vitest/globals"]
 	},
 	"include": [],
 	"references": [{ "path": "./tsconfig.node.json" }]
