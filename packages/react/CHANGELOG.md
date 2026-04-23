@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [4.0.3]
+
+### Changed
+
+- Hooks and utilities (`mergeRefs`, `Observable`, `useColorScheme`, `useDeepCompareMemo`, `useObservable`, `useReRender`, `useSet`, etc.) extracted to new `@slimr/react-util` package. All exports are unchanged — `@slimr/react` re-exports everything from `@slimr/react-util`.
+
 ## [4.0.2]
 
 ### Changed

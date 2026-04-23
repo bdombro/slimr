@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { useUpdate } from "react-use"
+import { useReRender } from "./useReRender.js"
 
 export interface UseSet<T> extends Set<T> {
 	_add: Set<T>["add"]
@@ -26,7 +26,7 @@ export interface UseSet<T> extends Set<T> {
  * ```
  */
 export function useSet<T>(initial: Set<T> = new Set()) {
-	const rerender = useUpdate()
+	const rerender = useReRender()
 	const setRef = useRef(initial as unknown as UseSet<T>)
 	const set = setRef.current
 

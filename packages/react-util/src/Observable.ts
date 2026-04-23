@@ -1,7 +1,8 @@
 // this file has exports to create an observable and useObservable react hook
 
 import { areEqualDeep } from "@slimr/util"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef } from "react"
+import { useReRender } from "./useReRender.js"
 
 type ObservableSetter<T> = (value: T) => T
 
@@ -95,8 +96,8 @@ export class Observable<T> {
 	 * ```
 	 */
 	use() {
-		const [_, setValue] = useState(this.val)
-		useEffect(() => this.subscribe(setValue), [])
+		const rerender = useReRender()
+		useEffect(() => this.subscribe(rerender), [])
 	}
 
 	get val(): T {
@@ -123,7 +124,7 @@ export interface UseObservableObserver<T> {
  * when assigned. Works with compound assignment like `handle.value++`.
  */
 export function useObservable<T>(initial: T): UseObservableObserver<T> {
-	const [, setTick] = useState(0)
+	const rerender = useReRender()
 	const ref = useRef(initial)
 	return useMemo<UseObservableObserver<T>>(
 		() => ({
@@ -132,7 +133,7 @@ export function useObservable<T>(initial: T): UseObservableObserver<T> {
 			},
 			set value(next: T) {
 				ref.current = next
-				setTick((n) => n + 1)
+				rerender()
 			},
 			toString() {
 				return `${ref.current}`

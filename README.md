@@ -8,6 +8,7 @@
 - [@slimr/mdi-paths](https://www.npmjs.com/package/@slimr/mdi-paths) - A basic Icon component and Material Design icon svg paths, code-split by path.
 - [@slimr/react](https://www.npmjs.com/package/@slimr/react) - A collection of useful 1st and third party react components, hooks, and util. Includes
   several other @slimr libs for convenience
+- [@slimr/react-util](https://www.npmjs.com/package/@slimr/react-util) - React hooks and utilities (mergeRefs, Observable, useColorScheme, useObservable, useReRender, useSet, and more). Re-exported by `@slimr/react`
 - [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
 - [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
