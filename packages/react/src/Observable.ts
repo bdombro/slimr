@@ -1,7 +1,7 @@
 // this file has exports to create an observable and useObservable react hook
 
 import { areEqualDeep } from "@slimr/util"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 type ObservableSetter<T> = (value: T) => T
 
@@ -107,4 +107,37 @@ export class Observable<T> {
 	set val(newValue: T) {
 		this.set(newValue)
 	}
+}
+
+/**
+ * A mutable handle whose `.value` triggers a re-render when assigned.
+ * Works with compound assignment like `handle.value++`.
+ */
+export interface UseObservableObserver<T> {
+	value: T
+	toString(): string
+}
+
+/**
+ * React hook that returns a mutable handle whose `.value` triggers a re-render
+ * when assigned. Works with compound assignment like `handle.value++`.
+ */
+export function useObservable<T>(initial: T): UseObservableObserver<T> {
+	const [, setTick] = useState(0)
+	const ref = useRef(initial)
+	return useMemo<UseObservableObserver<T>>(
+		() => ({
+			get value() {
+				return ref.current
+			},
+			set value(next: T) {
+				ref.current = next
+				setTick((n) => n + 1)
+			},
+			toString() {
+				return `${ref.current}`
+			},
+		}),
+		[],
+	)
 }

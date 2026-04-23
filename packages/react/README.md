@@ -30,7 +30,6 @@ export default defineConfig({
 - [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
 - [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
-- [react-use](https://www.npmjs.com/package/react-use) - an excellent collection of hooks
 
 ### mergeRefs
 
@@ -64,13 +63,26 @@ Provides a variable with observable capabilities, like pub/sub and React hook in
   }
 ```
 
+### useObservable
+
+A hook that returns a mutable handle whose `.value` triggers a re-render when assigned. Supports compound assignment (`handle.value++`) and implicit string coercion via `.toString()`.
+
+```tsx
+import { useObservable } from '@slimr/react';
+
+function Counter() {
+  const count = useObservable(0)
+  return <button onClick={() => count.value++}>{count}</button>
+}
+```
+
 ### useDeepCompareMemo and useShallowCompareMemo
 
-like react-use's useDeepEffects, but for memos
+like [react-use](https://www.npmjs.com/package/react-use)'s useDeepEffects, but for memos
 
-### useSet2
+### useSet
 
-Returns a set-like object that intercepts the setter function to trigger re-renders on change. Also adds a toggle and reset method. `@slimr/hooks` also exports a `useSet` from `react-use`, which is similar but has a different, less desirable (imho) pattern.
+Returns a set-like object that intercepts the setter function to trigger re-renders on change. Also adds a toggle and reset method.
 
 ```typescript
 function MyComponent() {

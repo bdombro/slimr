@@ -3,7 +3,6 @@ export * from "@slimr/markdown"
 export * from "@slimr/router"
 export * from "@slimr/styled"
 export * from "@slimr/swr"
-export * from "react-use"
 
 export * from "./merge-refs.js"
 export * from "./Observable.js"
