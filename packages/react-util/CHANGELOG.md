@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.1]
+
+### Added
+
+- `useColorScheme` now tolerates running in non-browser environments
+
 ## [1.0.0]
 
 ### Added

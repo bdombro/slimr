@@ -38,7 +38,7 @@ function MyComponent() {
 
 ### useColorScheme
 
-Returns `{ dark, light, scheme }` that tracks the OS color scheme preference.
+Returns `{ dark, light, scheme }` that tracks the browser color scheme preference.
 
 ```typescript
 function MyComponent() {

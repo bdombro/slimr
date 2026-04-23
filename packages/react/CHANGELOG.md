@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [4.0.5]
+
+### Changed
+
+- Bumped `@slimr/react-util` dependency to `^1.0.1` to get the latest `useColorScheme` fix.
+
 ## [4.0.3]
 
 ### Changed
