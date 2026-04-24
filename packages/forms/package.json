@@ -1,6 +1,6 @@
 {
 	"name": "@slimr/forms",
-	"version": "5.0.49",
+	"version": "5.0.51",
 	"author": "Brian Dombrowski",
 	"license": "ISC",
 	"private": false,
@@ -25,13 +25,18 @@
 	},
 	"scripts": {
 		"build": "run-p build:*",
-		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false && cp -r src/* $OUT",
-		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
+		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
+		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
 		"clean": "rm -rf esm cjs",
 		"start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
 	},
+	"files": [
+		"cjs",
+		"esm",
+		"README.md"
+	],
 	"dependencies": {
-		"@slimr/util": "^3.2.76"
+		"@slimr/util": "^3.2.78"
 	},
 	"peerDependencies": {
 		"@types/react": "*",

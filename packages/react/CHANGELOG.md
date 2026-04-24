@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [4.0.7]
+
+### Changed
+
+- Excluding ts source files from published bundle for better compat
+
 ## [4.0.5]
 
 ### Changed

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2]
+
+### Changed
+
+- Excluding ts source files from published bundle for better compat
+
 ## [1.0.1]
 
 ### Added

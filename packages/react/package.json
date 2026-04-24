@@ -1,6 +1,6 @@
 {
 	"name": "@slimr/react",
-	"version": "4.0.7",
+	"version": "4.0.9",
 	"author": "Brian Dombrowski",
 	"license": "ISC",
 	"private": false,
@@ -25,18 +25,24 @@
 	},
 	"scripts": {
 		"build": "run-p build:*",
-		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false && cp -r src/* $OUT",
-		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false && cp -r src/* $OUT",
+		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
+		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
 		"clean": "rm -rf esm cjs",
 		"start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
 	},
+	"files": [
+		"cjs",
+		"esm",
+		"README.md",
+		"CHANGELOG.md"
+	],
 	"dependencies": {
-		"@slimr/forms": "^5.0.49",
-		"@slimr/markdown": "^2.1.89",
-		"@slimr/react-util": "^1.0.2",
-		"@slimr/router": "^2.1.96",
-		"@slimr/styled": "^2.1.96",
-		"@slimr/swr": "^2.1.75"
+		"@slimr/forms": "^5.0.51",
+		"@slimr/markdown": "^2.1.91",
+		"@slimr/react-util": "^1.0.4",
+		"@slimr/router": "^2.1.98",
+		"@slimr/styled": "^2.1.98",
+		"@slimr/swr": "^2.1.77"
 	},
 	"peerDependencies": {
 		"@types/react": "*",

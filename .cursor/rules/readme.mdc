@@ -1,0 +1,16 @@
+---
+description: README tone—concise, human-readable, senior-engineer audience
+globs:
+  - "README.md"
+alwaysApply: false
+---
+
+**Audience:** senior engineers (CLI, builds, VCS, reading code—skip hand-holding).
+
+- **Voice:** direct English; outcome first; tradeoffs and limits when non-obvious. One strong
+  example beats many weak ones; prefer real repo commands/paths when useful.
+- **Shape:** clear `##` / `###`, fenced code with language tags, small tables for dense reference.
+  Wrap prose near **100** columns when it stays readable.
+- **Substance:** what / why / how for adoptable features; copy-pastable invocations or schema;
+  note defaults, validation, failures only where it matters. No long tutorials unless the repo is
+  one.
