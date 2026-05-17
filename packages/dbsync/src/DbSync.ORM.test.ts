@@ -48,6 +48,39 @@ describe("DbSync ORM", () => {
 		expect(await db.findAll("deletedQueue")).toEqual([])
 	})
 
+	/** Confirms table migrations run during init so existing records upgrade automatically when the app boots. */
+	test("runs configured table migrations during init", async () => {
+		await db.put("posts", {
+			id: "post-1",
+			firstName: "Ada",
+			lastName: "Lovelace",
+			storeVersion: 0,
+		})
+
+		const upgrade = vi.fn(async (record: any) => {
+			record.fullName = `${record.firstName} ${record.lastName}`.trim()
+			delete record.firstName
+			delete record.lastName
+		})
+
+		db.config.tables.posts.migrations = [
+			{
+				version: 1,
+				note: "combine name fields",
+				upgrade,
+			},
+		]
+
+		await db.init()
+
+		expect(upgrade).toHaveBeenCalledTimes(1)
+		expect(await db.get<any>("posts", "post-1")).toMatchObject({
+			id: "post-1",
+			fullName: "Ada Lovelace",
+			storeVersion: 1,
+		})
+	})
+
 	/** Confirms writes are readable immediately so the local store acts like a usable database instead of a remote cache. */
 	test("adds and retrieves record", async () => {
 		await db.put("posts", { id: "1", content: "hello", userId: "u1" })

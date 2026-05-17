@@ -53,6 +53,51 @@ By default, you don't even need to provide a `version`. The library calculates a
 
 If you prefer explicit control, you can provide an exact `version: number` in the config. `@slimr/dbsync` will strictly enforce that exact version across the network instead.
 
+### Pre-Write Hooks
+Sometimes you want to ensure default values or dynamic fields are applied before any `add` or `put` operation. By providing a `beforeWrite` function in your `DbSyncTableConfig`, you can modify or validate the payload immediately before it is written to the queue, ensuring all subsequent hooks and backend tables receive consistent data.
+
+```typescript
+const db = new DbSync({
+    adapter: dbAdapter,
+    tables: {
+        posts: { 
+            beforeWrite: (val) => ({ ...val, updatedAt: Date.now() }) 
+        }
+    }
+});
+```
+
+### Schema Data Migrations
+As your app grows, document structures will evolve. `@slimr/dbsync` provides a graceful mechanism for applying sequential, in-place schema rewrites to persistent data immediately after IndexedDB initialization. This ensures long-lived cached objects automatically adapt to your new models.
+
+Simply supply a `migrations` array onto your `DbSyncTableConfig`. `@slimr/dbsync` iterates through the existing records, applies the logic cleanly, and commits the updated schema to the database. A record currently at `version: 1` will only trigger migrations where `version >= 2`.
+
+```typescript
+import { DbSync, type Migration } from '@slimr/dbsync';
+
+const userMigrations: Migration[] = [
+    {
+        version: 2,
+        note: 'Merge firstName and lastName into fullName',
+        upgrade: async (record) => {
+            record.fullName = `${record.firstName} ${record.lastName}`.trim();
+            delete record.firstName;
+            delete record.lastName;
+            // The record is updated in place
+        }
+    }
+];
+
+const db = new DbSync({
+    adapter: dbAdapter,
+    tables: {
+        users: { 
+            migrations: userMigrations
+        }
+    }
+});
+```
+
 ## The ORM API
 Once initialized, `dbsync` acts as a fast NoSQL document store. To support offline-first behavior, you should generate IDs locally using `db.uuid()`.
 

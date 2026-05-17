@@ -1,48 +1,48 @@
 {
-	"name": "@slimr/dbsync",
-	"version": "0.0.12",
-	"author": "Brian Dombrowski",
-	"license": "ISC",
-	"private": false,
-	"main": "cjs/index.js",
-	"module": "esm/index.js",
-	"sideEffects": false,
-	"exports": {
-		".": {
-			"require": "./cjs/index.js",
-			"import": "./esm/index.js"
-		},
-		"./adapters": {
-			"require": "./cjs/adapters/index.js",
-			"import": "./esm/adapters/index.js"
-		},
-		"./react": {
-			"require": "./cjs/react.js",
-			"import": "./esm/react.js"
-		}
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/bdombro/slimr.git"
-	},
-	"type": "module",
-	"scripts": {
-		"build": "run-p build:*",
-		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
-		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
-		"clean": "rm -rf esm cjs",
-		"start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'",
-		"test": "vitest run",
-		"test:e2e": "playwright test",
-		"typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-		"typecheck": "tsc -noEmit && npm run typecheck:test"
-	},
-	"files": [
-		"docs",
-		"cjs",
-		"esm"
-	],
-	"dependencies": {
-		"@slimr/util": "^3.2.78"
-	}
+  "name": "@slimr/dbsync",
+  "version": "0.0.13",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "require": "./cjs/index.js",
+      "import": "./esm/index.js"
+    },
+    "./adapters": {
+      "require": "./cjs/adapters/index.js",
+      "import": "./esm/adapters/index.js"
+    },
+    "./react": {
+      "require": "./cjs/react.js",
+      "import": "./esm/react.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bdombro/slimr.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "run-p build:*",
+    "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
+    "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
+    "clean": "rm -rf esm cjs",
+    "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+    "typecheck": "tsc -noEmit && npm run typecheck:test"
+  },
+  "files": [
+    "docs",
+    "cjs",
+    "esm"
+  ],
+  "dependencies": {
+    "@slimr/util": "^3.2.78"
+  }
 }

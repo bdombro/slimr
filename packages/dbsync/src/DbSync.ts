@@ -2,14 +2,22 @@ import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
 import { AuthManager } from "./internal/AuthManager.js"
 import { EventBus, type SyncState } from "./internal/EventBus.js"
+import {
+	type MigrationManagerMigration as Migration,
+	MigrationManager,
+} from "./internal/MigrationManager.js"
 import { StorageManager } from "./internal/StorageManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
+
+export type { Migration }
 
 export interface DbSyncTableConfig {
 	/** Optional index names to create for the store. */
 	indexes?: string[]
 	/** Optional callback that fills in default fields before write operations. */
 	beforeWrite?: (value: any) => any
+	/** Optional migrations to run on records when the schema evolves. */
+	migrations?: Migration[]
 }
 
 export interface DbSyncConfig {
@@ -83,7 +91,21 @@ export class DbSync {
 	}
 	/** Initializes the underlying IndexedDB stores. */
 	public async init() {
-		return this.storage.init()
+		await this.storage.init()
+
+		const schemaMigrations: Record<string, Migration[]> = {}
+		let hasMigrations = false
+		for (const [storeName, tableConfig] of Object.entries(this.config.tables)) {
+			if (tableConfig.migrations && tableConfig.migrations.length > 0) {
+				schemaMigrations[storeName] = tableConfig.migrations
+				hasMigrations = true
+			}
+		}
+
+		if (hasMigrations) {
+			const migrationManager = new MigrationManager(this)
+			await migrationManager.runAll(schemaMigrations)
+		}
 	}
 	/** Returns a queued transaction object for batched writes. */
 	public getTransaction() {
