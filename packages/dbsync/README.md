@@ -27,9 +27,9 @@ You instantiate `dbsync` by supplying your backend [adapter](./src/adapters/Adap
 
 ```typescript
 import { DbSync } from '@slimr/dbsync';
-import { RestAdapter } from '@slimr/dbsync/adapters';
+import { LocalAdapter, RestAdapter } from '@slimr/dbsync/adapters';
 
-const dbAdapter = new RestAdapter({ url: 'https://api.myapp.com' });
+const dbAdapter = process.env.TEST ? new LocalAdapter() : new RestAdapter({ url: 'https://api.myapp.com' });
 
 const db = new DbSync({
     adapter: dbAdapter,
@@ -42,6 +42,8 @@ const db = new DbSync({
 // Await init before usage
 await db.init();
 ```
+
+> **Local-Only No-Sync Database:** If you want all the IndexedDB ORM and reactive features, but completely lack a remote database to sync to, simply import `LocalAdapter` from `@slimr/dbsync/adapters` and pass that into the constructor instead. It acts as an empty black box so your operations succeed cleanly entirely on the client.
 
 ## Schema Versioning
 
