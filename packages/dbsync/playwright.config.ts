@@ -6,11 +6,12 @@ export default defineConfig({
 	fullyParallel: true,
 	use: {
 		browserName: "chromium",
-		baseURL: "http://localhost:5173",
+		baseURL: "http://127.0.0.1:5173",
 	},
 	webServer: {
-		command: "cd ../../ && ./node_modules/.bin/vite packages/dbsync/playwright/fixtures",
+		command: "cd playwright/fixtures && ../../../../node_modules/.bin/vite",
 		port: 5173,
+		host: "127.0.0.1",
 		reuseExistingServer: !process.env.CI,
 	},
 })

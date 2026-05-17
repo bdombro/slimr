@@ -6,7 +6,7 @@ import {
 	type MigrationManagerMigration as Migration,
 	MigrationManager,
 } from "./internal/MigrationManager.js"
-import { StorageManager } from "./internal/StorageManager.js"
+import { applyDefaults, StorageManager } from "./internal/StorageManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
 
 export type { Migration }
@@ -15,7 +15,7 @@ export interface DbSyncTableConfig {
 	/** Optional index names to create for the store. */
 	indexes?: string[]
 	/** Optional callback that fills in default fields before write operations. */
-	beforeWrite?: (value: any) => any
+	defaultSetter?: (value: any) => any
 	/** Optional migrations to run on records when the schema evolves. */
 	migrations?: Migration[]
 }
@@ -106,6 +106,24 @@ export class DbSync {
 			const migrationManager = new MigrationManager(this)
 			await migrationManager.runAll(schemaMigrations)
 		}
+	}
+	/** Applies the configured migrations for a single store to the provided record. */
+	public async upgradeRecord<T extends Record<string, any>>(
+		storeName: string,
+		record: T,
+	): Promise<T> {
+		const migrations = this.config.tables[storeName]?.migrations || []
+		if (migrations.length === 0) {
+			return record
+		}
+
+		const upgradedRecord = { ...record }
+		await MigrationManager.upgradeRecord(upgradedRecord, migrations)
+		return upgradedRecord as T
+	}
+	/** Applies the configured defaultSetter/defaulting logic for a single store without persisting. */
+	public applyDefaults<T extends Record<string, any>>(storeName: string, record: T): T {
+		return applyDefaults(this.config.tables[storeName], record)
 	}
 	/** Returns a queued transaction object for batched writes. */
 	public getTransaction() {

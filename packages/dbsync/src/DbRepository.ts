@@ -48,6 +48,16 @@ export class DbRepository<T> {
 	}
 
 	/**
+	 * Applies the store's defaultSetter/defaulting logic without persisting the record.
+	 *
+	 * @param value The partial object payload.
+	 * @returns A promise resolving to the normalized record.
+	 */
+	applyDefaults(value: Partial<T>): T {
+		return this.db.applyDefaults(this.storeName, value as Record<string, any>) as T
+	}
+
+	/**
 	 * Inserts or updates an existing record in the object store.
 	 *
 	 * @param value The complete object to upsert.

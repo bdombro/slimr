@@ -48,6 +48,63 @@ describe("DbSync ORM", () => {
 		expect(await db.findAll("deletedQueue")).toEqual([])
 	})
 
+	/** Confirms the public upgradeRecord helper applies configured migrations on demand without writing to IndexedDB. */
+	test("upgrades a record on demand through the public API", async () => {
+		const upgrade = vi.fn(async (record: any) => {
+			record.title = record.legacyTitle.toUpperCase()
+			delete record.legacyTitle
+		})
+
+		db.config.tables.posts.migrations = [
+			{
+				version: 1,
+				note: "rename legacy title",
+				upgrade,
+			},
+		]
+
+		const importedPost = {
+			id: "imported-1",
+			legacyTitle: "hello world",
+			storeVersion: 0,
+		}
+
+		const upgraded = await db.upgradeRecord("posts", importedPost)
+
+		expect(upgrade).toHaveBeenCalledTimes(1)
+		expect(upgraded).toMatchObject({
+			id: "imported-1",
+			title: "HELLO WORLD",
+			storeVersion: 1,
+		})
+		expect(importedPost).toMatchObject({
+			id: "imported-1",
+			legacyTitle: "hello world",
+			storeVersion: 0,
+		})
+	})
+
+	/** Confirms the public applyDefaults helper applies table defaulting logic without persisting the record. */
+	test("applies defaults on demand through the public API", async () => {
+		db.config.tables.posts.defaultSetter = (value) => ({
+			id: "defaulted-post",
+			title: "default title",
+			createdAt: 123,
+			...value,
+		})
+
+		const importedPost = { title: "custom title" }
+		const normalized = await db.applyDefaults("posts", importedPost)
+
+		expect(normalized).toEqual({
+			id: "defaulted-post",
+			title: "custom title",
+			createdAt: 123,
+		})
+		expect(importedPost).toEqual({ title: "custom title" })
+		expect(await db.findAll<any>("posts")).toEqual([])
+	})
+
 	/** Confirms table migrations run during init so existing records upgrade automatically when the app boots. */
 	test("runs configured table migrations during init", async () => {
 		await db.put("posts", {
@@ -90,7 +147,7 @@ describe("DbSync ORM", () => {
 
 	/** Confirms table-level default injectors can fill missing fields for add/put writes. */
 	test("applies table default injectors on add", async () => {
-		db.config.tables.posts.beforeWrite = (value) => ({
+		db.config.tables.posts.defaultSetter = (value) => ({
 			id: "auto-post",
 			content: "default content",
 			createdAt: 123,
@@ -204,7 +261,7 @@ describe("DbSync ORM", () => {
 
 	/** Confirms transaction writes use the same table default injectors as direct writes. */
 	test("applies table default injectors in transactions", async () => {
-		db.config.tables.posts.beforeWrite = (value) => ({
+		db.config.tables.posts.defaultSetter = (value) => ({
 			id: "tx-auto-post",
 			content: "default tx content",
 			createdAt: 456,

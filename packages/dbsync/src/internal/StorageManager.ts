@@ -3,10 +3,28 @@ import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
 import { DbTransaction } from "./DbTransaction.js"
 import type { EventBus } from "./EventBus.js"
 
+type TableDefaults = {
+	/** Callback that fills in default fields before a write is persisted. */
+	defaultSetter?: (value: any) => any
+}
+
+/** Applies a table's defaultSetter logic to a shallow copy without mutating the original input. */
+export const applyDefaults = <T>(tableConfig: TableDefaults | undefined, value: T): T => {
+	const nextValue = { ...value }
+	return (tableConfig?.defaultSetter?.(nextValue) ?? nextValue) as T
+}
+
+/**
+ * Captures the final payload written for a single store operation after defaults and patches are applied.
+ */
 type ExecutedWrite = {
+	/** The operation that was executed. */
 	type: string
+	/** The store the operation targeted. */
 	storeName: string
+	/** The final value written to IndexedDB, if applicable. */
 	value?: any
+	/** The record key used for the write, if one was present. */
 	key?: string | number
 }
 
@@ -151,10 +169,7 @@ export class StorageManager {
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
 				if (op.type === "put" || op.type === "add") {
-					const beforeWrite = this.config.tables[op.storeName]?.beforeWrite
-					if (beforeWrite) {
-						payloadToWrite = beforeWrite(payloadToWrite)
-					}
+					payloadToWrite = applyDefaults(this.config.tables[op.storeName], payloadToWrite)
 					recordId = op.key || payloadToWrite?.id
 				} else if (op.type === "patch") {
 					const existingRecord = patchRecords[`${op.storeName}-${recordId}`]
