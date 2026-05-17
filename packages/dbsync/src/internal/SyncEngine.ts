@@ -1,0 +1,195 @@
+import type { BackendAdapter } from "../adapters/types.js"
+import type { DbSyncConfig } from "../DbSync.js"
+import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
+import type { AuthManager } from "./AuthManager.js"
+import type { EventBus } from "./EventBus.js"
+import type { StorageManager } from "./StorageManager.js"
+
+export class SyncEngine {
+	private syncSetInterval: any = null
+
+	constructor(
+		private config: DbSyncConfig,
+		private syncInterval: number,
+		private events: EventBus,
+		private storage: StorageManager,
+		private auth: AuthManager,
+		private adapter: BackendAdapter,
+		private onSchemaChange: () => void,
+	) {}
+
+	public enable() {
+		if (!this.syncSetInterval) {
+			this.syncSetInterval = setInterval(() => this.sync(), this.syncInterval)
+		}
+	}
+
+	public disable() {
+		if (this.syncSetInterval) {
+			clearInterval(this.syncSetInterval)
+			this.syncSetInterval = null
+		}
+	}
+
+	public get isEnabled() {
+		return !!this.syncSetInterval
+	}
+
+	public get isLive() {
+		const lastSuccess = localStorage.getItem("dbsync-lastSuccessAt")
+		if (!lastSuccess) return false
+		return Date.now() - new Date(lastSuccess).getTime() < this.syncInterval * 4
+	}
+
+	public async waitForLive(): Promise<void> {
+		const { promise, resolve, reject } = promiseWithResolvers<void>()
+		if (!this.isEnabled) {
+			reject(new Error("Sync disabled"))
+			return promise
+		}
+		const check = setInterval(() => {
+			if (this.isLive) {
+				clearInterval(check)
+				resolve()
+			}
+		}, this.syncInterval)
+		return promise
+	}
+
+	public async triggerSync() {
+		await this.sync()
+	}
+
+	private async sync() {
+		if (typeof navigator !== "undefined" && navigator.locks) {
+			await navigator.locks.request("dbsync-leader", async () => {
+				await this.performSync()
+			})
+		} else {
+			await this.performSync()
+		}
+	}
+
+	private async performSync() {
+		this.events.setState("syncing")
+		try {
+			await this.syncPull()
+			await this.syncPush()
+			this.events.setState("idle")
+			this.auth.isAuth = true
+			localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
+		} catch (err: any) {
+			if (err.status === 401) {
+				this.auth.isAuth = false
+				this.disable()
+			}
+			this.events.setState("error")
+		}
+	}
+
+	private get schemaSignature() {
+		const tables = Object.keys(this.config.tables)
+			.sort()
+			.map((table) => {
+				return {
+					table,
+					indexes: this.config.tables[table].indexes?.slice().sort() || [],
+				}
+			})
+		return JSON.stringify(tables)
+	}
+
+	private async syncPull() {
+		let hasMore = true
+		while (hasMore) {
+			const cursor = localStorage.getItem("dbsync-pullSyncedUpTo") || ""
+			const data = await this.adapter.pull(cursor)
+
+			if (data.items && data.items.length > 0) {
+				const tx = this.storage.getTransaction()
+				data.items.forEach((post: any) => {
+					if (post.variant === "__dbsync_system" && post.id === "version") {
+						const remoteContent = JSON.parse(post.content)
+						if (this.config.version !== undefined) {
+							if (remoteContent.version && remoteContent.version > this.config.version) {
+								this.onSchemaChange()
+							}
+						} else {
+							const currentSignature = this.schemaSignature
+							if (remoteContent.signature && remoteContent.signature !== currentSignature) {
+								this.onSchemaChange()
+							}
+						}
+						return
+					}
+					const storeName = post.variant
+					if (post.isDeleted) tx.delete(storeName, post.id)
+					else tx.put(storeName, { id: post.id, ...JSON.parse(post.content) })
+				})
+				await tx.commit()
+				localStorage.setItem("dbsync-pullSyncedUpTo", data.items[data.items.length - 1].updatedAt)
+			}
+			hasMore = data.hasMore
+		}
+	}
+
+	private async syncPush() {
+		const dirty = await this.storage.findAll<any>("dirtyQueue")
+		const deleted = await this.storage.findAll<any>("deletedQueue")
+
+		const payload = [
+			...dirty.map((d) => ({
+				id: d.id,
+				variant: d.table,
+				content: JSON.stringify(d.payload),
+				isDeleted: false,
+				updatedAt: new Date(d.timestamp).toISOString(),
+			})),
+			...deleted.map((d) => ({
+				id: d.id,
+				variant: d.table,
+				content: "{}",
+				isDeleted: true,
+				updatedAt: new Date(d.timestamp).toISOString(),
+			})),
+		]
+
+		if (this.config.version !== undefined) {
+			const localVersion = Number(localStorage.getItem("dbsync-version") || "0")
+			if (this.config.version > localVersion) {
+				payload.push({
+					id: "version",
+					variant: "__dbsync_system",
+					content: JSON.stringify({ version: this.config.version }),
+					isDeleted: false,
+					updatedAt: new Date().toISOString(),
+				})
+			}
+		} else {
+			const currentSignature = this.schemaSignature
+			const storedSyncSig = localStorage.getItem("dbsync-sync-signature") || ""
+			if (currentSignature !== storedSyncSig) {
+				payload.push({
+					id: "version",
+					variant: "__dbsync_system",
+					content: JSON.stringify({ signature: currentSignature }),
+					isDeleted: false,
+					updatedAt: new Date().toISOString(),
+				})
+			}
+		}
+
+		if (payload.length > 0) {
+			await this.adapter.push(payload)
+
+			if (this.config.version !== undefined)
+				localStorage.setItem("dbsync-version", String(this.config.version))
+			else localStorage.setItem("dbsync-sync-signature", this.schemaSignature)
+
+			const tx = this.storage.getTransaction()
+			dirty.forEach((d) => tx.delete("dirtyQueue", d.id))
+			deleted.forEach((d) => tx.delete("deletedQueue", d.id))
+			await tx.commit()
+		}
+	}
+}
