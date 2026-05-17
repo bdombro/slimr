@@ -110,7 +110,6 @@ export async function publishWorkspaces(
 
 	console.log(`[PUBLISH]:publish\n`)
 	for (const workspace of toPublish) {
-		if (p.bump) await bumpVersion(workspaces, workspace)
 		console.log(`[PUBLISH]: Publishing ${workspace.name}@${workspace.config.version}...`)
 		console.log(await execPromise("npm publish --access public", workspace.path))
 	}
