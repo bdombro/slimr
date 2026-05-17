@@ -96,6 +96,11 @@ export class DbSync {
 		await this.storage.executeTransaction([{ type: "add", storeName, value, key }])
 		return value
 	}
+	/** Partially updates an existing record in the given object store. */
+	public async patch<T>(storeName: string, value: Partial<T>, key?: string | number): Promise<T> {
+		await this.storage.executeTransaction([{ type: "patch", storeName, value, key }])
+		return value as T
+	}
 	/** Upserts a record into the given object store. */
 	public async put<T>(storeName: string, value: any, key?: string | number): Promise<T> {
 		await this.storage.executeTransaction([{ type: "put", storeName, value, key }])

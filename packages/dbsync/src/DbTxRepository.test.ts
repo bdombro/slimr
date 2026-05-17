@@ -6,6 +6,7 @@ describe("DbTxRepository", () => {
 		const tx = {
 			add: vi.fn(),
 			put: vi.fn(),
+			patch: vi.fn(),
 			delete: vi.fn(),
 			clear: vi.fn(),
 			commit: vi.fn(),
@@ -15,11 +16,13 @@ describe("DbTxRepository", () => {
 
 		repo.add({ name: "beta" }, "2")
 		repo.put({ id: "1", name: "gamma" })
+		repo.patch({ id: "1", name: "delta" })
 		repo.delete("1")
 		repo.clear()
 
 		expect(tx.add).toHaveBeenCalledWith("posts", { name: "beta" }, "2")
 		expect(tx.put).toHaveBeenCalledWith("posts", { id: "1", name: "gamma" }, undefined)
+		expect(tx.patch).toHaveBeenCalledWith("posts", { id: "1", name: "delta" }, undefined)
 		expect(tx.delete).toHaveBeenCalledWith("posts", "1")
 		expect(tx.clear).toHaveBeenCalledWith("posts")
 	})

@@ -47,6 +47,16 @@ export class DbTxRepository<T> {
 	}
 
 	/**
+	 * Queues a partial update operation for an existing record.
+	 *
+	 * @param value The object partial payload to patch.
+	 * @param key An optional explicit primary key.
+	 */
+	patch(value: Partial<T>, key?: string | number): void {
+		this.tx.patch(this.storeName, value, key)
+	}
+
+	/**
 	 * Queues an operation to remove all records from the object store.
 	 */
 	clear(): void {

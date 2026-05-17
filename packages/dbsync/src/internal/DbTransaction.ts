@@ -11,7 +11,7 @@ export class DbTransaction {
 	 * @internal Evaluated and executed by the executor function upon `commit()`.
 	 */
 	private operations: {
-		type: "put" | "add" | "delete" | "clear"
+		type: "put" | "add" | "delete" | "clear" | "patch"
 		storeName: string
 		value?: any
 		key?: string | number
@@ -46,6 +46,18 @@ export class DbTransaction {
 	 */
 	put(storeName: string, value: any, key?: string | number) {
 		this.operations.push({ type: "put", storeName, value, key })
+	}
+
+	/**
+	 * Queues a partial update of an existing record.
+	 * Fails if the primary key does not already exist in the database.
+	 *
+	 * @param storeName The name of the target object store.
+	 * @param value The partial object payload containing the primary key and fields to update.
+	 * @param key An optional explicit primary key.
+	 */
+	patch(storeName: string, value: any, key?: string | number) {
+		this.operations.push({ type: "patch", storeName, value, key })
 	}
 
 	/**

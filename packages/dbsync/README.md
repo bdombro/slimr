@@ -97,6 +97,7 @@ const tx = db.getTransaction();
 
 tx.put('posts', { id: '1', content: 'Atomic write 1' });
 tx.put('posts', { id: '2', content: 'Atomic write 2' });
+tx.patch('posts', { id: '2', content: 'Atomic write 2b' });
 tx.delete('users', 'bad_user');
 
 // Writes hit the database together
@@ -121,6 +122,7 @@ class Tx {
 const tx = new Tx();
 tx.posts.put({ id: '1', content: 'Atomic write 1' });
 tx.posts.put({ id: '2', content: 'Atomic write 2' });
+tx.posts.patch({ id: '2', content: 'Atomic write 2b' });
 tx.users.delete('bad_user');
 
 // Writes hit the database together

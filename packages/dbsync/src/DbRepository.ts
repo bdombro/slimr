@@ -69,6 +69,17 @@ export class DbRepository<T> {
 	}
 
 	/**
+	 * Partially updates an existing record in the object store.
+	 *
+	 * @param value The partial object payload.
+	 * @param key An optional explicit primary key.
+	 * @returns A promise resolving to the final patched record.
+	 */
+	async patch(value: Partial<T>, key?: string | number): Promise<T> {
+		return this.db.patch<T>(this.storeName, value, key)
+	}
+
+	/**
 	 * Discards all records present in the object store.
 	 *
 	 * @returns A promise resolving when the store has been completely cleared.

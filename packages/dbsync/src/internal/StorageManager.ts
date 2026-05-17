@@ -98,8 +98,35 @@ export class StorageManager {
 			"dirtyQueue",
 			"deletedQueue",
 		])
-		const { promise, resolve, reject } = promiseWithResolvers<void>()
 
+		// Pre-fetch objects for patch operations using a separate read-only transaction.
+		// A standard IndexedDB transaction auto-commits if we await inside it, so we must
+		// gather everything into memory synchronously before opening the main readwrite transaction.
+		const patchOperations = operations.filter((o) => o.type === "patch")
+		const patchRecords: Record<string, any> = {}
+
+		if (patchOperations.length > 0) {
+			const preTx = this.db.transaction(storeNames, "readonly")
+			const fetchPromises = patchOperations.map(async (op) => {
+				const recordId = String(op.key || op.value?.id)
+				const { promise: p, resolve: r, reject: rej } = promiseWithResolvers<any>()
+				const getReq = preTx.objectStore(op.storeName).get(recordId)
+				getReq.onsuccess = () => r(getReq.result)
+				getReq.onerror = () => rej(getReq.error)
+				const existingRecord = await p
+
+				if (!existingRecord) {
+					throw new Error(
+						`[dbsync]: Cannot patch record ${recordId} in ${op.storeName} because it doesn't exist`,
+					)
+				}
+				patchRecords[`${op.storeName}-${recordId}`] = existingRecord
+			})
+			await Promise.all(fetchPromises)
+		}
+
+		// Now execute the actual write bundle synchronously
+		const { promise, resolve, reject } = promiseWithResolvers<void>()
 		const tx = this.db.transaction(storeNames, "readwrite")
 		tx.oncomplete = () => {
 			this.events.notifySubscribers(storeNames)
@@ -111,13 +138,19 @@ export class StorageManager {
 			const store = tx.objectStore(op.storeName)
 			const recordId = op.key || op.value?.id
 
-			if (op.type === "put" || op.type === "add") {
-				store.put(op.value)
+			if (op.type === "put" || op.type === "add" || op.type === "patch") {
+				let payloadToWrite = op.value
+				if (op.type === "patch") {
+					const existingRecord = patchRecords[`${op.storeName}-${recordId}`]
+					payloadToWrite = { ...existingRecord, ...op.value }
+				}
+
+				store.put(payloadToWrite)
 				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
 					tx.objectStore("dirtyQueue").put({
 						id: recordId,
 						table: op.storeName,
-						payload: op.value,
+						payload: payloadToWrite,
 						timestamp: Date.now(),
 					})
 				}

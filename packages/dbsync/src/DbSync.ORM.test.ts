@@ -55,6 +55,35 @@ describe("DbSync ORM", () => {
 		expect(record).toMatchObject({ id: "1", content: "hello", userId: "u1" })
 	})
 
+	/** Confirms patch updates only the provided fields while preserving the rest of the stored record. */
+	test("patches a record without dropping existing fields", async () => {
+		await db.put("posts", { id: "patch-1", content: "hello", userId: "u1", draft: true })
+
+		await db.patch("posts", { id: "patch-1", content: "updated" })
+
+		expect(await db.get<any>("posts", "patch-1")).toMatchObject({
+			id: "patch-1",
+			content: "updated",
+			userId: "u1",
+			draft: true,
+		})
+
+		expect(await db.findAll<any>("dirtyQueue")).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "patch-1",
+					table: "posts",
+					payload: expect.objectContaining({
+						id: "patch-1",
+						content: "updated",
+						userId: "u1",
+						draft: true,
+					}),
+				}),
+			]),
+		)
+	})
+
 	/** Confirms updates enter the dirty queue so sync can eventually flush them. */
 	test("queues dirty records on write", async () => {
 		await db.put("posts", { id: "2", content: "test queue", userId: "u1" })

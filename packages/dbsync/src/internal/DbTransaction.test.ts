@@ -9,11 +9,18 @@ describe("DbTransaction", () => {
 		const tx = new DbTransaction(executor)
 
 		tx.put("posts", { id: "1", content: "hello" })
+		tx.patch("posts", { id: "1", content: "hello again" })
 		tx.delete("users", "u1")
 		await tx.commit()
 
 		expect(executor).toHaveBeenCalledWith([
 			{ type: "put", storeName: "posts", value: { id: "1", content: "hello" }, key: undefined },
+			{
+				type: "patch",
+				storeName: "posts",
+				value: { id: "1", content: "hello again" },
+				key: undefined,
+			},
 			{ type: "delete", storeName: "users", key: "u1" },
 		])
 
