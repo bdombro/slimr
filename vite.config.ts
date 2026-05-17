@@ -7,7 +7,7 @@ export default defineConfig({
 	plugins: [react()],
 	test: {
 		environment: "jsdom",
-		exclude: ["**/(esm|cjs|node_modules)/**"],
+		exclude: ["**/(esm|cjs|node_modules)/**", "**/playwright/**"],
 		globals: true,
 	},
 })
