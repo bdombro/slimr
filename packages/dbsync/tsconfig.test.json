@@ -1,5 +1,5 @@
 {
-	"extends": "./tsconfig.json",
-	"include": ["src/**/*.ts", "src/**/*.tsx", "playwright/**/*.ts"],
-	"exclude": []
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "playwright/**/*.ts"],
+  "exclude": []
 }

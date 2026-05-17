@@ -1,53 +1,53 @@
 {
-	"name": "@slimr/react",
-	"version": "4.0.9",
-	"author": "Brian Dombrowski",
-	"license": "ISC",
-	"private": false,
-	"sideEffects": false,
-	"keywords": [
-		"preact",
-		"react",
-		"swr"
-	],
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/bdombro/slimr.git"
-	},
-	"type": "module",
-	"main": "./cjs/index.js",
-	"module": "./esm/index.js",
-	"exports": {
-		".": {
-			"require": "./cjs/index.js",
-			"import": "./esm/index.js"
-		}
-	},
-	"scripts": {
-		"build": "run-p build:*",
-		"build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
-		"build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
-		"clean": "rm -rf esm cjs",
-		"start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
-	},
-	"files": [
-		"cjs",
-		"esm",
-		"README.md",
-		"CHANGELOG.md"
-	],
-	"dependencies": {
-		"@slimr/forms": "^5.0.51",
-		"@slimr/markdown": "^2.1.91",
-		"@slimr/react-util": "^1.0.4",
-		"@slimr/router": "^2.1.98",
-		"@slimr/styled": "^2.1.98",
-		"@slimr/swr": "^2.1.77"
-	},
-	"peerDependencies": {
-		"@types/react": "*",
-		"@types/react-dom": "*",
-		"react": "*",
-		"react-dom": "*"
-	}
+  "name": "@slimr/react",
+  "version": "4.0.9",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
+  "sideEffects": false,
+  "keywords": [
+    "preact",
+    "react",
+    "swr"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bdombro/slimr.git"
+  },
+  "type": "module",
+  "main": "./cjs/index.js",
+  "module": "./esm/index.js",
+  "exports": {
+    ".": {
+      "require": "./cjs/index.js",
+      "import": "./esm/index.js"
+    }
+  },
+  "scripts": {
+    "build": "run-p build:*",
+    "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
+    "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
+    "clean": "rm -rf esm cjs",
+    "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
+  },
+  "files": [
+    "cjs",
+    "esm",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "dependencies": {
+    "@slimr/forms": "^5.0.51",
+    "@slimr/markdown": "^2.1.91",
+    "@slimr/react-util": "^1.0.4",
+    "@slimr/router": "^2.1.98",
+    "@slimr/styled": "^2.1.98",
+    "@slimr/swr": "^2.1.77"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "*",
+    "react-dom": "*"
+  }
 }
