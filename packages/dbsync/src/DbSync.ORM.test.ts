@@ -55,6 +55,46 @@ describe("DbSync ORM", () => {
 		expect(record).toMatchObject({ id: "1", content: "hello", userId: "u1" })
 	})
 
+	/** Confirms table-level default injectors can fill missing fields for add/put writes. */
+	test("applies table default injectors on add", async () => {
+		db.config.tables.posts.beforeWrite = (value) => ({
+			id: "auto-post",
+			content: "default content",
+			createdAt: 123,
+			...value,
+		})
+
+		const added = await db.add("posts", { userId: "u-default" })
+		expect(added).toMatchObject({
+			id: "auto-post",
+			content: "default content",
+			createdAt: 123,
+			userId: "u-default",
+		})
+
+		expect(await db.get<any>("posts", "auto-post")).toMatchObject({
+			id: "auto-post",
+			content: "default content",
+			createdAt: 123,
+			userId: "u-default",
+		})
+
+		expect(await db.findAll<any>("dirtyQueue")).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "auto-post",
+					table: "posts",
+					payload: expect.objectContaining({
+						id: "auto-post",
+						content: "default content",
+						createdAt: 123,
+						userId: "u-default",
+					}),
+				}),
+			]),
+		)
+	})
+
 	/** Confirms patch updates only the provided fields while preserving the rest of the stored record. */
 	test("patches a record without dropping existing fields", async () => {
 		await db.put("posts", { id: "patch-1", content: "hello", userId: "u1", draft: true })
@@ -127,6 +167,42 @@ describe("DbSync ORM", () => {
 		expect(await db.get("posts", "5")).toMatchObject({ id: "5", content: "batched", userId: "u1" })
 		expect(subscriber).toHaveBeenCalled()
 		expect(subscriber.mock.calls[0][0]).toEqual(expect.arrayContaining(["posts", "users"]))
+	})
+
+	/** Confirms transaction writes use the same table default injectors as direct writes. */
+	test("applies table default injectors in transactions", async () => {
+		db.config.tables.posts.beforeWrite = (value) => ({
+			id: "tx-auto-post",
+			content: "default tx content",
+			createdAt: 456,
+			...value,
+		})
+
+		const tx = db.getTransaction()
+		tx.add("posts", { userId: "u-tx-default" })
+		await tx.commit()
+
+		expect(await db.get<any>("posts", "tx-auto-post")).toMatchObject({
+			id: "tx-auto-post",
+			content: "default tx content",
+			createdAt: 456,
+			userId: "u-tx-default",
+		})
+
+		expect(await db.findAll<any>("dirtyQueue")).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "tx-auto-post",
+					table: "posts",
+					payload: expect.objectContaining({
+						id: "tx-auto-post",
+						content: "default tx content",
+						createdAt: 456,
+						userId: "u-tx-default",
+					}),
+				}),
+			]),
+		)
 	})
 
 	/** Confirms cancel drops buffered writes before they hit IndexedDB. */

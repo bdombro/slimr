@@ -1,9 +1,16 @@
+import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
 import { AuthManager } from "./internal/AuthManager.js"
 import { EventBus, type SyncState } from "./internal/EventBus.js"
 import { StorageManager } from "./internal/StorageManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
-import { genUuid } from "./internal/utils.js"
+
+export interface DbSyncTableConfig {
+	/** Optional index names to create for the store. */
+	indexes?: string[]
+	/** Optional callback that fills in default fields before write operations. */
+	beforeWrite?: (value: any) => any
+}
 
 export interface DbSyncConfig {
 	/** The backend adapter used for authentication and synchronization. */
@@ -12,7 +19,7 @@ export interface DbSyncConfig {
 	/** Optional fixed IndexedDB version. */
 	version?: number
 	/** The object stores and their index definitions. */
-	tables: Record<string, { indexes?: string[] }>
+	tables: Record<string, DbSyncTableConfig>
 }
 
 export type { SyncState }
@@ -67,7 +74,7 @@ export class DbSync {
 
 	/** Returns a fresh RFC-4122 UUID. */
 	public genUuid() {
-		return genUuid()
+		return createUid()
 	}
 
 	/** Whether the storage layer has finished initializing. */
@@ -93,8 +100,10 @@ export class DbSync {
 	}
 	/** Inserts a new record into the given object store. */
 	public async add<T>(storeName: string, value: any, key?: string | number): Promise<T> {
-		await this.storage.executeTransaction([{ type: "add", storeName, value, key }])
-		return value
+		const [executedWrite] = await this.storage.executeTransaction([
+			{ type: "add", storeName, value, key },
+		])
+		return executedWrite?.value as T
 	}
 	/** Partially updates an existing record in the given object store. */
 	public async patch<T>(storeName: string, value: Partial<T>, key?: string | number): Promise<T> {
@@ -103,8 +112,10 @@ export class DbSync {
 	}
 	/** Upserts a record into the given object store. */
 	public async put<T>(storeName: string, value: any, key?: string | number): Promise<T> {
-		await this.storage.executeTransaction([{ type: "put", storeName, value, key }])
-		return value
+		const [executedWrite] = await this.storage.executeTransaction([
+			{ type: "put", storeName, value, key },
+		])
+		return executedWrite?.value as T
 	}
 	/** Deletes a record from the given object store. */
 	public async delete(storeName: string, key: string | number): Promise<void> {

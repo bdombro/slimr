@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react"
 import type { DbSync } from "./DbSync.js"
 
+type DbQueryState<T> = {
+	value: T | null
+	loading: boolean
+}
+
 /**
  * A React hook that subscribes to one or more `DbSync` tables and natively
  * re-evaluates a strictly typed query function whenever local mutations or
@@ -10,16 +15,16 @@ import type { DbSync } from "./DbSync.js"
  * @param stores A string or array of strings containing the table names the query function reads from.
  * @param queryFn An asynchronous function invoked to pull data from IndexedDB.
  * @param deps A standard React dependency array for parameters referenced inside the `queryFn`.
- * @returns The resolved data of the `queryFn`, or `undefined` while the initial fetch evaluates.
+ * @returns An object containing the latest query result and whether the initial fetch is still pending.
  */
 export function useDbQuery<T>(
 	db: DbSync,
 	stores: string | string[],
 	queryFn: () => Promise<T>,
 	deps: any[] = [],
-): T | undefined {
-	/** Holds the latest query result. */
-	const [data, setData] = useState<T | undefined>(undefined)
+): DbQueryState<T> {
+	/** Holds the latest query result and loading state. */
+	const [state, setState] = useState<DbQueryState<T>>({ value: null, loading: true })
 	/** Normalizes the store input into an array for matching. */
 	const storeArray = Array.isArray(stores) ? stores : [stores]
 
@@ -40,9 +45,14 @@ export function useDbQuery<T>(
 			}
 			try {
 				const result = await queryFn()
-				if (isMounted) setData(result)
+				if (isMounted) {
+					setState({ value: result ?? null, loading: false })
+				}
 			} catch (err) {
 				console.error("[dbsync useDbQuery]: Query failed", err)
+				if (isMounted) {
+					setState((current) => ({ ...current, loading: false }))
+				}
 			}
 		}
 
@@ -64,5 +74,16 @@ export function useDbQuery<T>(
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [db, JSON.stringify(storeArray), ...deps])
 
-	return data
+	return state
+}
+
+/** Creates a DbSync-bound query hook so consumers can avoid threading the db instance through every call. */
+export function createUseDbQuery(db: DbSync) {
+	return function useBoundDbQuery<T>(
+		stores: string | string[],
+		queryFn: () => Promise<T>,
+		deps: any[] = [],
+	): DbQueryState<T> {
+		return useDbQuery(db, stores, queryFn, deps)
+	}
 }

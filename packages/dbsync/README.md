@@ -34,7 +34,7 @@ const dbAdapter = process.env.TEST ? new LocalAdapter() : new RestAdapter({ url:
 const db = new DbSync({
     adapter: dbAdapter,
     tables: {
-        posts: { indexes: ['userId', 'updatedAt'] },
+        posts: { indexes: ['userId', 'updatedAt'], beforeWrite: () => ({ category: 0 }) },
         users: { indexes: ['email'] }
     }
 });
@@ -116,7 +116,7 @@ class Tx {
     posts = new DbTxRepository<Post>(this.tx, 'posts');
     users = new DbTxRepository<User>(this.tx, 'users');
 
-    commit = () => this.tx.commit();
+    commit = this.tx.commit.bind(this.tx);
 }
 
 const tx = new Tx();
@@ -152,10 +152,27 @@ import { useDbQuery } from '@slimr/dbsync/react';
 
 function PostList({ db }) {
     // Re-renders automatically whenever the 'posts' table changes!
-    const posts = useDbQuery(db, 'posts', () => db.findAll('posts'));
+    const { value: posts, loading } = useDbQuery(db, 'posts', () => db.findAll('posts'));
 
-    if (!posts) return <Spinner />;
+    if (loading) return <Spinner />;
+    if (!posts) return <p>No posts found.</p>;
     return <ul>{posts.map(p => <li key={p.id}>{p.content}</li>)}</ul>;
+}
+```
+
+If you want a db-bound hook you can export from your app once and reuse everywhere, `@slimr/dbsync/react` also exports `createUseDbQuery`:
+
+```tsx
+import { createUseDbQuery } from '@slimr/dbsync/react';
+
+const useDbQuery = createUseDbQuery(db);
+
+function TodoList() {
+    const { value: todos, loading } = useDbQuery('todos', () => todoRepo.findAll());
+
+    if (loading) return <Spinner />;
+    if (!todos) return <p>No todos found.</p>;
+    return <ul>{todos.map(todo => <li key={todo.id}>{todo.title}</li>)}</ul>;
 }
 ```
 

@@ -3,6 +3,13 @@ import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
 import { DbTransaction } from "./DbTransaction.js"
 import type { EventBus } from "./EventBus.js"
 
+type ExecutedWrite = {
+	type: string
+	storeName: string
+	value?: any
+	key?: string | number
+}
+
 /**
  * Owns IndexedDB initialization, transactions, and record access.
  */
@@ -42,7 +49,9 @@ export class StorageManager {
 
 	/** Creates a transaction wrapper used by the sync engine and public facade. */
 	public getTransaction() {
-		return new DbTransaction((operations) => this.executeTransaction(operations))
+		return new DbTransaction(async (operations) => {
+			await this.executeTransaction(operations)
+		})
 	}
 
 	/** Opens IndexedDB and creates the configured stores when needed. */
@@ -93,11 +102,12 @@ export class StorageManager {
 	}
 
 	/** Executes a batch of writes inside a single IndexedDB transaction. */
-	public async executeTransaction(operations: any[]): Promise<void> {
+	public async executeTransaction(operations: any[]): Promise<ExecutedWrite[]> {
 		const storeNames = Array.from(new Set(operations.map((o) => o.storeName))).concat([
 			"dirtyQueue",
 			"deletedQueue",
 		])
+		const executedWrites: ExecutedWrite[] = []
 
 		// Pre-fetch objects for patch operations using a separate read-only transaction.
 		// A standard IndexedDB transaction auto-commits if we await inside it, so we must
@@ -126,26 +136,39 @@ export class StorageManager {
 		}
 
 		// Now execute the actual write bundle synchronously
-		const { promise, resolve, reject } = promiseWithResolvers<void>()
+		const { promise, resolve, reject } = promiseWithResolvers<ExecutedWrite[]>()
 		const tx = this.db.transaction(storeNames, "readwrite")
 		tx.oncomplete = () => {
 			this.events.notifySubscribers(storeNames)
-			resolve()
+			resolve(executedWrites)
 		}
 		tx.onerror = () => reject(tx.error)
 
 		operations.forEach((op) => {
 			const store = tx.objectStore(op.storeName)
-			const recordId = op.key || op.value?.id
+			let payloadToWrite = op.value
+			let recordId = op.key || op.value?.id
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
-				let payloadToWrite = op.value
-				if (op.type === "patch") {
+				if (op.type === "put" || op.type === "add") {
+					const beforeWrite = this.config.tables[op.storeName]?.beforeWrite
+					if (beforeWrite) {
+						payloadToWrite = beforeWrite(payloadToWrite)
+					}
+					recordId = op.key || payloadToWrite?.id
+				} else if (op.type === "patch") {
 					const existingRecord = patchRecords[`${op.storeName}-${recordId}`]
 					payloadToWrite = { ...existingRecord, ...op.value }
+					recordId = op.key || payloadToWrite?.id
 				}
 
 				store.put(payloadToWrite)
+				executedWrites.push({
+					type: op.type,
+					storeName: op.storeName,
+					value: payloadToWrite,
+					key: recordId,
+				})
 				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
 					tx.objectStore("dirtyQueue").put({
 						id: recordId,
