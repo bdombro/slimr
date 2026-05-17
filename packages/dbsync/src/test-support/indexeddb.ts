@@ -10,44 +10,61 @@ type DatabaseRecord = {
 	db: FakeDatabase
 }
 
+/** Stores the in-memory fake databases created by the test shim. */
 const databases = new Map<string, DatabaseRecord>()
 
+/** Clones values before storing or returning them from the fake IndexedDB. */
 const clone = <T>(value: T): T => {
 	if (typeof structuredClone === "function") return structuredClone(value)
 	return JSON.parse(JSON.stringify(value))
 }
 
+/** Mimics the request object returned by IndexedDB operations. */
 class FakeRequest<T = any> {
+	/** The eventual request result. */
 	public result!: T
+	/** The request error, if one occurred. */
 	public error: Error | null = null
+	/** The success handler registered by consumer code. */
 	public onsuccess: ((event: any) => void) | undefined = undefined
+	/** The error handler registered by consumer code. */
 	public onerror: ((event: any) => void) | undefined = undefined
+	/** The upgrade handler registered by consumer code. */
 	public onupgradeneeded: ((event: any) => void) | undefined = undefined
 }
 
+/** Mimics the DOMStringList used by IndexedDB for object store names. */
 class FakeDOMStringList implements Iterable<string> {
+	/** Creates a new list wrapper around the provided store names. */
 	constructor(private names: string[]) {}
 
+	/** Checks whether the provided name exists in the list. */
 	contains(name: string) {
 		return this.names.includes(name)
 	}
 
+	/** Returns the item at the requested index, or `null`. */
 	item(index: number) {
 		return this.names[index] ?? null
 	}
 
+	/** Returns the number of names contained in the list. */
 	get length() {
 		return this.names.length
 	}
 
+	/** Returns an iterator over the underlying names. */
 	[Symbol.iterator]() {
 		return this.names[Symbol.iterator]()
 	}
 }
 
+/** Mimics an IndexedDB object store backed by an in-memory map. */
 class FakeObjectStore {
+	/** Creates a fake object store from the provided data bucket. */
 	constructor(private storeData: StoreData) {}
 
+	/** No-op index creation hook used by the shim. */
 	createIndex() {
 		return undefined
 	}
@@ -104,10 +121,14 @@ class FakeObjectStore {
 	}
 }
 
+/** Mimics an IndexedDB transaction over one or more fake stores. */
 class FakeTransaction {
+	/** Fires when the transaction finishes successfully. */
 	public oncomplete: RequestHandler = undefined
+	/** Fires when the transaction fails. */
 	public onerror: RequestHandler = undefined
 
+	/** Creates a fake transaction and schedules its completion. */
 	constructor(
 		private db: FakeDatabase,
 		_storeNames: string[],
@@ -117,6 +138,7 @@ class FakeTransaction {
 		})
 	}
 
+	/** Returns the requested fake object store. */
 	objectStore(name: string) {
 		const store = this.db.stores.get(name)
 		if (!store) throw new Error(`Object store ${name} does not exist`)
@@ -124,10 +146,14 @@ class FakeTransaction {
 	}
 }
 
+/** Mimics the IndexedDB database object used in tests. */
 class FakeDatabase {
+	/** The object store names available on the fake database. */
 	public objectStoreNames: FakeDOMStringList
+	/** The current fake database version. */
 	public version: number
 
+	/** Creates a fake database with the given stores. */
 	constructor(
 		public name: string,
 		version: number,
@@ -137,6 +163,7 @@ class FakeDatabase {
 		this.objectStoreNames = new FakeDOMStringList([...stores.keys()])
 	}
 
+	/** Creates a fake object store if it does not already exist. */
 	createObjectStore(name: string, options?: { keyPath?: string }) {
 		if (!this.stores.has(name)) {
 			this.stores.set(name, { keyPath: options?.keyPath, values: new Map() })
@@ -145,17 +172,21 @@ class FakeDatabase {
 		return new FakeObjectStore(this.stores.get(name)!)
 	}
 
+	/** Returns a fake transaction wrapper for the requested stores. */
 	transaction(storeNames: string | string[], _mode: IDBTransactionMode) {
 		const names = Array.isArray(storeNames) ? storeNames : [storeNames]
 		return new FakeTransaction(this, names)
 	}
 
+	/** Closes the fake database. */
 	close() {
 		return undefined
 	}
 }
 
+/** Mimics the global IndexedDB factory used by the test shim. */
 class FakeIndexedDB {
+	/** Opens a fake database, creating it or upgrading it as needed. */
 	open(name: string, version = 1) {
 		const request = new FakeRequest<FakeDatabase>()
 		queueMicrotask(() => {
@@ -182,6 +213,7 @@ class FakeIndexedDB {
 		return request
 	}
 
+	/** Deletes a fake database from the in-memory registry. */
 	deleteDatabase(name: string) {
 		const request = new FakeRequest<void>()
 		queueMicrotask(() => {
@@ -193,7 +225,9 @@ class FakeIndexedDB {
 	}
 }
 
-/** Installs a small in-memory IndexedDB implementation for Vitest so the dbsync suites can run without a browser polyfill dependency. */
+/**
+ * Installs a small in-memory IndexedDB implementation for Vitest so the dbsync suites can run without a browser polyfill dependency.
+ */
 export const installIndexedDbTestShim = () => {
 	;(globalThis as any).indexedDB = new FakeIndexedDB()
 	const storage = new Map<string, string>()

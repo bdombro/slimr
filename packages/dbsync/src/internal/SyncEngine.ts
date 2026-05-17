@@ -5,9 +5,24 @@ import type { AuthManager } from "./AuthManager.js"
 import type { EventBus } from "./EventBus.js"
 import type { StorageManager } from "./StorageManager.js"
 
+/**
+ * Coordinates periodic pull/push sync cycles against the configured backend.
+ */
 export class SyncEngine {
+	/** The active interval handle, or `null` when sync is disabled. */
 	private syncSetInterval: any = null
 
+	/**
+	 * Creates a sync engine bound to the given storage, auth, and adapter instances.
+	 *
+	 * @param config The active dbsync configuration.
+	 * @param syncInterval The polling interval in milliseconds.
+	 * @param events The event bus used for sync state notifications.
+	 * @param storage The storage manager used to read and write records.
+	 * @param auth The auth manager used to update authentication state.
+	 * @param adapter The backend adapter used for pull and push requests.
+	 * @param onSchemaChange Callback fired when schema versions diverge.
+	 */
 	constructor(
 		private config: DbSyncConfig,
 		private syncInterval: number,
@@ -18,32 +33,37 @@ export class SyncEngine {
 		private onSchemaChange: () => void,
 	) {}
 
-	public enable() {
+	/** Starts periodic synchronization if it is not already running. */
+	public start() {
 		if (!this.syncSetInterval) {
 			this.syncSetInterval = setInterval(() => this.sync(), this.syncInterval)
 		}
 	}
 
-	public disable() {
+	/** Stops periodic synchronization if it is currently running. */
+	public stop() {
 		if (this.syncSetInterval) {
 			clearInterval(this.syncSetInterval)
 			this.syncSetInterval = null
 		}
 	}
 
-	public get isEnabled() {
+	/** Whether the sync timer is currently active. */
+	public get isStarted() {
 		return !!this.syncSetInterval
 	}
 
+	/** Whether the last successful sync is still considered fresh. */
 	public get isLive() {
 		const lastSuccess = localStorage.getItem("dbsync-lastSuccessAt")
 		if (!lastSuccess) return false
 		return Date.now() - new Date(lastSuccess).getTime() < this.syncInterval * 4
 	}
 
+	/** Waits until the engine reports a live connection or rejects if disabled. */
 	public async waitForLive(): Promise<void> {
 		const { promise, resolve, reject } = promiseWithResolvers<void>()
-		if (!this.isEnabled) {
+		if (!this.isStarted) {
 			reject(new Error("Sync disabled"))
 			return promise
 		}
@@ -56,10 +76,12 @@ export class SyncEngine {
 		return promise
 	}
 
+	/** Triggers a single sync cycle immediately. */
 	public async triggerSync() {
 		await this.sync()
 	}
 
+	/** Runs one sync pass, optionally under a Web Locks leader lock. */
 	private async sync() {
 		if (typeof navigator !== "undefined" && navigator.locks) {
 			await navigator.locks.request("dbsync-leader", async () => {
@@ -70,6 +92,7 @@ export class SyncEngine {
 		}
 	}
 
+	/** Performs pull, push, and sync-state bookkeeping for one cycle. */
 	private async performSync() {
 		this.events.setState("syncing")
 		try {
@@ -81,12 +104,13 @@ export class SyncEngine {
 		} catch (err: any) {
 			if (err.status === 401) {
 				this.auth.isAuth = false
-				this.disable()
+				this.stop()
 			}
 			this.events.setState("error")
 		}
 	}
 
+	/** Computes the local schema signature used for version handshakes. */
 	private get schemaSignature() {
 		const tables = Object.keys(this.config.tables)
 			.sort()
@@ -99,6 +123,7 @@ export class SyncEngine {
 		return JSON.stringify(tables)
 	}
 
+	/** Pulls remote changes and applies them to IndexedDB. */
 	private async syncPull() {
 		let hasMore = true
 		while (hasMore) {
@@ -133,6 +158,7 @@ export class SyncEngine {
 		}
 	}
 
+	/** Pushes queued local mutations to the backend and clears the queues. */
 	private async syncPush() {
 		const dirty = await this.storage.findAll<any>("dirtyQueue")
 		const deleted = await this.storage.findAll<any>("deletedQueue")

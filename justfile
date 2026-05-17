@@ -60,3 +60,4 @@ watch:
 # Run tests once (CI-style, no watch)
 test:
     ./node_modules/.bin/vitest --run
+    npm -w packages/dbsync run test:e2e

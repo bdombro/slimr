@@ -52,7 +52,7 @@ These records arrive in `push(payload)` formatted roughly like this:
 
 ---
 
-### Officially Supported Adapters
+### Included Adapters
 
-- [LocalAdapter (`@slimr/dbsync/adapters`)](./LocalAdapter.ts) — A no-op adapter if you just want to use the IndexedDB ORM features without any backend syncing.
-- [RestAdapter (`@slimr/dbsync/adapters`)](./RestAdapter.md) — The default REST adapter built to pair seamlessly with `swift-crud`.
+- [LocalAdapter](./LocalAdapter.md) — A no-op adapter if you just want to use the IndexedDB ORM features without any backend syncing.
+- [RestAdapter](./RestAdapter.md) — The default REST adapter built to pair seamlessly with `swift-crud`.

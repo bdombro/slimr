@@ -3,17 +3,31 @@ import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
 import { DbTransaction } from "./DbTransaction.js"
 import type { EventBus } from "./EventBus.js"
 
+/**
+ * Owns IndexedDB initialization, transactions, and record access.
+ */
 export class StorageManager {
+	/** The active IndexedDB database instance. */
 	public db!: IDBDatabase
+	/** Whether the storage layer has finished initializing. */
 	public initted = false
+	/** The IndexedDB database name used by dbsync. */
 	private dbName = "dbsync"
 
+	/**
+	 * Creates a storage manager for the provided dbsync configuration and event bus.
+	 *
+	 * @param config The full dbsync configuration object.
+	 * @param events The event bus used to broadcast store updates.
+	 * @param onSchemaChange Callback fired when the IndexedDB schema changes.
+	 */
 	constructor(
 		private config: DbSyncConfig,
 		private events: EventBus,
 		private onSchemaChange: () => void,
 	) {}
 
+	/** Computes a deterministic schema signature from the configured tables and indexes. */
 	private get schemaSignature() {
 		const tables = Object.keys(this.config.tables)
 			.sort()
@@ -26,10 +40,12 @@ export class StorageManager {
 		return JSON.stringify(tables)
 	}
 
+	/** Creates a transaction wrapper used by the sync engine and public facade. */
 	public getTransaction() {
 		return new DbTransaction((operations) => this.executeTransaction(operations))
 	}
 
+	/** Opens IndexedDB and creates the configured stores when needed. */
 	public async init() {
 		const { promise, resolve, reject } = promiseWithResolvers<void>()
 
@@ -76,6 +92,7 @@ export class StorageManager {
 		return promise
 	}
 
+	/** Executes a batch of writes inside a single IndexedDB transaction. */
 	public async executeTransaction(operations: any[]): Promise<void> {
 		const storeNames = Array.from(new Set(operations.map((o) => o.storeName))).concat([
 			"dirtyQueue",
@@ -122,6 +139,7 @@ export class StorageManager {
 		return promise
 	}
 
+	/** Reads a typed record by primary key from the requested store. */
 	public async get<T>(storeName: string, id: string | number): Promise<T | undefined> {
 		const { promise, resolve, reject } = promiseWithResolvers<T | undefined>()
 		const tx = this.db.transaction(storeName, "readonly")
@@ -131,6 +149,7 @@ export class StorageManager {
 		return promise
 	}
 
+	/** Returns every record from the requested store. */
 	public async findAll<T>(storeName: string): Promise<T[]> {
 		const { promise, resolve, reject } = promiseWithResolvers<T[]>()
 		const tx = this.db.transaction(storeName, "readonly")
@@ -140,6 +159,7 @@ export class StorageManager {
 		return promise
 	}
 
+	/** Clears every object store managed by the database. */
 	public async clearAllStores() {
 		const tx = this.db.transaction(Array.from(this.db.objectStoreNames), "readwrite")
 		Array.from(this.db.objectStoreNames).forEach((name) => tx.objectStore(name).clear())
@@ -149,6 +169,7 @@ export class StorageManager {
 		})
 	}
 
+	/** Closes the underlying IndexedDB connection. */
 	public dispose() {
 		if (this.db) {
 			this.db.close()

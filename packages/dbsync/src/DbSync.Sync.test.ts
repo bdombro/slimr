@@ -51,21 +51,21 @@ describe("DbSync sync engine", () => {
 	})
 
 	/** Confirms the polling lifecycle starts and stops as expected without calling the network more than once per tick. */
-	test("enable schedules polling and disable stops it", async () => {
+	test("start schedules polling and stop stops it", async () => {
 		vi.useFakeTimers()
 		fetchMock.mockResolvedValue(
 			new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
 		)
 
-		db.startSyncInterval()
-		expect(db.isEnabled).toBe(true)
+		await db.start()
+		expect(db.isStarted).toBe(true)
 
 		await vi.advanceTimersByTimeAsync(db.syncInterval)
 		expect(fetchMock).toHaveBeenCalled()
 
 		const callsAfterFirstTick = fetchMock.mock.calls.length
-		db.stopSyncInterval()
-		expect(db.isEnabled).toBe(false)
+		await db.stop()
+		expect(db.isStarted).toBe(false)
 
 		await vi.advanceTimersByTimeAsync(db.syncInterval)
 		expect(fetchMock.mock.calls.length).toBe(callsAfterFirstTick)

@@ -1,0 +1,38 @@
+<\!DOCTYPE html>
+<html lang="en">
+<body>
+  <div id="content">waiting...</div>
+  <script type="module">
+    import { DbSync, DbRepository } from '../../src/index.ts';
+    import { LocalAdapter } from '../../src/adapters/LocalAdapter.ts';
+
+    window.logs = [];
+    const log = (msg) => {
+        window.logs.push(msg);
+        document.getElementById('content').textContent = window.logs.join('\n');
+    };
+
+    const db = new DbSync({
+      adapter: new LocalAdapter(),
+      tables: { posts: {} }
+    });
+
+    // Make available for playwright evaluation
+    window.db = db;
+    window.postsRepo = new DbRepository(db, 'posts');
+
+    db.init().then(() => {
+        log('ready');
+        db.subscribe((stores) => {
+            log('updated:' + stores.join(','));
+            if (stores.includes('posts')) {
+                db.findAll('posts').then(posts => {
+                    window.latestPosts = posts;
+                    log('total:' + posts.length);
+                });
+            }
+        });
+    });
+  </script>
+</body>
+</html>

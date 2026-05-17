@@ -18,7 +18,9 @@ export function useDbQuery<T>(
 	queryFn: () => Promise<T>,
 	deps: any[] = [],
 ): T | undefined {
+	/** Holds the latest query result. */
 	const [data, setData] = useState<T | undefined>(undefined)
+	/** Normalizes the store input into an array for matching. */
 	const storeArray = Array.isArray(stores) ? stores : [stores]
 
 	useEffect(() => {

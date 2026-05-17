@@ -1,22 +1,76 @@
 import { expect, test } from "@playwright/test"
 
-/**
- * Browser-level coordination tests for DbSync.
- *
- * These are intentionally kept as a separate Playwright suite because they need
- * real tabs, real BroadcastChannel behavior, and real Web Locks arbitration.
- */
 test.describe("DbSync cross-tab coordination", () => {
-	/** Verifies that a write in one tab notifies another tab through BroadcastChannel and reactivity wiring. */
 	test("broadcasts data updates across tabs", async ({ browser }) => {
-		// TODO: Load the package in a browser fixture or demo page, then assert that
-		// a write in one tab updates the UI in a second tab.
-		expect(true).toBe(true)
+		const context = await browser.newContext()
+		const page1 = await context.newPage()
+		const page2 = await context.newPage()
+
+		await page1.goto("/")
+		await page2.goto("/")
+
+		await expect(page1.locator("#content")).toContainText("ready")
+		await expect(page2.locator("#content")).toContainText("ready")
+
+		await page1.evaluate(async () => {
+			// @ts-ignore
+			await window.postsRepo.put({ id: "1", title: "Cross-tab post" })
+		})
+
+		await expect(page2.locator("#content")).toContainText("updated:posts")
+		await expect(page2.locator("#content")).toContainText("total:1")
 	})
 
-	/** Verifies that only one tab polls the backend at a time and another tab takes over when the leader disappears. */
-	test("elects a single polling leader", async ({ browser }) => {
-		// TODO: Load the package in multiple tabs, enable sync in each one, and
-		// assert that only one tab performs network polling at a time.
+	test("elects a single polling leader via Web Locks", async ({ browser }) => {
+		const context = await browser.newContext()
+
+		const page1 = await context.newPage()
+		await page1.goto("/")
+		await expect(page1.locator("#content")).toContainText("ready")
+
+		const page2 = await context.newPage()
+		await page2.goto("/")
+		await expect(page2.locator("#content")).toContainText("ready")
+
+		// Have Tab 1 hold the lock artificially for 2 seconds
+		await page1.evaluate(() => {
+			// @ts-ignore
+			window.db.syncEngine.performSync = () => new Promise((resolve) => setTimeout(resolve, 2000))
+		})
+
+		// Have Tab 2 log when it acquires the lock
+		await page2.evaluate(() => {
+			// @ts-ignore
+			window.lockAcquiredTime = 0
+			// @ts-ignore
+			window.db.syncEngine.performSync = async () => {
+				// @ts-ignore
+				window.lockAcquiredTime = Date.now()
+			}
+		})
+
+		// Trigger simultaneous syncs cleanly using Promise.all so playwright tracks them
+		const p1 = page1.evaluate(() => {
+			// @ts-ignore
+			return window.db.triggerSync()
+		})
+		const p2 = page2.evaluate(() => {
+			// @ts-ignore
+			return window.db.triggerSync()
+		})
+
+		// Ensure tab 2 doesn't immediately get the lock due to tab 1 stalling it
+		await page1.waitForTimeout(500)
+
+		// Tab 2 has not executed yet because Tab 1 is holding the lock
+		const timeDuringLock = await page2.evaluate(() => (window as any).lockAcquiredTime)
+		expect(timeDuringLock).toBe(0)
+
+		// Ensure test cleans up properly tracking floating promises
+		await Promise.all([p1, p2])
+
+		// Verify Tab 2 eventually got the lock once Tab 1 completed!
+		const timeAfterLock = await page2.evaluate(() => (window as any).lockAcquiredTime)
+		expect(timeAfterLock).toBeGreaterThan(0)
 	})
 })

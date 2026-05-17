@@ -23,7 +23,7 @@ npm install @slimr/dbsync
 ```
 
 ## Quick Start
-You instantiate `dbsync` by supplying your backend [adapter](./src/adapters/Adapters.md) and your table/index definitions. Afterwards, you must call `.init()` to safely generate the database.
+You instantiate `dbsync` by supplying your backend [adapter](./docs/Adapters.md) and your table/index definitions. Afterwards, you must call `.init()` to safely generate the database.
 
 ```typescript
 import { DbSync } from '@slimr/dbsync';
@@ -39,8 +39,8 @@ const db = new DbSync({
     }
 });
 
-// Await init before usage
-await db.init();
+// Init the db and boot up the background sync engine!
+await db.start();
 ```
 
 > **Local-Only No-Sync Database:** If you want all the IndexedDB ORM and reactive features, but completely lack a remote database to sync to, simply import `LocalAdapter` from `@slimr/dbsync/adapters` and pass that into the constructor instead. It acts as an empty black box so your operations succeed cleanly entirely on the client.
@@ -164,10 +164,10 @@ To boot up the network synchronizer to clear those queues and fetch server updat
 
 ```typescript
 // Start polling the swift-crud backend every 5 seconds
-db.enable();
+await db.start();
 
 // Stop polling
-db.disable();
+await db.stop();
 ```
 
 Only one tab on a user's device will act as the "Leader" and poll the network at any time using **Web Locks**. All other tabs remain completely idle and rely on `BroadcastChannel` messages from the Leader tab to reactively update their UI when fresh data drops.

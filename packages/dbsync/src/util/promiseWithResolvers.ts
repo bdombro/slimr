@@ -5,8 +5,11 @@
  * the built-in helper yet.
  */
 export function promiseWithResolvers<T>() {
+	/** Resolves the created promise. */
 	let resolve!: (value: T | PromiseLike<T>) => void
+	/** Rejects the created promise. */
 	let reject!: (reason?: any) => void
+	/** The promise instance returned to the caller. */
 	const promise = new Promise<T>((res, rej) => {
 		resolve = res
 		reject = rej
