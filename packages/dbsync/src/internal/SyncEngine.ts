@@ -5,6 +5,11 @@ import type { AuthManager } from "./AuthManager.js"
 import type { EventBus } from "./EventBus.js"
 import type { StorageManager } from "./StorageManager.js"
 
+type SchemaTable = {
+	storeName: string
+	indexes?: string[]
+}
+
 /**
  * Coordinates periodic pull/push sync cycles against the configured backend.
  */
@@ -31,6 +36,7 @@ export class SyncEngine {
 		private auth: AuthManager,
 		private adapter: BackendAdapter,
 		private onSchemaChange: () => void,
+		private getSchemaTables: () => SchemaTable[],
 	) {}
 
 	/** Starts periodic synchronization if it is not already running. */
@@ -112,12 +118,13 @@ export class SyncEngine {
 
 	/** Computes the local schema signature used for version handshakes. */
 	private get schemaSignature() {
-		const tables = Object.keys(this.config.tables)
-			.sort()
+		const tables = this.getSchemaTables()
+			.slice()
+			.sort((left, right) => left.storeName.localeCompare(right.storeName))
 			.map((table) => {
 				return {
-					table,
-					indexes: this.config.tables[table].indexes?.slice().sort() || [],
+					table: table.storeName,
+					indexes: table.indexes?.slice().sort() || [],
 				}
 			})
 		return JSON.stringify(tables)
@@ -160,8 +167,8 @@ export class SyncEngine {
 
 	/** Pushes queued local mutations to the backend and clears the queues. */
 	private async syncPush() {
-		const dirty = await this.storage.findAll<any>("dirtyQueue")
-		const deleted = await this.storage.findAll<any>("deletedQueue")
+		const dirty = await this.storage.getAll<any>("dirtyQueue")
+		const deleted = await this.storage.getAll<any>("deletedQueue")
 
 		const payload = [
 			...dirty.map((d) => ({

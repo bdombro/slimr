@@ -1,315 +1,312 @@
 # 🪶 @slimr/dbsync [![npm package](https://img.shields.io/npm/v/@slimr/dbsync.svg?style=flat-square)](https://npmjs.org/package/@slimr/dbsync)
 
-**A powerfully slim, offline-first IndexedDB ORM and sync engine.**
+**An offline-first IndexedDB ORM and sync engine. Zero runtime dependencies. One unified API.**
 
-Building offline-first web applications is notoriously difficult. `@slimr/dbsync` is designed for browser apps that need instant, local-first UX without giving up a real backend—and without forcing you to adopt a massive, complex data framework.
+Your code writes to IndexedDB. `dbsync` handles the rest: durable mutation queues, leader-elected
+background sync, cross-tab coherence, schema drift across devices, and auth-aware resets. The UI
+never blocks on the network, online and offline are the same code path, and tabs stay consistent
+without a separate cache layer.
 
-You simply write against a clean, Promise-based IndexedDB API. Under the hood, `dbsync` handles the intricate edge cases that usually make offline-first architecture painful: durable local mutation queues, background replay, cross-tab coordination, schema drift, auth-aware resets, and robust remote synchronization.
+If you've ever tried to bolt offline support onto a normal REST app, you know the failure modes —
+lost writes, stale tabs, schema mismatches between a phone that's been offline for two weeks and
+a fresh device, migrations that wipe user data, queues that double-fire after a reload. `dbsync`
+exists because those problems are tedious, correctness-sensitive, and not what you want to be
+writing yourself.
 
-If your web app needs to feel native, instant, and reliable on weak or flaky networks, `dbsync` lets you keep the user experience completely local-first while seamlessly syncing to a remote source of truth.
+## What you actually get
 
-## Why it's awesome
+| Problem | What `dbsync` does |
+| --- | --- |
+| UI blocks on network requests | IndexedDB is the runtime store; reads and writes are local-first and synchronous-feeling. |
+| Writes lost when offline or on flaky connections | `put`/`add`/`patch`/`delete` enqueue into a durable dirty queue; replayed when reachable. |
+| Tabs drift out of sync | Local + remote mutations broadcast over `BroadcastChannel`; every tab sees the same stream. |
+| Multiple tabs hammering the server | One tab wins a Web Lock and becomes the sole sync leader; the rest stay passive. |
+| Schema changes break offline clients | Tables produce a deterministic schema signature; IndexedDB upgrades and cross-device announcements are automatic. |
+| Old records on long-offline devices have stale shapes | Per-table `migrations` run on read/upgrade so old records move forward instead of getting tossed. |
+| Auth expiry leaves stale local data | Auth failures stop sync; `reset()` wipes the local DB cleanly when the session ends. |
+| Lock-in to a specific backend | Swap the `BackendAdapter`. Bring REST, GraphQL, Firebase, websockets, whatever — the runtime doesn't change. |
 
-- ⚡️ **Reads and writes stay fast:** IndexedDB is the primary runtime data layer, meaning your UI is *never* blocked waiting on a network request.
-- 🔄 **Offline is not a separate mode:** The exact same CRUD API works flawlessly whether the browser is online, offline, or moving in and out of cellular dead zones.
-- 🌐 **You keep your backend:** Bring your own REST backend, or use the pre-made `@slimr/swift-crud` backend.
-- 📣 **Your app stays perfectly coherent:** Local mutations and remote synced changes are broadcast through the same unified Pub/Sub model. Any tab is always up-to-date.
-- 🧠 **The surface area stays small:** You get full-featured offline-first behavior with incredibly low cognitive overhead. No GraphQL, no massive stores.
-- 🌱 **Zero runtime dependencies:** Built 100% on standard web APIs like IndexedDB, `BroadcastChannel`, Web Locks, and `fetch`.
+Built entirely on standard web APIs: IndexedDB, `BroadcastChannel`, Web Locks, `fetch`. No
+dependencies at runtime.
 
-## The hard problems it solves for you
-
-- **Durable offline writes:** `put`, `add`, `patch`, and `delete` happen locally first, then flow into internal dirty and deleted queues for later push.
-- **Cross-tab coordination:** `BroadcastChannel` fans out updates so other tabs can react without manual cache invalidation.
-- **Leader election for sync:** when Web Locks are available, only one tab polls and pushes at a time.
-- **Schema drift across devices:** table definitions are converted into a deterministic schema signature, or you can provide an explicit version number.
-- **Safe data evolution:** migrations help normalize old and new records as your model changes.
-- **Auth-aware local state:** auth failures stop syncing, and `reset()` can wipe local IndexedDB state when the session ends.
-
-## Installation
+## Install
 
 ```bash
 npm install @slimr/dbsync
 ```
 
-## Quick Start
-
-Create a `DbSync` instance with an [adapter](./docs/Adapters.md) and your table definitions, then call `start()`. That initializes IndexedDB if needed and starts background sync.
+## Recommended setup
 
 ```typescript
-import { DbSync } from '@slimr/dbsync';
-import { LocalAdapter, RestAdapter } from '@slimr/dbsync/adapters';
-
-const adapter = new RestAdapter({ url: 'https://api.myapp.com' });
-// For local-only apps or tests:
-// const adapter = new LocalAdapter();
-
-const db = new DbSync({
-    adapter,
-    tables: {
-        posts: {
-            indexes: ['userId', 'updatedAt'],
-            defaultSetter: (post) => ({
-                category: 0,
-                updatedAt: Date.now(),
-                ...post,
-            }),
-        },
-        users: {
-            indexes: ['email'],
-        },
-    },
-});
-
-await db.start();
-```
-
-### What `start()` actually does
-
-- Opens and upgrades your IndexedDB stores.
-- Runs configured record migrations.
-- Starts the background pull/push loop.
-- Lets one tab become the sync leader while the rest stay passive.
-
-> If you want all the local ORM and reactivity features without any remote system, use `LocalAdapter`. Your app keeps the same API, just without a real backend handshake.
-
-## The local-first API
-
-Once started, `dbsync` behaves like a small object-store ORM for your browser app. The important difference is that writes also participate in background synchronization.
-
-### Basic CRUD
-
-```typescript
-const newPost = await db.put('posts', {
-    id: db.genUuid(),
-    userId: 'user_123',
-    content: 'Hello world',
-});
-
-const myPost = await db.get('posts', newPost.id);
-const allPosts = await db.findAll('posts');
-
-await db.patch('posts', { id: newPost.id, content: 'Edited content' });
-await db.delete('posts', newPost.id);
-```
-
-### Typed repositories with less repetition
-
-If you do not want to keep passing store names around, wrap a table in `DbRepository` and let TypeScript carry the type information for you.
-
-```typescript
-import { DbRepository } from '@slimr/dbsync';
+import { DbSync, DbTable } from "@slimr/dbsync"
+import { RestAdapter } from "@slimr/dbsync/adapters"
 
 interface Post {
-    id: string;
-    userId: string;
-    content: string;
-    updatedAt?: number;
+    id: string
+    userId: string
+    content: string
+    updatedAt: number
 }
 
-const postsRepo = new DbRepository<Post>(db, 'posts');
-
-await postsRepo.put({ id: '1', userId: 'u1', content: 'Cleaner code' });
-const post = await postsRepo.findById('1');
-const posts = await postsRepo.findAll();
-```
-
-### Atomic local transactions
-
-`DbSync` transactions are buffered in memory and only hit IndexedDB when you call `commit()`. That keeps batched writes ergonomic and avoids IndexedDB's awkward async transaction timing.
-
-```typescript
-const tx = db.getTransaction();
-
-tx.put('posts', { id: '1', content: 'Atomic write 1' });
-tx.put('posts', { id: '2', content: 'Atomic write 2' });
-tx.patch('posts', { id: '2', content: 'Atomic write 2b' });
-tx.delete('users', 'bad_user');
-
-await tx.commit();
-```
-
-If you want the same typed experience inside transactions, use `DbTxRepository`.
-
-```typescript
-import { DbTxRepository } from '@slimr/dbsync';
+type PostCreateInput = Omit<Post, "id" | "updatedAt"> & {
+    id?: string
+    updatedAt?: number
+}
 
 interface User {
-    id: string;
-    email: string;
+    id: string
+    email: string
 }
 
-class Tx {
-    private tx = db.getTransaction();
+type UserCreateInput = Omit<User, "id"> & {
+    id?: string
+}
 
-    posts = new DbTxRepository<Post>(this.tx, 'posts');
-    users = new DbTxRepository<User>(this.tx, 'users');
+class PostTable extends DbTable<Post, PostCreateInput> {
+    static tableName = "posts"
+    static indexes = ["userId", "updatedAt"]
 
-    commit = this.tx.commit.bind(this.tx);
+    prepareCreate(input: PostCreateInput) {
+        return {
+            ...super.prepareCreate(input),
+            updatedAt: input.updatedAt ?? Date.now(),
+        }
+    }
+}
+
+class UserTable extends DbTable<User, UserCreateInput> {
+    static tableName = "users"
+    static indexes = ["email"]
+}
+
+class AppDb extends DbSync {
+    posts = new PostTable(this)
+    users = new UserTable(this)
+}
+
+const db = new AppDb({
+    adapter: new RestAdapter({ url: "https://api.myapp.com" }),
+})
+
+await db.start()
+
+await db.posts.add({
+    userId: "u_1",
+    content: "Hello world",
+})
+
+const recentPosts = await db.posts.find({
+    index: "updatedAt",
+    order: "desc",
+    limit: 20,
+})
+```
+
+`init()` opens or upgrades IndexedDB, creates stores from the registered table classes, and runs
+table migrations. `start()` does that and also starts the pull/push loop plus sync leadership.
+No backend? Swap `RestAdapter` for `LocalAdapter` — same API, just no network handshake.
+
+Bring your own TypeScript interfaces, whether you hand-write them or generate them from your
+backend schema. `dbsync` works best when your app has one typed `DbSync` subclass that declares
+`DbTable` instances up front and keeps table-specific normalization on the table class itself.
+
+## Day-to-day usage
+
+### Read and write through typed tables
+
+```typescript
+await db.posts.add({ userId, content: "Hello" })
+await db.posts.put({ id, userId, content: "Hello", updatedAt: Date.now() })
+await db.posts.patch({ id, content: "Edited" })
+await db.posts.delete(id)
+
+const one = await db.posts.get(id)
+const many = await db.posts.getAll()
+```
+
+Use `db.posts`, `db.users`, and the rest of your declared typed tables as the primary API.
+The lower-level `db.get`, `db.put`, `db.patch`, `db.delete`, and `db.clear` helpers still exist
+for direct object-store access when you need them. `DbTable` is where you put table-specific
+defaults, validation, and normalization via `prepareCreate`, `preparePut`, and `preparePatch`.
+
+### Query and stream without loading the whole store into memory
+
+`getAll()` is the blunt instrument. Reach for `find`, `getBy`, `stream`, and `streamAll` when you
+want IndexedDB-backed filtering, ordering, or low-memory iteration.
+
+```typescript
+const recent = await db.posts.find({
+    index: "updatedAt",
+    lowerBound: Date.now() - 3600000,
+    order: "desc",
+    limit: 50,
+})
+
+const firstForUser = await db.posts.getBy("userId", "u1")
+
+for await (const post of db.posts.stream({ index: "updatedAt", order: "desc" })) {
+    renderIncrementally(post)
 }
 ```
 
-## Reactivity built in
+If you truly need everything in memory, `getAll()` is still there. The point is to make it the
+exception rather than the default.
 
-`dbsync` already knows when data changes locally, from another tab, or from the sync engine. Consumers can subscribe directly or use the React hook.
+### Lower-level helpers when you need direct store access
 
-### Pub/sub for any UI layer
+The table repositories are the preferred interface, but `DbSync` still exposes the underlying
+store-name helpers for migrations, experiments, and edge cases that benefit from working one layer
+closer to IndexedDB.
+
+```typescript
+await db.put("posts", { id, userId, content: "Hello", updatedAt: Date.now() })
+await db.patch("posts", { id, content: "Edited" })
+await db.delete("posts", id)
+await db.clear("posts")
+```
+
+## Transactions
+
+`dbsync` transactions are buffered write scopes. Queue multiple writes, then hit IndexedDB once on
+`commit()`. That avoids the awkward lifetime rules of native IndexedDB transactions while still
+giving you a single batched unit of work.
+
+```typescript
+const tx = db.getTransaction()
+tx.posts.put({ id: "1", content: "Draft", userId: "u1", updatedAt: Date.now() })
+tx.posts.patch({ id: "1", content: "Published" })
+tx.users.delete("stale-user")
+await tx.commit()
+```
+
+Use transactions when several writes should land together, or when you want to stage a batch and
+either `commit()` or `cancel()` it later.
+
+## Reactivity
+
+`dbsync` already knows when data changes — locally, from another tab, or from the sync engine.
+Subscribe directly, or use the React hook.
 
 ```typescript
 const sub = db.subscribe((updatedStores) => {
-    if (updatedStores.includes('posts')) {
-        console.log('Posts changed');
-    }
-});
-
-sub.close();
+    if (updatedStores.includes("posts")) refresh()
+})
+sub.close()
 ```
 
-### React hook: `useDbQuery`
-
 ```tsx
-import { useDbQuery } from '@slimr/dbsync/react';
+// In a useDbQuery.ts file
+import { createUseDbQuery } from "@slimr/dbsync/react"
+export const useDbQuery = createUseDbQuery(db)
 
-function PostList({ db }) {
-    const { value: posts, loading } = useDbQuery(db, 'posts', () => db.findAll('posts'));
+// In a component file
+import { useDbQuery } from "./useDbQuery"
 
-    if (loading) return <p>Loading...</p>;
-    if (!posts) return <p>No posts found.</p>;
-
-    return <ul>{posts.map((post) => <li key={post.id}>{post.content}</li>)}</ul>;
+function PostList() {
+    const { value: posts, loading } = useDbQuery("posts", () => db.getAll("posts"))
+    
+    if (loading) return <p>Loading…</p>
+    
+    return (
+        <ul>
+            {posts?.map((p) => (
+                <li key={p.id}>{p.content}</li>
+            ))}
+        </ul>
+    )
 }
 ```
 
-If you prefer not to thread the `db` instance through every component, `@slimr/dbsync/react` also exports `createUseDbQuery`.
-
-```tsx
-import { createUseDbQuery } from '@slimr/dbsync/react';
-
-const useDbQuery = createUseDbQuery(db);
-
-function TodoList() {
-    const { value: todos, loading } = useDbQuery('todos', () => db.findAll('todos'));
-
-    if (loading) return <p>Loading...</p>;
-    if (!todos) return <p>No todos found.</p>;
-
-    return <ul>{todos.map((todo) => <li key={todo.id}>{todo.title}</li>)}</ul>;
-}
-```
+If you prefer to thread `db` through every component, you can use the generic `useDbQuery` exported from "@slimr/dbsync/react".
 
 ## Schema evolution without wiping user data
 
-Offline-first apps get painful once your record shapes start changing. `dbsync` gives you two ways to handle that cleanly.
+Two mechanisms, used together:
 
-### `defaultSetter`: normalize data before it is written
+**`defaultSetter`** — normalize records on write (`add`/`put`). Useful for filling defaults and
+stamping `updatedAt`. Call it manually with `db.applyDefaults(store, partial)` when you want the
+normalized shape without persisting.
 
-Use `defaultSetter` to fill in missing values or add dynamic fields before `add()` and `put()` are persisted.
-
-```typescript
-const db = new DbSync({
-    adapter,
-    tables: {
-        posts: {
-            defaultSetter: (post) => ({
-                updatedAt: Date.now(),
-                ...post,
-            }),
-        },
-    },
-});
-```
-
-You can also call the same logic directly without writing anything:
+**`migrations`** — upgrade records already on device. Runs during init so long-offline data moves
+forward with your model. Each migration is a `{ version, note, upgrade(record) }` triple.
 
 ```typescript
-const normalizedPost = db.applyDefaults('posts', { title: 'Draft' });
-
-const postsRepo = new DbRepository<Post>(db, 'posts');
-const normalizedViaRepo = postsRepo.applyDefaults({ title: 'Draft' });
-```
-
-### `migrations`: upgrade records already stored on device
-
-Migrations run during initialization so long-lived offline data can move forward with your model instead of being discarded.
-
-```typescript
-import { DbSync, type Migration } from '@slimr/dbsync';
+import { type Migration } from "@slimr/dbsync"
 
 const userMigrations: Migration[] = [
-    {
-        version: 2,
-        note: 'Merge firstName and lastName into fullName',
-        upgrade: async (record) => {
-            record.fullName = `${record.firstName} ${record.lastName}`.trim();
-            delete record.firstName;
-            delete record.lastName;
-        },
+  {
+    version: 2,
+    note: "Merge firstName + lastName into fullName",
+    upgrade: async (r) => {
+      r.fullName = `${r.firstName} ${r.lastName}`.trim()
+      delete r.firstName
+      delete r.lastName
     },
-];
-
-const db = new DbSync({
-    adapter,
-    tables: {
-        users: {
-            migrations: userMigrations,
-        },
+  },
+  {
+    version: 3,
+    note: "Split fullName into displayName",
+    upgrade: async (r) => {
+      r.displayName = r.fullName
     },
-});
+  },
+]
 ```
 
-If you need to upgrade imported JSON before storing it, `upgradeRecord()` applies the same migrations on demand without writing anything back to IndexedDB.
-
-```typescript
-const upgradedUser = await db.upgradeRecord('users', importedUser);
-```
+Use `db.upgradeRecord("users", imported)` to run the same chain on inbound data (e.g. JSON
+imports) without writing it back.
 
 ### Automatic schema versioning
 
-By default, `dbsync` computes a deterministic schema signature from your tables and indexes. When that signature changes, the local IndexedDB version bumps automatically and the new schema state is announced through sync so other devices can react safely.
+By default `dbsync` derives a deterministic signature from your table + index definitions. When
+the signature changes, the local IndexedDB version bumps and the new schema state is broadcast
+through sync so other devices know to upgrade. Prefer manual control? Pass an explicit
+`version: number` and that becomes authoritative.
 
-If you prefer stricter control, provide `version: number` and `dbsync` will enforce that exact version instead.
-
-## Sync lifecycle and session helpers
-
-The consumer-facing API stays small even though the runtime work is not.
-
-```typescript
-await db.start();
-await db.waitForLive();
-
-db.onSyncStateChange((state) => {
-    console.log('sync state:', state);
-});
-
-await db.triggerSync();
-await db.stop();
-```
-
-`DbSync` also wraps the basic auth lifecycle so local data and remote sync stay aligned with the user session.
+## Sync lifecycle and auth
 
 ```typescript
-await db.login('user@email.com', '123456');
-await db.logout();
+await db.init()                    // open IndexedDB, run migrations, pull initial data
+await db.start())                  // calls `init()` and starts the sync loop and leadership election
+await db.waitForLive()             // resolves once initial pull is settled
 
-// Wipes local IndexedDB and logs out
-await db.reset();
+db.onSyncStateChange((s) => console.log("sync:", s))
+
+await db.triggerSync()             // force an immediate push/pull pass
+await db.stop()
+
+await db.login("user@example.com", "123456")
+await db.logout()                  // drops session; local data stays for re-login
+await db.reset()                   // logout + nuke local IndexedDB
 ```
+
+`login` / `logout` / `reset` are thin wrappers around the adapter's auth contract so local state
+and remote session stay aligned.
 
 ## Adapters
 
-- [Adapters overview](./docs/Adapters.md)
-- [RestAdapter](./docs/RestAdapter.md) for `swift-crud`
-- [LocalAdapter](./docs/LocalAdapter.md) for local-only usage
+`dbsync` doesn't care what your backend looks like — implement the [adapter contract] and the
+runtime is identical.
 
-If you already have a backend, you can implement the adapter contract yourself and keep the rest of the `dbsync` runtime exactly the same.
+- [Adapters overview](./docs/Adapters.md) — the `BackendAdapter` interface (`checkAuth`, `login`,
+  `logout`, `pull`, `push`) and how schema-versioning system records flow through it.
+- [RestAdapter](./docs/RestAdapter.md) — pairs with `@slimr/swift-crud`.
+- [LocalAdapter](./docs/LocalAdapter.md) — no-op adapter for local-only apps and tests.
 
-## When `dbsync` is a strong fit
+[adapter contract]: ./docs/Adapters.md
 
-- Your users expect the app to remain usable with poor or intermittent connectivity.
-- You want local-first UX without writing your own queueing and replay system.
-- You need browser tabs to stay consistent without inventing another cache invalidation layer.
-- You want a small API that still supports schema evolution, typed repositories, and background synchronization.
+## When this is (and isn't) the right tool
+
+**Fits well** when users expect the app to stay usable through bad connectivity, when you want
+tabs to stay coherent without inventing a cache layer, and when you want typed repositories +
+schema evolution in a package small enough to actually read.
+
+**Probably not the right fit** when you need strong server-authoritative consistency on every
+write (last-write-wins is the default reconciliation), when you need rich relational queries
+inside the client (this is an object store, not SQLite), or when you'd prefer a heavier
+framework that owns your data layer end to end (Replicache, RxDB, PowerSync, etc.).
 
 ## Context
 
-`@slimr` is a set of slim React-oriented libraries. Explore the monorepo on [GitHub](https://github.com/bdombro/slimr).
+`@slimr` is a set of slim React-oriented libraries. Explore the monorepo on
+[GitHub](https://github.com/bdombro/slimr).

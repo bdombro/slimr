@@ -1,5 +1,14 @@
 import type { DbSync } from "./DbSync.js"
 
+export interface FindOptions {
+	index?: string
+	equals?: string | number
+	lowerBound?: string | number
+	upperBound?: string | number
+	limit?: number
+	order?: "asc" | "desc"
+}
+
 /**
  * A typed repository wrapper for a single `DbSync` object store.
  * Provides a localized CRUD interface to minimize boilerplate and
@@ -23,7 +32,7 @@ export class DbRepository<T> {
 	 * @param id The primary key of the record to retrieve.
 	 * @returns A promise resolving to the typed record, or `undefined` if not found.
 	 */
-	async findById(id: string | number): Promise<T | undefined> {
+	async get(id: string | number): Promise<T | undefined> {
 		return this.db.get<T>(this.storeName, id)
 	}
 
@@ -32,8 +41,36 @@ export class DbRepository<T> {
 	 *
 	 * @returns A promise resolving to an array of all typed records.
 	 */
-	async findAll(): Promise<T[]> {
-		return this.db.findAll<T>(this.storeName)
+	async getAll(): Promise<T[]> {
+		return this.db.getAll<T>(this.storeName)
+	}
+
+	/**
+	 * Retrieves records matching a query from the object store.
+	 */
+	async find(options: FindOptions = {}): Promise<T[]> {
+		return this.db.find<T>(this.storeName, options)
+	}
+
+	/**
+	 * Retrieves the first record matching an index/value pair.
+	 */
+	async getBy(indexName: string, value: string | number): Promise<T | undefined> {
+		return this.db.getBy<T>(this.storeName, indexName, value)
+	}
+
+	/**
+	 * Streams records matching a query from the object store.
+	 */
+	stream(options: FindOptions = {}): AsyncGenerator<T> {
+		return this.db.stream<T>(this.storeName, options)
+	}
+
+	/**
+	 * Streams every record from the object store.
+	 */
+	streamAll(): AsyncGenerator<T> {
+		return this.db.streamAll<T>(this.storeName)
 	}
 
 	/**

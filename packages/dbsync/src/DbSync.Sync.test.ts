@@ -131,7 +131,7 @@ describe("DbSync sync engine", () => {
 				}),
 			]),
 		)
-		expect(await db.findAll<any>("dirtyQueue")).toHaveLength(0)
+		expect(await db.getAll<any>("dirtyQueue")).toHaveLength(0)
 	})
 
 	/** Confirms delete tombstones are preserved for the backend and removed from the local dirty queue. */
@@ -153,7 +153,7 @@ describe("DbSync sync engine", () => {
 			content: "{}",
 			isDeleted: true,
 		})
-		expect(await db.findAll<any>("deletedQueue")).toHaveLength(0)
+		expect(await db.getAll<any>("deletedQueue")).toHaveLength(0)
 	})
 
 	/** Confirms auth checks and login/logout state transitions map to the session endpoints. */
@@ -181,8 +181,8 @@ describe("DbSync sync engine", () => {
 
 		await db.reset()
 
-		expect(await db.findAll("posts")).toEqual([])
-		expect(await db.findAll("dirtyQueue")).toEqual([])
+		expect(await db.getAll("posts")).toEqual([])
+		expect(await db.getAll("dirtyQueue")).toEqual([])
 		expect(localStorage.getItem("dbsync-lastSuccessAt")).toBeNull()
 		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBeNull()
 	})

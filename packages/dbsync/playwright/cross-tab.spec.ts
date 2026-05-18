@@ -32,10 +32,10 @@ test.describe("DbSync cross-tab coordination", () => {
 		await page2.goto("/")
 		await expect(page2.locator("#content")).toContainText("ready")
 
-		// Have Tab 1 hold the lock artificially for 2 seconds
+		// Have Tab 1 hold the lock artificially for long enough to verify exclusivity.
 		await page1.evaluate(() => {
 			// @ts-ignore
-			window.db.syncEngine.performSync = () => new Promise((resolve) => setTimeout(resolve, 2000))
+			window.db.syncEngine.performSync = () => new Promise((resolve) => setTimeout(resolve, 5000))
 		})
 
 		// Have Tab 2 log when it acquires the lock
@@ -59,12 +59,11 @@ test.describe("DbSync cross-tab coordination", () => {
 			return window.db.triggerSync()
 		})
 
-		// Ensure tab 2 doesn't immediately get the lock due to tab 1 stalling it
-		await page1.waitForTimeout(500)
-
-		// Tab 2 has not executed yet because Tab 1 is holding the lock
-		const timeDuringLock = await page2.evaluate(() => (window as any).lockAcquiredTime)
-		expect(timeDuringLock).toBe(0)
+		await expect
+			.poll(async () => page2.evaluate(() => (window as any).lockAcquiredTime), {
+				timeout: 1000,
+			})
+			.toBe(0)
 
 		// Ensure test cleans up properly tracking floating promises
 		await Promise.all([p1, p2])

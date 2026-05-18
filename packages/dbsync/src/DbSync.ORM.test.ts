@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { RestAdapter } from "./adapters/RestAdapter.js"
+import { DbRepository } from "./DbRepository.js"
 import { DbSync } from "./DbSync.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 
@@ -32,6 +33,52 @@ describe("DbSync ORM", () => {
 		await db.init()
 	})
 
+	/** Confirms the preferred schema-class pattern exposes typed table properties and works at runtime. */
+	test("supports typed subclass repositories on the db instance", async () => {
+		interface Todo {
+			id: string
+			title: string
+			createdAt: number
+		}
+
+		interface User {
+			id: string
+			name: string
+		}
+
+		class MyAppDatabase extends DbSync {
+			declare todos: DbRepository<Todo>
+			declare users: DbRepository<User>
+		}
+
+		db.dispose()
+		await resetDatabase()
+
+		const typedDb = new MyAppDatabase({
+			adapter: new RestAdapter({ url: "http://localhost" }),
+			version: 1,
+			tables: {
+				todos: { indexes: ["createdAt"] },
+				users: {},
+			},
+		})
+		db = typedDb
+
+		await typedDb.init()
+
+		expect(typedDb.todos).toBeInstanceOf(DbRepository)
+		expect(typedDb.users).toBeInstanceOf(DbRepository)
+		expect(typedDb.todos.storeName).toBe("todos")
+		expect(typedDb.users.storeName).toBe("users")
+
+		await typedDb.todos.put({ id: "todo-1", title: "Typed API", createdAt: 123 })
+		expect(await typedDb.todos.get("todo-1")).toMatchObject({
+			id: "todo-1",
+			title: "Typed API",
+			createdAt: 123,
+		})
+	})
+
 	/** Clears any residual DB state between tests so the suite stays deterministic. */
 	afterEach(async () => {
 		db.dispose()
@@ -42,10 +89,10 @@ describe("DbSync ORM", () => {
 	/** Confirms initialization creates the configured tables plus the sync queues. */
 	test("initializes tables and sync queues", async () => {
 		expect(db.initted).toBe(true)
-		expect(await db.findAll("posts")).toEqual([])
-		expect(await db.findAll("users")).toEqual([])
-		expect(await db.findAll("dirtyQueue")).toEqual([])
-		expect(await db.findAll("deletedQueue")).toEqual([])
+		expect(await db.getAll("posts")).toEqual([])
+		expect(await db.getAll("users")).toEqual([])
+		expect(await db.getAll("dirtyQueue")).toEqual([])
+		expect(await db.getAll("deletedQueue")).toEqual([])
 	})
 
 	/** Confirms the public upgradeRecord helper applies configured migrations on demand without writing to IndexedDB. */
@@ -240,8 +287,8 @@ describe("DbSync ORM", () => {
 
 		await db.clear("posts")
 
-		expect(await db.findAll("posts")).toEqual([])
-		expect(await db.findAll("users")).toHaveLength(1)
+		expect(await db.getAll("posts")).toEqual([])
+		expect(await db.getAll("users")).toHaveLength(1)
 	})
 
 	/** Confirms buffered transactions commit atomically and notify subscribers once. */

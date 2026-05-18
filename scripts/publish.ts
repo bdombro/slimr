@@ -1,3 +1,4 @@
+import fs from "node:fs"
 import { parseArgs } from "node:util"
 import { buildWorkspaces } from "./build.ts"
 import * as npm from "./util/npm.ts"
@@ -144,11 +145,11 @@ if (import.meta.main) main()
 
 /** Bumps the version of a workspace and update children to use the new version */
 async function bumpVersion(workspaces: Record<string, npm.Workspace>, workspace: npm.Workspace) {
-	workspace.config.version = workspace.config.version
-		.split(".")
-		.map((v: string, i: number) => (i === 2 ? Number(v) + 1 : v))
-		.join(".")
+	const nextVersion = bumpPatchVersion(workspace.config.version)
+
+	workspace.config.version = nextVersion
 	await workspace.save()
+	await insertChangelogVersion(workspace.path, nextVersion)
 
 	// update the children to the new version
 	for (const childName of workspace.wsChildrenAll) {
@@ -158,4 +159,34 @@ async function bumpVersion(workspaces: Record<string, npm.Workspace>, workspace:
 			await child.save()
 		}
 	}
+}
+
+/** Returns the next patch version for a semver string */
+function bumpPatchVersion(version: string) {
+	return version
+		.split(".")
+		.map((part: string, index: number) => (index === 2 ? Number(part) + 1 : part))
+		.join(".")
+}
+
+/** Inserts the released version heading into the changelog below UNRELEASED */
+async function insertChangelogVersion(workspacePath: string, version: string) {
+	const changelogPath = `${workspacePath}/CHANGELOG.md`
+	const changelog = fs.readFileSync(changelogPath, "utf-8")
+	const unreleasedBlock = "## UNRELEASED\n\n"
+	const versionBlock = `## ${version}\n\n`
+	const expectedPrefix = `${unreleasedBlock}${versionBlock}`
+
+	if (changelog.startsWith(expectedPrefix)) {
+		return
+	}
+
+	const unreleasedIndex = changelog.indexOf(unreleasedBlock)
+	if (unreleasedIndex === -1) {
+		throw new Error(`[PUBLISH]: Could not find UNRELEASED heading in ${changelogPath}`)
+	}
+
+	const insertAt = unreleasedIndex + unreleasedBlock.length
+	const updated = `${changelog.slice(0, insertAt)}${versionBlock}${changelog.slice(insertAt)}`
+	fs.writeFileSync(changelogPath, updated, "utf-8")
 }

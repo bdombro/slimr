@@ -40,7 +40,7 @@ describe("MigrationManager", () => {
 		const put = vi.fn()
 		const commit = vi.fn().mockResolvedValue(undefined)
 		const db = {
-			findAll: vi.fn().mockResolvedValue([{ id: "1", storeVersion: 0, name: "old" }]),
+				getAll: vi.fn().mockResolvedValue([{ id: "1", storeVersion: 0, name: "old" }]),
 			getTransaction: vi.fn().mockReturnValue({ put, commit }),
 		}
 		const manager = new MigrationManager(db as any)
@@ -57,7 +57,7 @@ describe("MigrationManager", () => {
 			],
 		})
 
-		expect(db.findAll).toHaveBeenCalledWith("posts")
+			expect(db.getAll).toHaveBeenCalledWith("posts")
 		expect(put).toHaveBeenCalledWith(
 			"posts",
 			expect.objectContaining({ name: "new", storeVersion: 1 }),

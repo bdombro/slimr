@@ -1,7 +1,13 @@
 import type { DbSyncConfig } from "../DbSync.js"
+import type { FindOptions } from "../DbRepository.js"
 import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
 import { DbTransaction } from "./DbTransaction.js"
 import type { EventBus } from "./EventBus.js"
+
+type SchemaTable = {
+	storeName: string
+	indexes?: string[]
+}
 
 type TableDefaults = {
 	/** Callback that fills in default fields before a write is persisted. */
@@ -50,16 +56,18 @@ export class StorageManager {
 		private config: DbSyncConfig,
 		private events: EventBus,
 		private onSchemaChange: () => void,
+		private getSchemaTables: () => SchemaTable[],
 	) {}
 
 	/** Computes a deterministic schema signature from the configured tables and indexes. */
 	private get schemaSignature() {
-		const tables = Object.keys(this.config.tables)
-			.sort()
+		const tables = this.getSchemaTables()
+			.slice()
+			.sort((left, right) => left.storeName.localeCompare(right.storeName))
 			.map((table) => {
 				return {
-					table,
-					indexes: this.config.tables[table].indexes?.slice().sort() || [],
+					table: table.storeName,
+					indexes: table.indexes?.slice().sort() || [],
 				}
 			})
 		return JSON.stringify(tables)
@@ -78,11 +86,11 @@ export class StorageManager {
 
 		const upgradeFn = (e: IDBVersionChangeEvent) => {
 			const db = (e.target as IDBOpenDBRequest).result
-			Object.entries(this.config.tables).forEach(([tableName, config]) => {
-				if (!db.objectStoreNames.contains(tableName)) {
-					const store = db.createObjectStore(tableName, { keyPath: "id" })
-					if (config.indexes) {
-						config.indexes.forEach((idx) => store.createIndex(idx, idx, { unique: false }))
+			this.getSchemaTables().forEach((table) => {
+				if (!db.objectStoreNames.contains(table.storeName)) {
+					const store = db.createObjectStore(table.storeName, { keyPath: "id" })
+					if (table.indexes) {
+						table.indexes.forEach((idx) => store.createIndex(idx, idx, { unique: false }))
 					}
 				}
 			})
@@ -169,7 +177,7 @@ export class StorageManager {
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
 				if (op.type === "put" || op.type === "add") {
-					payloadToWrite = applyDefaults(this.config.tables[op.storeName], payloadToWrite)
+					payloadToWrite = applyDefaults(this.config.tables?.[op.storeName], payloadToWrite)
 					recordId = op.key || payloadToWrite?.id
 				} else if (op.type === "patch") {
 					const existingRecord = patchRecords[`${op.storeName}-${recordId}`]
@@ -221,13 +229,68 @@ export class StorageManager {
 	}
 
 	/** Returns every record from the requested store. */
-	public async findAll<T>(storeName: string): Promise<T[]> {
+	public async getAll<T>(storeName: string): Promise<T[]> {
 		const { promise, resolve, reject } = promiseWithResolvers<T[]>()
 		const tx = this.db.transaction(storeName, "readonly")
 		const req = tx.objectStore(storeName).getAll()
 		req.onsuccess = () => resolve(req.result)
 		req.onerror = () => reject(req.error)
 		return promise
+	}
+
+	/** Returns records matching a query from the requested store. */
+	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
+		const records = await this.getAll<T>(storeName)
+		const filtered = this.applyQuery(records, options)
+		return this.applyOrderingAndLimit(filtered, options)
+	}
+
+	/** Returns the first record matching an index/value pair, if any. */
+	public async getBy<T>(
+		storeName: string,
+		indexName: string,
+		value: string | number,
+	): Promise<T | undefined> {
+		const results = await this.find<T>(storeName, { index: indexName, equals: value, limit: 1 })
+		return results[0]
+	}
+
+	/** Streams records matching a query from the requested store. */
+	public async *stream<T>(storeName: string, options: FindOptions = {}): AsyncGenerator<T> {
+		for (const record of await this.find<T>(storeName, options)) {
+			yield record
+		}
+	}
+
+	/** Streams every record from the requested store. */
+	public async *streamAll<T>(storeName: string): AsyncGenerator<T> {
+		for (const record of await this.getAll<T>(storeName)) {
+			yield record
+		}
+	}
+
+	private applyQuery<T>(records: T[], options: FindOptions): T[] {
+		if (
+			options.index === undefined &&
+			options.equals === undefined &&
+			options.lowerBound === undefined &&
+			options.upperBound === undefined
+		) {
+			return records
+		}
+
+		return records.filter((record) => {
+			const candidate = (record as Record<string, any>)[options.index ?? "id"]
+			if (options.equals !== undefined) return candidate === options.equals
+			if (options.lowerBound !== undefined && candidate < options.lowerBound) return false
+			if (options.upperBound !== undefined && candidate > options.upperBound) return false
+			return true
+		})
+	}
+
+	private applyOrderingAndLimit<T>(records: T[], options: FindOptions): T[] {
+		const ordered = options.order === "desc" ? [...records].reverse() : records
+		return options.limit === undefined ? ordered : ordered.slice(0, options.limit)
 	}
 
 	/** Clears every object store managed by the database. */

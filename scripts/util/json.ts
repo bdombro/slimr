@@ -12,7 +12,7 @@ export const json = {
 		}
 	},
 	writeFile: (path: string, data: any) => {
-		const jsonString = JSON.stringify(data, null, 2)
+		const jsonString = JSON.stringify(data, null, 2) + "\n"
 		fs.writeFileSync(path, jsonString, "utf-8")
 	},
 }
