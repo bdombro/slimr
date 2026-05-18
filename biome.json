@@ -50,7 +50,8 @@
       },
       "style": {
         "noDescendingSpecificity": "off",
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useTemplate": "off"
       },
       "suspicious": {
         "noArrayIndexKey": "off",

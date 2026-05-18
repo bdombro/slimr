@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.98",
+  "version": "2.1.99",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -15,18 +15,17 @@
     "url": "git+https://github.com/bdombro/slimr.git"
   },
   "type": "module",
-  "main": "./cjs/index.js",
+  "types": "esm/index.d.ts",
+  "main": "./cjs/index.cjs",
   "module": "./esm/index.js",
   "exports": {
     ".": {
-      "require": "./cjs/index.js",
+      "require": "./cjs/index.cjs",
       "import": "./esm/index.js"
     }
   },
   "scripts": {
-    "build": "run-p build:*",
-    "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
-    "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
+    "build": "bun ../../scripts/build-lib.ts --pkg .",
     "clean": "rm -rf esm cjs",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },

@@ -1,19 +1,19 @@
 {
   "name": "@slimr/util",
-  "version": "3.2.78",
+  "version": "3.2.79",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
-  "main": "cjs/index.js",
+  "main": "cjs/index.cjs",
   "module": "esm/index.js",
   "sideEffects": false,
   "exports": {
     ".": {
-      "require": "./cjs/index.js",
+      "require": "./cjs/index.cjs",
       "import": "./esm/index.js"
     },
     "./code-highlight": {
-      "require": "./cjs/code-highlight.js",
+      "require": "./cjs/code-highlight.cjs",
       "import": "./esm/code-highlight.js"
     }
   },
@@ -22,10 +22,9 @@
     "url": "git+https://github.com/bdombro/slimr.git"
   },
   "type": "module",
+  "types": "esm/index.d.ts",
   "scripts": {
-    "build": "run-p build:*",
-    "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
-    "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
+    "build": "bun ../../scripts/build-lib.ts --pkg .",
     "clean": "rm -rf esm cjs",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },

@@ -1,5 +1,13 @@
 # Changelog
 
+## UNRELEASED
+
+## 1.0.5
+
+### Changed
+
+- CommonJS build artifacts now ship with .cjs extensions so ESM-first consumers resolve the package correctly.
+
 ## 1.0.2
 
 ### Changed

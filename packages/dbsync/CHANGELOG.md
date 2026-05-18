@@ -6,6 +6,10 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.20
+
+- CommonJS build artifacts now ship with .cjs extensions so ESM-first consumers resolve the package correctly.
+
 ## 0.0.19
 
 - removed `DbRepository` from the package root export so the public API stays focused on `DbTable` and `DbSync`; internal code still uses it as the implementation layer.

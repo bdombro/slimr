@@ -27,7 +27,7 @@ Cross-package deps exist (e.g. `styled` → `css`, `react` re-exports others). W
 
 ## Tooling
 
-- **Runtime/build:** Node is the baseline runtime. Some repo-level scripts in `/scripts` use `bun`, but package work should follow the package's own `package.json` scripts and existing toolchain. If a package is npm-based, prefer `npm run` / `npx` / package-local commands over `bun` unless that package explicitly uses it. Vite 4; TypeScript 5.
+- **Runtime/build:** Node is the baseline runtime. Some repo-level scripts in `/scripts` use `bun`, but package work should follow the package's own `package.json` scripts and existing toolchain. If a package is npm-based, prefer `npm run` / `npx` / package-local commands over `bun` unless that package explicitly uses it. Vite 4; TypeScript 5. Published CommonJS artifacts use `.cjs` extensions, and library packages build through the shared `scripts/build-lib.ts` entrypoint.
 - **Lint/format:** Biome (`biome.json`). Run `npm run lint` / `npm run lint:fix`. Do not introduce ESLint/Prettier.
 - **Test:** Vitest + Testing Library + jsdom. `npm test`.
 - **Package manager:** npm workspaces.

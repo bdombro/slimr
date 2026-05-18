@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "4.0.9",
+  "version": "4.0.10",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -15,18 +15,17 @@
     "url": "git+https://github.com/bdombro/slimr.git"
   },
   "type": "module",
-  "main": "./cjs/index.js",
+  "types": "esm/index.d.ts",
+  "main": "./cjs/index.cjs",
   "module": "./esm/index.js",
   "exports": {
     ".": {
-      "require": "./cjs/index.js",
+      "require": "./cjs/index.cjs",
       "import": "./esm/index.js"
     }
   },
   "scripts": {
-    "build": "run-p build:*",
-    "build:esm": "OUT=esm; tsc -d --outDir $OUT --noEmit false",
-    "build:cjs": "OUT=cjs; tsc -d -m commonjs --moduleResolution node --outDir $OUT --noEmit false",
+    "build": "bun ../../scripts/build-lib.ts --pkg .",
     "clean": "rm -rf esm cjs",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },
@@ -37,12 +36,12 @@
     "CHANGELOG.md"
   ],
   "dependencies": {
-    "@slimr/forms": "^5.0.51",
-    "@slimr/markdown": "^2.1.91",
-    "@slimr/react-util": "^1.0.4",
-    "@slimr/router": "^2.1.98",
-    "@slimr/styled": "^2.1.98",
-    "@slimr/swr": "^2.1.77"
+    "@slimr/forms": "^5.0.52",
+    "@slimr/markdown": "^2.1.92",
+    "@slimr/react-util": "^1.0.5",
+    "@slimr/router": "^2.1.99",
+    "@slimr/styled": "^2.1.99",
+    "@slimr/swr": "^2.1.78"
   },
   "peerDependencies": {
     "@types/react": "*",
