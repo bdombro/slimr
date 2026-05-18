@@ -14,7 +14,10 @@ export type DbTableConstructor<Row extends { id: string }, CreateInput extends o
  * Table subclasses define the stored row shape with class fields and carry
  * static metadata used by DbSync to build schema and transaction facades.
  */
-export class DbTable<Row extends { id: string }, CreateInput extends object = Row> extends DbRepository<Row> {
+export class DbTable<
+	Row extends { id: string },
+	CreateInput extends object = Row,
+> extends DbRepository<Row> {
 	constructor(db: DbSync) {
 		const ctor = new.target as DbTableConstructor<Row, CreateInput>
 		if (!ctor.tableName) {

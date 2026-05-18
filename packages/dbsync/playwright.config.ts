@@ -1,6 +1,6 @@
-import { defineConfig } from "@playwright/test"
-import { fileURLToPath } from "node:url"
 import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import { defineConfig } from "@playwright/test"
 
 const packageRoot = dirname(fileURLToPath(import.meta.url))
 const fixtureDir = resolve(packageRoot, "playwright/fixtures")

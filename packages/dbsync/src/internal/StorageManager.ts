@@ -1,5 +1,5 @@
-import type { DbSyncConfig } from "../DbSync.js"
 import type { FindOptions } from "../DbRepository.js"
+import type { DbSyncConfig } from "../DbSync.js"
 import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
 import { DbTransaction } from "./DbTransaction.js"
 import type { EventBus } from "./EventBus.js"

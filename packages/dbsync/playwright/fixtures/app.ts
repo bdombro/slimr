@@ -1,5 +1,5 @@
-import { DbSync, DbTable } from "../../src/index.ts"
 import { LocalAdapter } from "../../src/adapters/LocalAdapter.ts"
+import { DbSync, DbTable } from "../../src/index.ts"
 
 interface Post {
 	id: string

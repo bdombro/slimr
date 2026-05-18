@@ -31,7 +31,9 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 * @param key An optional explicit primary key.
 	 */
 	add(value: CreateInput, key?: string | number): void {
-		const nextValue = this.prepare?.prepareCreate ? this.prepare.prepareCreate(value) : (value as unknown as Row)
+		const nextValue = this.prepare?.prepareCreate
+			? this.prepare.prepareCreate(value)
+			: (value as unknown as Row)
 		this.tx.add(this.storeName, nextValue, key)
 	}
 

@@ -56,9 +56,7 @@ describe("DbSync tables", () => {
 		expect(db.posts.storeName).toBe("posts")
 
 		await db.posts.add({ title: "  hello world  " })
-		expect(await db.getAll("posts")).toEqual([
-			{ id: "post-1", title: "hello world" },
-		])
+		expect(await db.getAll("posts")).toEqual([{ id: "post-1", title: "hello world" }])
 
 		const tx = db.getTransaction() as MyAppTransaction
 		tx.posts.add({ title: "  from tx  " })

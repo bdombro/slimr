@@ -1,2 +1,2 @@
-export * from "./DbTable.js"
 export * from "./DbSync.js"
+export * from "./DbTable.js"

@@ -27,9 +27,9 @@ describe("StorageManager query helpers", () => {
 			{ id: "2", name: "beta", score: 2, createdAt: 200 },
 			{ id: "3", name: "beta", score: 3, createdAt: 300 },
 		])
-		expect(await storage.find("posts", { index: "createdAt", lowerBound: 150, upperBound: 250 })).toEqual([
-			{ id: "2", name: "beta", score: 2, createdAt: 200 },
-		])
+		expect(
+			await storage.find("posts", { index: "createdAt", lowerBound: 150, upperBound: 250 }),
+		).toEqual([{ id: "2", name: "beta", score: 2, createdAt: 200 }])
 		expect(await storage.find("posts", { order: "desc", limit: 2 })).toEqual([
 			{ id: "3", name: "beta", score: 3, createdAt: 300 },
 			{ id: "2", name: "beta", score: 2, createdAt: 200 },

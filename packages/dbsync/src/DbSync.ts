@@ -1,8 +1,9 @@
 import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
+import type { FindOptions } from "./DbRepository.js"
 import { DbRepository } from "./DbRepository.js"
-import { DbTxRepository } from "./DbTxRepository.js"
 import type { DbTable } from "./DbTable.js"
+import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
 import { EventBus, type SyncState } from "./internal/EventBus.js"
 import {
@@ -11,7 +12,6 @@ import {
 } from "./internal/MigrationManager.js"
 import { applyDefaults, StorageManager } from "./internal/StorageManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
-import type { FindOptions } from "./DbRepository.js"
 
 export type { Migration }
 
@@ -78,7 +78,9 @@ export class DbSync {
 
 		const onSchemaChange = () => this.onSchemaChangeDetected()
 
-		this.storage = new StorageManager(config, this.events, onSchemaChange, () => this.getSchemaTables())
+		this.storage = new StorageManager(config, this.events, onSchemaChange, () =>
+			this.getSchemaTables(),
+		)
 
 		this.authManager = new AuthManager(adapter, this.storage, () => {
 			void this.stop()
@@ -99,10 +101,11 @@ export class DbSync {
 			;(this as Record<string, unknown>)[storeName] = new DbRepository(this, storeName)
 		}
 
-		// Return a Proxy interceptor so that subclasses declaring typed table properties 
+		// Return a Proxy interceptor so that subclasses declaring typed table properties
 		// (e.g. `todos!: DbRepository<Todo>`) do not overwrite the repositories with `undefined`
 		// when their field initializers run.
 		const knownStores = config.tables ?? {}
+		// biome-ignore lint/correctness/noConstructorReturn: the constructor intentionally returns a Proxy
 		return new Proxy(this, {
 			defineProperty(target, prop, desc) {
 				if (typeof prop === "string" && prop in knownStores && desc.value === undefined) {
@@ -148,7 +151,9 @@ export class DbSync {
 			})
 		}
 
-		return [...resolvedTables.values()].sort((left, right) => left.storeName.localeCompare(right.storeName))
+		return [...resolvedTables.values()].sort((left, right) =>
+			left.storeName.localeCompare(right.storeName),
+		)
 	}
 
 	/** Resolves a single table definition by store name, if one exists. */
