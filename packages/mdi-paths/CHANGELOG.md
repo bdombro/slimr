@@ -1,8 +1,8 @@
 # Changelog
 
-## [UNRELEASED]
+## UNRELEASED
 
-## [2.1.73]
+## 2.1.73
 
 ### Changed
 

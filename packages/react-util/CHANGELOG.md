@@ -1,18 +1,18 @@
 # Changelog
 
-## [1.0.2]
+## 1.0.2
 
 ### Changed
 
 - Excluding ts source files from published bundle for better compat
 
-## [1.0.1]
+## 1.0.1
 
 ### Added
 
 - `useColorScheme` now tolerates running in non-browser environments
 
-## [1.0.0]
+## 1.0.0
 
 ### Added
 
