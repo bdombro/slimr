@@ -1,6 +1,6 @@
 import type { BackendAdapter } from "../adapters/types.js"
 import type { DbSyncConfig } from "../DbSync.js"
-import { promiseWithResolvers } from "../util/promiseWithResolvers.js"
+import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
 import type { EventBus } from "./EventBus.js"
 import type { StorageManager } from "./StorageManager.js"

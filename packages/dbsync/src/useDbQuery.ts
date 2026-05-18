@@ -1,5 +1,7 @@
+import { areEqualDeep } from "@slimr/util"
 import { useEffect, useState } from "react"
 import type { DbSync } from "./DbSync.js"
+import { sleep } from "./util/promises.js"
 
 type DbQueryState<T> = {
 	value: T | null
@@ -32,21 +34,19 @@ export function useDbQuery<T>(
 		let isMounted = true
 
 		const fetchData = async () => {
-			if (!db.initted) {
-				// If attempting to query before init(), safely wait
-				await new Promise<void>((resolve) => {
-					const check = setInterval(() => {
-						if (!isMounted || db.initted) {
-							clearInterval(check)
-							resolve()
-						}
-					}, 50)
-				})
-			}
+			// If attempting to query before init(), safely wait.
+			while (isMounted && !db.initted) await sleep(50)
+			if (!isMounted) return
 			try {
 				const result = await queryFn()
 				if (isMounted) {
-					setState({ value: result ?? null, loading: false })
+					const nextValue = result ?? null
+					setState((current) => {
+						if (!current.loading && areEqualDeep(current.value, nextValue)) {
+							return current
+						}
+						return { value: nextValue, loading: false }
+					})
 				}
 			} catch (err) {
 				console.error("[dbsync useDbQuery]: Query failed", err)
@@ -72,7 +72,7 @@ export function useDbQuery<T>(
 			sub.close()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [db, JSON.stringify(storeArray), ...deps])
+	}, [JSON.stringify(storeArray), ...deps])
 
 	return state
 }
@@ -80,8 +80,11 @@ export function useDbQuery<T>(
 /** Creates a DbSync-bound query hook so consumers can avoid threading the db instance through every call. */
 export function createUseDbQuery(db: DbSync) {
 	return function useBoundDbQuery<T>(
+		/** One store name or a list of store names that the query depends on. */
 		stores: string | string[],
+		/** Async function that reads the latest data from IndexedDB. */
 		queryFn: () => Promise<T>,
+		/** Additional dependencies that should retrigger the query when they change. */
 		deps: any[] = [],
 	): DbQueryState<T> {
 		return useDbQuery(db, stores, queryFn, deps)

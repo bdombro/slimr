@@ -16,3 +16,8 @@ export function promiseWithResolvers<T>() {
 	})
 	return { promise, resolve, reject }
 }
+
+/** Resolves after the requested delay. */
+export function sleep(ms: number) {
+	return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
