@@ -1,14 +1,12 @@
+/** Run shell commands with a structured cwd option for repo scripts. */
 import { exec } from "node:child_process"
 
 /**
  * Executes a shell command and returns a promise that resolves with the output.
  */
-export function execPromise(command: string, inPath?: string): Promise<string> {
-	if (inPath) {
-		command = `cd ${inPath} && ${command}`
-	}
+export function execPromise(command: string, options: { cwd?: string } = {}): Promise<string> {
 	return new Promise((resolve, reject) => {
-		exec(command, (error, stdout, stderr) => {
+		exec(command, { cwd: options.cwd }, (error, stdout, stderr) => {
 			if (error) {
 				reject(stderr || error.message)
 			} else {

@@ -13,8 +13,7 @@
     "packages/*"
   ],
   "scripts": {
-    "//just": "common tasks are in the justfile",
-    "preinstall": "echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit"
+    "//just": "common tasks are in the justfile"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",

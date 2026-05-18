@@ -16,6 +16,11 @@ build-dirty:
 clean:
     npm run -ws clean
 
+# Install dependencies and set up git hooks (run once after cloning)
+install:
+    npm install
+    echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
 # Check code style and correctness with Biome
 lint:
     npx biome check
@@ -30,12 +35,9 @@ lint-fix:
 lint-watch:
     npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'just lint'
 
-# Check for newer versions of dependencies
-update:
-    npx npm-check-updates
-
-# Full CI check run before committing: install, build, lint, and test
-precommit: build lint test
+# Precommit check: build dirty workspaces, lint, and run dirty tests
+precommit:
+    bun scripts/precommit.ts
 
 # Bump versions and publish all packages to npm (excludes demo)
 publish-all:
@@ -53,11 +55,19 @@ publish-demo:
 start:
     npm run -w @slimr/demo start
 
-# Run tests in watch mode
-watch:
-    ./node_modules/.bin/vitest
-
 # Run tests once (CI-style, no watch)
 test:
     ./node_modules/.bin/vitest --run
     ./node_modules/.bin/playwright test --config packages/dbsync/playwright.config.ts
+
+# Run tests only for dirty workspaces with test scripts
+test-dirty:
+    bun scripts/test.ts --dirty --exclude demo
+
+# Check for newer versions of dependencies
+update:
+    npx npm-check-updates
+
+# Run tests in watch mode
+watch:
+    ./node_modules/.bin/vitest

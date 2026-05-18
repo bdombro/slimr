@@ -21,13 +21,13 @@ Guidance for AI agents working in this repo.
 - [packages/swr/](packages/swr/) — stale-while-refresh data-fetching hook
 - [packages/util/](packages/util/) — framework-agnostic JS polyfills
 - [packages/demo/](packages/demo/) — demo app (not published)
-- [scripts/](scripts/) — bun scripts: `build.ts`, `publish.ts`, `deploy-demo.ts`
+- [scripts/](scripts/) — bun scripts: `build.ts`, `publish.ts`, `test.ts`, `precommit.ts`, `build-lib.ts`, and shared utilities in `util/` (`workspaces.ts`, `workspace-task.ts`, `process.ts`)
 
 Cross-package deps exist (e.g. `styled` → `css`, `react` re-exports others). When changing a lib, check and bump dependents.
 
 ## Tooling
 
-- **Runtime/build:** Node is the baseline runtime. Some repo-level scripts in `/scripts` use `bun`, but package work should follow the package's own `package.json` scripts and existing toolchain. If a package is npm-based, prefer `npm run` / `npx` / package-local commands over `bun` unless that package explicitly uses it. Vite 4; TypeScript 5. Published CommonJS artifacts use `.cjs` extensions, and library packages build through the shared `scripts/build-lib.ts` entrypoint.
+- **Runtime/build:** Node is the baseline runtime. Some repo-level scripts in `/scripts` use `bun`, but package work should follow the package's own `package.json` scripts and existing toolchain. If a package is npm-based, prefer `npm run` / `npx` / package-local commands over `bun` unless that package explicitly uses it. Vite 4; TypeScript 5. Published CommonJS artifacts use `.cjs` extensions, library packages build through the shared `scripts/build-lib.ts` entrypoint, workspace graph and task selection live in `scripts/util/workspaces.ts` and `scripts/util/workspace-task.ts`, and `scripts/util/process.ts` uses structured `{ cwd }` options.
 - **Lint/format:** Biome (`biome.json`). Run `npm run lint` / `npm run lint:fix`. Do not introduce ESLint/Prettier.
 - **Test:** Vitest + Testing Library + jsdom. `npm test`.
 - **Package manager:** npm workspaces.
@@ -36,14 +36,14 @@ When working inside a package, inspect that package's `package.json` first and u
 
 ## Common commands
 
-- `npm start` — run the demo app
-- `npm run build` — build all publishable packages (excludes demo)
-- `npm run build:dirty` — build only changed packages
-- `npm run lint` / `npm run lint:fix`
-- `npm test` — vitest (watch); `npm test -- --run` for CI-style
-- `npm run publish:dirty` — bump + publish changed packages (and their dependents), and insert a new released-version heading in each published package's CHANGELOG.md
-- `npm run publish:demo` — deploy demo
-- `npm run precommit` — install + build + lint + test (wired as a git pre-commit hook via `preinstall`)
+- `just start` — run the demo app
+- `just build` — build all publishable packages (excludes demo)
+- `just build-dirty` — build only changed packages
+- `just lint` / `just lint-fix`
+- `just test` — vitest + Playwright for the repo's tests
+- `just publish-dirty` — bump + publish changed packages (and their dependents), and insert a new released-version heading in each published package's CHANGELOG.md
+- `just publish-demo` — deploy demo
+- `just precommit` — build dirty workspaces, lint, and test dirty workspaces (wired as a git pre-commit hook via `preinstall`)
 
 ## Conventions
 

@@ -1,9 +1,12 @@
-// deno-lint-ignore-file require-await no-explicit-any
-// import { npm } from "./util/index.ts"
-
+/** Build workspace packages in dependency order so dirty and included packages stay in sync. */
 import { parseArgs } from "node:util"
-import * as npm from "./util/npm"
 import { execPromise } from "./util/process"
+import {
+	runWorkspaceTaskPhases,
+	selectWorkspaceTaskWorkspaces,
+	type WorkspaceTaskSelection,
+} from "./util/workspace-task.ts"
+import { getWorkspaces } from "./util/workspaces.ts"
 
 /************************************************************************
  * Globals
@@ -29,84 +32,29 @@ Options:
 /************************************************************************/
 
 /**
- * Bumps the version of any dirty packages and their dependencies
+ * Builds packages based on the selected workspace set and dependency order.
  */
-export async function buildWorkspaces(
-	p: {
-		/** Build all workspaces (except excluded) */
-		all?: boolean
-		/** Only build workspaces that have dirty or depend on dirty workspaces */
-		dirty?: boolean
-		/** Exclude a workspace name, or part of, from being built */
-		exclude?: string[]
-		/** Include workspace names or parts */
-		include?: string[]
-	} = {},
-) {
+export async function buildWorkspaces(p: WorkspaceTaskSelection = {}) {
 	console.log("[BUILD]:start")
 
 	// If no flags, default to nothing
 	if (!p.all && !p.dirty && !p.include) {
-		console.log("[PUBLISH]: No packages selected for publish. Use --all, --dirty, or --include.")
+		console.log("[BUILD]: No packages selected for build. Use --all, --dirty, or --include.")
 		return []
 	}
 
-	const workspaces = await npm.getWorkspaces()
-
-	// Determine which workspaces to publish
-	let toBuild: npm.Workspace[] = []
-	for (const workspace of Object.values(workspaces)) {
-		const isExcluded = p.exclude?.some((e) => workspace.name.includes(e))
-		const isIncluded = p.include?.some((i) => workspace.name.includes(i))
-
-		if (isExcluded) {
-			continue
-		}
-
-		if (workspace.name === "@slimr/mdi-paths") {
-			console.warn(`[BUILD]: Skipping mdi-paths because it's heavy`)
-			continue
-		}
-
-		// If --all, publish all
-		if (p.all) {
-			toBuild.push(workspace)
-		}
-		// If --dirty, publish dirty
-		else if (p.dirty && workspace.dirty) {
-			toBuild.push(workspace, ...workspace.wsChildrenAll.map((n) => workspaces[n]))
-		}
-		// If --include, publish included
-		else if (p.include && isIncluded) {
-			toBuild.push(workspace, ...workspace.wsChildrenAll.map((n) => workspaces[n]))
-		}
-	}
-
-	toBuild = [...new Set(toBuild)] // deduplicate
-	toBuild.sort((a, b) => a.name.localeCompare(b.name))
+	const workspaces = await getWorkspaces()
+	const toBuild = selectWorkspaceTaskWorkspaces(workspaces, p, {
+		includeDependents: true,
+		workspaceFilter: (workspace) => workspace.name !== "@slimr/mdi-paths",
+	})
 
 	console.log(`[BUILD]: Packages to build: ${toBuild.map((w) => w.name).join(", ")}`)
 
-	const unbuilt = [...toBuild]
-
-	let phase = 0
-	while (unbuilt.length) {
-		console.log(`[BUILD]: Phase ${++phase} at time ${new Date().toISOString()}...`)
-		await Promise.all(
-			unbuilt
-				.filter((w) => {
-					const hasUnbuiltParents = w.wsParentsAll.some((wsName) =>
-						unbuilt.map((w2) => w2.name).includes(wsName),
-					)
-					return !hasUnbuiltParents
-				})
-				.map(async (w) => {
-					console.log(`[BUILD]: ${w.name}@${w.config.version}...`)
-					console.log(await execPromise("npm run build", w.path))
-					unbuilt.splice(unbuilt.indexOf(w), 1)
-				}),
-		)
-	}
+	await runWorkspaceTaskPhases("BUILD", toBuild, async (workspace) => {
+		console.log(`[BUILD]: ${workspace.name}@${workspace.config.version}...`)
+		console.log(await execPromise("npm run build", { cwd: workspace.path }))
+	})
 
 	console.log("BUILD:end")
 	return toBuild

@@ -13,6 +13,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { $ } from "bun"
 
+/** Build the ESM and CommonJS artifacts for a package and normalize CJS output. */
 export async function buildLib(packageDir = ".") {
 	const packageRoot = path.resolve(packageDir)
 	fs.rmSync(path.join(packageRoot, "esm"), { force: true, recursive: true })

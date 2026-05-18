@@ -1,8 +1,13 @@
+/** Publish workspace packages in dependency order so releases stay aligned with the workspace graph. */
 import fs from "node:fs"
 import { parseArgs } from "node:util"
-import { buildWorkspaces } from "./build.ts"
-import * as npm from "./util/npm.ts"
 import { execPromise } from "./util/process.ts"
+import {
+	runWorkspaceTaskPhases,
+	selectWorkspaceTaskWorkspaces,
+	type WorkspaceTaskSelection,
+} from "./util/workspace-task.ts"
+import { getWorkspaces, type Workspace } from "./util/workspaces.ts"
 
 /************************************************************************
  * Globals
@@ -33,20 +38,7 @@ Options:
 /**
  * Publishes packages based on flags, optionally bumping versions
  */
-export async function publishWorkspaces(
-	p: {
-		/** Publish all packages */
-		all?: boolean
-		/** Bump the version before publishing */
-		bump?: boolean
-		/** Only publish dirty packages */
-		dirty?: boolean
-		/** Exclude workspace names or parts */
-		exclude?: string[]
-		/** Include workspace names or parts */
-		include?: string[]
-	} = {},
-) {
+export async function publishWorkspaces(p: WorkspaceTaskSelection & { bump?: boolean } = {}) {
 	console.log("[PUBLISH]:start")
 
 	const user = (
@@ -62,44 +54,19 @@ export async function publishWorkspaces(
 		return []
 	}
 
-	const workspaces = await npm.getWorkspaces()
-
-	// Determine which workspaces to publish
-	let toPublish: npm.Workspace[] = []
-	for (const workspace of Object.values(workspaces)) {
-		const isExcluded = p.exclude?.some((e) => workspace.name.includes(e))
-		const isIncluded = p.include?.some((i) => workspace.name.includes(i))
-
-		if (isExcluded) {
-			continue
-		}
-
-		if (workspace.name === "@slimr/mdi-paths") {
-			console.warn(`[BUILD]: Skipping mdi-paths because it's heavy`)
-			continue
-		}
-
-		// If --all, publish all
-		if (p.all) {
-			toPublish.push(workspace)
-		}
-		// If --dirty, publish dirty
-		else if (p.dirty && workspace.dirty) {
-			toPublish.push(workspace, ...workspace.wsChildrenAll.map((n) => workspaces[n]))
-		}
-		// If --include, publish included
-		else if (p.include && isIncluded) {
-			toPublish.push(workspace, ...workspace.wsChildrenAll.map((n) => workspaces[n]))
-		}
-	}
-
-	toPublish = [...new Set(toPublish)] // deduplicate
-	toPublish.sort((a, b) => a.name.localeCompare(b.name))
+	const workspaces = await getWorkspaces()
+	const toPublish = selectWorkspaceTaskWorkspaces(workspaces, p, {
+		includeDependents: true,
+		workspaceFilter: (workspace) => workspace.name !== "@slimr/mdi-paths",
+	})
 
 	console.log(`[PUBLISH]: Packages to publish: ${toPublish.map((w) => w.name).join(", ")}`)
 
 	console.log(`[PUBLISH]:build\n`)
-	await buildWorkspaces({ include: toPublish.map((w) => w.name) })
+	await runWorkspaceTaskPhases("BUILD", toPublish, async (workspace) => {
+		console.log(`[BUILD]: ${workspace.name}@${workspace.config.version}...`)
+		console.log(await execPromise("npm run build", { cwd: workspace.path }))
+	})
 
 	if (p.bump) {
 		console.log(`[PUBLISH]:bump\n`)
@@ -110,16 +77,16 @@ export async function publishWorkspaces(
 	}
 
 	console.log(`[PUBLISH]:publish\n`)
-	for (const workspace of toPublish) {
+	await runWorkspaceTaskPhases("PUBLISH", toPublish, async (workspace) => {
 		console.log(`[PUBLISH]: Publishing ${workspace.name}@${workspace.config.version}...`)
-		console.log(await execPromise("npm publish --access public", workspace.path))
-	}
+		console.log(await execPromise("npm publish --access public", { cwd: workspace.path }))
+	})
 
 	console.log("[PUBLISH]:end")
 	return toPublish
 }
 
-/** The entrypoint if called directly (aka import.meta.main = true) */
+/** Parse CLI arguments and run the workspace publish entrypoint. */
 async function main() {
 	const pa = parseArgs({
 		options: {
@@ -144,7 +111,7 @@ if (import.meta.main) main()
 /************************************************************************/
 
 /** Bumps the version of a workspace and update children to use the new version */
-async function bumpVersion(workspaces: Record<string, npm.Workspace>, workspace: npm.Workspace) {
+async function bumpVersion(workspaces: Record<string, Workspace>, workspace: Workspace) {
 	const nextVersion = bumpPatchVersion(workspace.config.version)
 
 	workspace.config.version = nextVersion

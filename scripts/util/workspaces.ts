@@ -1,16 +1,16 @@
+/** Build the monorepo workspace graph so scripts can resolve dirty packages and dependencies. */
 import fs from "node:fs"
 import { throwError } from "./errors.ts"
 import { git } from "./git.ts"
 import { json } from "./json.ts"
 
-/** Get workspace meta for the current npm monorepo */
+/** Get workspace metadata for the current monorepo. */
 export async function getWorkspaces(
 	props: { gitChanged?: string; packageJson?: Record<string, any> } = {},
 ): Promise<Record<string, Workspace>> {
 	const gitChanged = props.gitChanged || (await git.getChanged())
 	const packageJson = props.packageJson || (await json.readFile("package.json"))
 
-	// Get the workspaces from the root package.json
 	if (!packageJson.workspaces) throwError("No workspaces found in packageJson")
 
 	const workspacePathsSet: Set<string> = new Set()
@@ -18,7 +18,7 @@ export async function getWorkspaces(
 		if (path.endsWith("/*")) {
 			path = path.slice(0, -2)
 			fs.readdirSync(path).forEach((entryName) => {
-				if (entryName.startsWith(".")) return // skip hidden folders
+				if (entryName.startsWith(".")) return
 				workspacePathsSet.add(`${path}/${entryName}`)
 			})
 		} else {
@@ -45,7 +45,6 @@ export async function getWorkspaces(
 		workspaces[workspace.name] = workspace
 	}
 
-	// establish parent/child relationships between workspaces to build out wsChildrenAll and wsParentsAll
 	for (const workspace of Object.values(workspaces)) {
 		const deps = workspace.config.dependencies
 			? Object.keys(workspace.config.dependencies).filter((dep) =>
@@ -58,7 +57,6 @@ export async function getWorkspaces(
 		})
 	}
 
-	// recursively build wsChildrenAll and wsParentsAll
 	for (const workspace of Object.values(workspaces)) {
 		const gatherParents = (ws: Workspace) => {
 			ws.wsParents.forEach((parentName) => {
@@ -80,7 +78,6 @@ export async function getWorkspaces(
 		gatherChildren(workspace)
 	}
 
-	// now update dirty status based on children
 	for (const workspace of Object.values(workspaces)) {
 		if (workspace.dirty) {
 			console.debug(`[NPM]: Workspace ${workspace.name} is dirty due to direct changes`)
@@ -96,19 +93,15 @@ export async function getWorkspaces(
 	return workspaces
 }
 
+/** Workspace metadata plus dependency-closure bookkeeping for repo scripts. */
 export interface Workspace {
 	config: { version: string; private: boolean; dependencies: Record<string, string> }
-	/** Is there changes to this workspace, or any of this workspaces children */
 	dirty: boolean
 	name: string
 	path: string
 	save: () => Promise<void>
-	/** workspaces that depend on this workspace directly */
 	wsChildren: string[]
-	/** all workspaces that depend on this workspace, directly or indirectly */
 	wsChildrenAll: string[]
-	/** workspaces that this workspace depends on directly */
 	wsParents: string[]
-	/** all workspaces that this workspace depends on, directly or indirectly */
 	wsParentsAll: string[]
 }
