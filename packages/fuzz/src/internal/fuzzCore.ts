@@ -52,18 +52,34 @@ export interface FuzzScoreOptions {
 const DEFAULT_RECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000
 const BOOST_SCALE = 50
 
+/** Trims a query for search; lowercases unless `caseSensitive` is true. */
+export function normalizeSearchQuery(query: string, caseSensitive = false): string {
+	const trimmed = query.trim()
+	return caseSensitive ? trimmed : trimmed.toLowerCase()
+}
+
+/** Trims indexed text for search; lowercases unless `caseSensitive` is true. */
+export function normalizeSearchableText(value: string, caseSensitive = false): string {
+	const trimmed = value.trim()
+	return caseSensitive ? trimmed : trimmed.toLowerCase()
+}
+
 /** Splits extract results into searchable text and boost metadata. */
-export function parseExtract(extracted: FuzzExtractResult[]): {
+export function parseExtract(
+	extracted: FuzzExtractResult[],
+	options: { caseSensitive?: boolean } = {},
+): {
 	searchables: Searchable[]
 	boosts: FuzzBoosts
 } {
 	const searchables: Searchable[] = []
 	const boosts: FuzzBoosts = { recency: [], numeric: [] }
+	const caseSensitive = options.caseSensitive ?? false
 
 	for (const entry of extracted) {
 		if ("value" in entry) {
 			searchables.push({
-				text: entry.value.toLowerCase().trim(),
+				text: normalizeSearchableText(entry.value, caseSensitive),
 				weight: entry.weight,
 			})
 		} else if ("recency" in entry) {
@@ -82,7 +98,7 @@ export function toSearchables(extracted: FuzzExtractResult[]): Searchable[] {
 }
 
 /**
- * Scores an item's searchables against a normalized (lowercased, trimmed) query.
+ * Scores an item's searchables against a normalized (trimmed, optionally lowercased) query.
  * Returns 0 when there is no match.
  */
 export function scoreSearchables(searchables: Searchable[], normalizedQuery: string): number {

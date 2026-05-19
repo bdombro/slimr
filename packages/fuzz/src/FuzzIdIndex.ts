@@ -34,6 +34,8 @@ export interface FuzzIdOptions<T> {
 	limit?: number
 	/** When true, blank queries return all indexed items by default. */
 	matchEmpty?: boolean
+	/** When true, text matching is case-sensitive. Default: false. */
+	caseSensitive?: boolean
 }
 
 interface IdIndexedItem {
@@ -92,7 +94,9 @@ export class FuzzIdIndex<T> extends BaseFuzzIndex<IdIndexedItem, IdIndexedItem, 
 				"[FuzzIdIndex] Items must have a resolvable id (string item.id or getId in options)",
 			)
 		}
-		const { searchables, boosts } = parseExtract(this.options.extract(item))
+		const { searchables, boosts } = parseExtract(this.options.extract(item), {
+			caseSensitive: this.options.caseSensitive,
+		})
 		return {
 			id,
 			searchables,

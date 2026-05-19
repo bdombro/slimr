@@ -2,6 +2,11 @@
 
 ## UNRELEASED
 
+## 0.0.8
+
+### Added
+- `caseSensitive` constructor option on `FuzzIndex` and `FuzzIdIndex` for case-sensitive text matching.
+
 ## 0.0.7
 
 ### Fixed

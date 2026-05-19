@@ -1,12 +1,21 @@
 {
   "name": "@slimr/fuzz",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
   "sideEffects": false,
   "keywords": [
-    "TODO"
+    "fuzzy",
+    "search",
+    "substring",
+    "filter",
+    "autocomplete",
+    "typeahead",
+    "index",
+    "in-memory",
+    "weighted",
+    "lightweight"
   ],
   "repository": {
     "type": "git",

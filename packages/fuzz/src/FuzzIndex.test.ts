@@ -12,6 +12,34 @@ const movieOptions = {
 }
 
 describe("FuzzIndex", () => {
+	it("matches case-insensitively by default", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add([{ id: "1", title: "The Matrix", description: "" }])
+		await index.index()
+
+		expect(index.searchSync("matrix")).toHaveLength(1)
+		expect(index.searchSync("MATRIX")).toHaveLength(1)
+
+		index.destroy()
+	})
+
+	it("caseSensitive requires matching letter case", async () => {
+		const index = new FuzzIndex<Movie>({
+			...movieOptions,
+			caseSensitive: true,
+		})
+
+		index.add([{ id: "1", title: "The Matrix", description: "" }])
+		await index.index()
+
+		expect(index.searchSync("Matrix")).toHaveLength(1)
+		expect(index.searchSync("matrix")).toHaveLength(0)
+		expect(index.searchSync("MATRIX")).toHaveLength(0)
+
+		index.destroy()
+	})
+
 	it("should find exact matches with highest score", async () => {
 		const index = new FuzzIndex<Movie>(movieOptions)
 

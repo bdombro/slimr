@@ -4,6 +4,7 @@ import {
 	type FuzzScoreOptions,
 	type FuzzSearchOptions,
 	limitResults,
+	normalizeSearchQuery,
 	resolveMatchEmpty,
 	resolveSearchLimit,
 	type Searchable,
@@ -21,7 +22,14 @@ export abstract class BaseFuzzIndex<
 	protected indexPromise: Promise<void> | null = null
 	protected indexInterval: ReturnType<typeof setInterval> | null = null
 
-	constructor(protected baseOptions: { chunkSize: number; limit?: number; matchEmpty?: boolean }) {
+	constructor(
+		protected baseOptions: {
+			chunkSize: number
+			limit?: number
+			matchEmpty?: boolean
+			caseSensitive?: boolean
+		},
+	) {
 		this.indexIntervalStart()
 	}
 
@@ -89,7 +97,7 @@ export abstract class BaseFuzzIndex<
 	 * Does NOT wait for pending items in the queue to be indexed.
 	 */
 	searchSync(query: string, options?: FuzzSearchOptions): TResult[] {
-		const normalizedQuery = query.toLowerCase().trim()
+		const normalizedQuery = normalizeSearchQuery(query, this.baseOptions.caseSensitive ?? false)
 		const matchEmpty = resolveMatchEmpty(options, this.baseOptions.matchEmpty)
 		if (!normalizedQuery && !matchEmpty) return []
 

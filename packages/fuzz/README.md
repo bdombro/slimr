@@ -1,10 +1,15 @@
-# 🪶 @slimr/fuzz [![npm package](https://img.shields.io/npm/v/@slimr/fuzz.svg?style=flat-square)](https://npmjs.org/package/@slimr/fuzz)
+# 🪶 @slimr/fuzz [npm package](https://npmjs.org/package/@slimr/fuzz)
 
 A tiny fuzzy text search library with zero dependencies and a low memory footprint. It specializes in fast, high-performance substring search with weighted fields. 
 
+Unlike others, @slimr/fuzz:
+
+- Is actually tiny, < 5kb zipped
+- Still has the most common features you would need
+
 ## Features
 
-- **Slim:** Zero dependencies. No typo-tolerance or heavy Levenshtein algorithms.
+- **Slim:** One tiny dependency. No typo-tolerance or heavy Levenshtein algorithms.
 - **Asynchronous Indexing:** Builds the search index in chunks without blocking the main thread.
 - **Weighted Search:** Assign different importance scores to different fields (e.g., Title is more important than Description).
 - **Type-safe:** Generic class allows you to pass your own object shapes.
@@ -74,15 +79,17 @@ searchIndex.destroy()
 
 Creates a search index. Background indexing starts immediately on a 2-second interval.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `chunkSize` | `number` | `500` | How many queued items to process per indexing pass before yielding to the browser. |
-| `extract` | `(item: T) => FuzzExtractResult[]` | *(required)* | Returns the searchable strings and their weights for each item. |
-| `getId` | `(item: T) => string` | `item.id` (when a string) | Stable id for deduplication on `add` and id-based `remove`. Override for non-`id` keys. |
-| `limit` | `number` | — | Default max results from `search` / `searchSync`. No cap when omitted. |
-| `matchEmpty` | `boolean` | `false` | When true, blank queries return all indexed items (sorted by boost fields). |
-| `numericMax` | `number` | — | Upper bound used to normalize `{ numeric }` values to 0–1. |
-| `recencyHalfLifeMs` | `number` | 7 days | Half-life for `{ recency }` extract fields. |
+
+| Option              | Type                               | Default                   | Description                                                                             |
+| ------------------- | ---------------------------------- | ------------------------- | --------------------------------------------------------------------------------------- |
+| `chunkSize`         | `number`                           | `500`                     | How many queued items to process per indexing pass before yielding to the browser.      |
+| `extract`           | `(item: T) => FuzzExtractResult[]` | *(required)*              | Returns the searchable strings and their weights for each item.                         |
+| `getId`             | `(item: T) => string`              | `item.id` (when a string) | Stable id for deduplication on `add` and id-based `remove`. Override for non-`id` keys. |
+| `limit`             | `number`                           | —                         | Default max results from `search` / `searchSync`. No cap when omitted.                  |
+| `matchEmpty`        | `boolean`                          | `false`                   | When true, blank queries return all indexed items (sorted by boost fields).             |
+| `numericMax`        | `number`                           | —                         | Upper bound used to normalize `{ numeric }` values to 0–1.                              |
+| `recencyHalfLifeMs` | `number`                           | 7 days                    | Half-life for `{ recency }` extract fields.                                             |
+
 
 ### `add(items: T | T[])`
 
@@ -201,12 +208,14 @@ Results are sorted by score descending.
 
 **Text fields** — each `{ value, weight }` is scored independently; the highest weighted text score is used:
 
-| Match type | Base score | Example (`query: "cool"`) |
-|------------|------------|---------------------------|
-| Exact | 100 | `"cool"` |
-| Prefix | 75 | `"cool runnings"` |
-| Word boundary | 50 | `"a cool movie"` |
-| Substring | 25 | `"acool"` |
+
+| Match type    | Base score | Example (`query: "cool"`) |
+| ------------- | ---------- | ------------------------- |
+| Exact         | 100        | `"cool"`                  |
+| Prefix        | 75         | `"cool runnings"`         |
+| Word boundary | 50         | `"a cool movie"`          |
+| Substring     | 25         | `"acool"`                 |
+
 
 Text contribution = base score × field weight.
 
@@ -221,7 +230,7 @@ Final score = text score + recency boost + numeric boost.
 
 ## FuzzIdIndex (memory-efficient)
 
-Use **`FuzzIdIndex`** when items are large (many fields, blobs, URLs) and you only need **ids back from search** — you resolve full records elsewhere (e.g. from a store or cache by id).
+Use `**FuzzIdIndex`** when items are large (many fields, blobs, URLs) and you only need **ids back from search** — you resolve full records elsewhere (e.g. from a store or cache by id).
 
 Same scoring and indexing behavior as `FuzzIndex`, but:
 
@@ -258,10 +267,12 @@ const movies = await Promise.all(hits.map((h) => loadMovie(h.id)))
 index.destroy()
 ```
 
-| | `FuzzIndex` | `FuzzIdIndex` |
-|--|-------------|---------------|
-| Stores full item | Yes | No (id + searchables only) |
-| Search result | `{ item, score }` | `{ id, score }` |
-| `removeWhere` | Yes | No |
-| Item id required | No (for dedup/remove) | Yes |
+
+|                  | `FuzzIndex`           | `FuzzIdIndex`              |
+| ---------------- | --------------------- | -------------------------- |
+| Stores full item | Yes                   | No (id + searchables only) |
+| Search result    | `{ item, score }`     | `{ id, score }`            |
+| `removeWhere`    | Yes                   | No                         |
+| Item id required | No (for dedup/remove) | Yes                        |
+
 
