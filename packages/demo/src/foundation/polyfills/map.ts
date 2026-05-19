@@ -53,7 +53,7 @@ Object.defineProperties(Map.prototype, {
 		enumerable: false,
 	},
 	update: {
-		value: function (key: OkOkAny, valueCb: (previous: sany) => sany) {
+		value: function (key: any, valueCb: (previous: any) => any) {
 			return this.set(key, valueCb(this.get(key)))
 		},
 		enumerable: false,

@@ -6,5 +6,9 @@ import { router } from "~/router"
  */
 export default function Planets() {
 	useEffect(() => router.replace(router.routes.planetsByPage, { page: "1" }), [])
-	return <Layout></Layout>
+	return (
+		<Layout>
+			<div />
+		</Layout>
+	)
 }
