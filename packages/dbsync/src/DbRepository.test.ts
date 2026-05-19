@@ -42,4 +42,84 @@ describe("DbRepository", () => {
 		expect(db.delete).toHaveBeenCalledWith("posts", "1")
 		expect(db.clear).toHaveBeenCalledWith("posts")
 	})
+
+	/** Confirms table-scoped subscribe filters global notifications to this table. */
+	test("subscribe forwards only this table's row changes", () => {
+		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
+		const db = {
+			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		const repo = new DbRepository<any>(db as any, "posts")
+		const callback = vi.fn()
+		repo.subscribe(callback)
+
+		subscriber?.(
+			["posts", "dirtyQueue"],
+			[
+				{ table: "posts", change: "update", id: "post-1" },
+				{ table: "users", change: "insert", id: "user-1" },
+			],
+		)
+
+		expect(callback).toHaveBeenCalledWith([{ change: "update", id: "post-1" }])
+	})
+
+	/** Confirms subscribe ignores notifications for other tables. */
+	test("subscribe ignores unrelated tables", () => {
+		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
+		const db = {
+			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		const repo = new DbRepository<any>(db as any, "posts")
+		const callback = vi.fn()
+		repo.subscribe(callback)
+
+		subscriber?.(["users"], [{ table: "users", change: "update", id: "user-1" }])
+
+		expect(callback).not.toHaveBeenCalled()
+	})
+
+	/** Confirms subscribe invokes callback with undefined when row detail is omitted. */
+	test("subscribe passes undefined when changes are omitted", () => {
+		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
+		const db = {
+			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		const repo = new DbRepository<any>(db as any, "posts")
+		const callback = vi.fn()
+		repo.subscribe(callback)
+
+		subscriber?.(["posts"])
+
+		expect(callback).toHaveBeenCalledWith(undefined)
+	})
+
+	/** Confirms optional id filtering skips irrelevant row updates. */
+	test("subscribe can filter to specific record ids", () => {
+		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
+		const db = {
+			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		const repo = new DbRepository<any>(db as any, "posts")
+		const callback = vi.fn()
+		repo.subscribe(callback, { ids: ["post-1"] })
+
+		subscriber?.(["posts"], [{ table: "posts", change: "update", id: "post-2" }])
+		expect(callback).not.toHaveBeenCalled()
+
+		subscriber?.(["posts"], [{ table: "posts", change: "update", id: "post-1" }])
+		expect(callback).toHaveBeenCalledWith([{ change: "update", id: "post-1" }])
+	})
 })

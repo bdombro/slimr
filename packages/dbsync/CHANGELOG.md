@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.26
+
+### Added
+
+- `DbRepository.subscribe` (e.g. `db.posts.subscribe`) for table-scoped row change notifications, with optional `ids` filtering.
+
 ## 0.0.25
 
 ### Added

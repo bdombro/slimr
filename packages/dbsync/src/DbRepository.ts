@@ -1,4 +1,5 @@
 import type { DbSync } from "./DbSync.js"
+import type { RowChange } from "./internal/EventBus.js"
 
 export interface FindOptions {
 	index?: string
@@ -10,6 +11,30 @@ export interface FindOptions {
 	limit?: number
 	order?: "asc" | "desc"
 }
+
+/** Row-level change for a single table (table name omitted). */
+export type TableRowChange =
+	| { change: "insert" | "update" | "delete"; id: string | number }
+	| { change: "clear" }
+
+/** Callback invoked when this table's rows change. */
+export type TableSubscribeCallback = (changes?: TableRowChange[]) => void
+
+/** Options for table-scoped subscriptions. */
+export type TableSubscribeOptions = {
+	/** When set, only invoke the callback if one of these ids changed (or the table was cleared). */
+	ids?: Array<string | number>
+}
+
+/** Maps global row changes to table-scoped changes. */
+const toTableRowChanges = (changes: RowChange[], tableName: string): TableRowChange[] =>
+	changes
+		.filter((change) => change.table === tableName)
+		.map((change) =>
+			change.change === "clear"
+				? { change: "clear" as const }
+				: { change: change.change, id: change.id },
+		)
 
 /**
  * A typed repository wrapper for a single `DbSync` table.
@@ -123,5 +148,37 @@ export class DbRepository<T> {
 	 */
 	async clear(): Promise<void> {
 		return this.db.clear(this.tableName)
+	}
+
+	/**
+	 * Subscribes to row-level changes for this table only.
+	 *
+	 * @param callback Invoked with changes for this table. `undefined` means the table changed but row detail is unavailable (e.g. large cross-tab broadcast).
+	 * @param options Optional filters such as limiting to specific record ids.
+	 * @returns A handle with `close()` to unsubscribe.
+	 */
+	subscribe(callback: TableSubscribeCallback, options?: TableSubscribeOptions) {
+		return this.db.subscribe((tables, changes) => {
+			if (!tables.includes(this.tableName)) return
+
+			if (!changes) {
+				callback(undefined)
+				return
+			}
+
+			const relevant = toTableRowChanges(changes, this.tableName)
+			if (relevant.length === 0) return
+
+			if (options?.ids) {
+				const watchedIds = options.ids
+				const hit = relevant.some(
+					(change) =>
+						change.change === "clear" || ("id" in change && watchedIds.includes(change.id)),
+				)
+				if (!hit) return
+			}
+
+			callback(relevant)
+		})
 	}
 }

@@ -185,6 +185,27 @@ sub.close()
 
 Each `RowChange` is either `{ table, change: "insert" | "update" | "delete", id }` or `{ table, change: "clear" }` for whole-table invalidation. The second argument is optional for backward compatibility; cross-tab broadcasts omit row details when a batch exceeds 100 changes.
 
+Table repositories expose the same notifications without repeating the table name:
+
+```typescript
+const sub = db.posts.subscribe((changes) => {
+    if (!changes) {
+        refreshAllPosts()
+        return
+    }
+    if (changes.some((c) => c.change === "clear")) {
+        refreshAllPosts()
+        return
+    }
+    refreshPosts(changes.filter((c) => "id" in c).map((c) => c.id))
+})
+
+// Optional: only hear about specific ids (or a table clear)
+db.posts.subscribe((changes) => { /* ... */ }, { ids: [postId] })
+
+sub.close()
+```
+
 ```tsx
 // In a useDbQuery.ts file
 import { createUseDbQuery } from "@slimr/dbsync/react"

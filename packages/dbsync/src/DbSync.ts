@@ -48,7 +48,12 @@ export interface DbSyncResolvedTable {
 	preparePatch?: (value: any) => any
 }
 
-export type { RowChange, SubscribeCallback, SyncState }
+export type {
+	TableRowChange,
+	TableSubscribeCallback,
+	TableSubscribeOptions,
+} from "./DbRepository.js"
+export type { RowChange, SubscribeCallback, SyncState } from "./internal/EventBus.js"
 
 /**
  * The public facade for the dbsync engine.
