@@ -141,6 +141,10 @@ Stops indexing. Signals to any ongoing indexing to stop after next queue item. R
 
 Restarts the background indexing interval and returns when indexing is completed.
 
+### `clear()`
+
+Empties all indexed and queued items. Background indexing keeps running so you can `add` again immediately.
+
 ### `destroy()`
 
 Stops background indexing, clears the index and queue, and releases resources. Call when the index is no longer needed (e.g. on component unmount).
@@ -189,7 +193,7 @@ Same scoring and indexing behavior as `FuzzIndex`, but:
 - On `add`, searchable text is extracted immediately; the **original item is not kept**.
 - `search` / `searchSync` return `{ id, score }`, not `{ item, score }`.
 - Every item must have a resolvable id (`item.id` or `getId`).
-- Supports `add`, `remove`, `search`, `searchSync`, `index`, `pause`, `resume`, and `destroy` — no `removeWhere` (there is no full item to match against).
+- Supports `add`, `remove`, `search`, `searchSync`, `index`, `pause`, `resume`, `clear`, and `destroy` — no `removeWhere` (there is no full item to match against).
 
 ```typescript
 import { FuzzIdIndex } from "@slimr/fuzz"

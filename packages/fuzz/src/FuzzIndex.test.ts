@@ -353,6 +353,25 @@ describe("FuzzIndex", () => {
 		index.destroy()
 	})
 
+	it("clear empties indexed and queued items", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add({ id: "1", title: "The Matrix", description: "" })
+		await index.index()
+		expect(index.searchSync("matrix")).toHaveLength(1)
+
+		index.clear()
+		expect(index.searchSync("matrix")).toHaveLength(0)
+
+		index.add({ id: "2", title: "Inception", description: "" })
+		expect(index.searchSync("inception")).toHaveLength(0)
+
+		await index.index()
+		expect(index.searchSync("inception")).toHaveLength(1)
+
+		index.destroy()
+	})
+
 	it("custom getId overrides default item.id", async () => {
 		type SlugItem = { slug: string; title: string }
 		const index = new FuzzIndex<SlugItem>({

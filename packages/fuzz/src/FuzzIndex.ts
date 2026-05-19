@@ -118,6 +118,14 @@ export class FuzzIndex<T> {
 	}
 
 	/**
+	 * Empties all indexed and queued items. Does not stop background indexing.
+	 */
+	clear() {
+		this.items = []
+		this.queue = []
+	}
+
+	/**
 	 * Cleans up the interval and clears the index.
 	 */
 	destroy() {
@@ -125,8 +133,7 @@ export class FuzzIndex<T> {
 			clearInterval(this.indexInterval)
 			this.indexInterval = null
 		}
-		this.items = []
-		this.queue = []
+		this.clear()
 	}
 
 	/**

@@ -2,6 +2,11 @@
 
 ## UNRELEASED
 
+## 0.0.4
+
+### Added
+- `clear()` on `FuzzIndex` and `FuzzIdIndex` empties indexed and queued items without stopping the index.
+
 ## 0.0.3
 
 ### Added
