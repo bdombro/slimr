@@ -18,7 +18,7 @@ export type TableRowChange =
 	| { change: "clear" }
 
 /** Callback invoked when this table's rows change. */
-export type TableSubscribeCallback = (changes?: TableRowChange[]) => void
+type TableSubscribeCallback = (changes?: TableRowChange[]) => void
 
 /** Options for table-scoped subscriptions. */
 export type TableSubscribeOptions = {

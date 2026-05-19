@@ -1,6 +1,7 @@
 import { areEqualDeep } from "@slimr/util"
 import { useEffect, useState } from "react"
-import type { DbSync, RowChange } from "./DbSync.js"
+import type { DbSync } from "./DbSync.js"
+import type { RowChange } from "./internal/EventBus.js"
 import { sleep } from "./util/promises.js"
 
 type DbQueryState<T> = {

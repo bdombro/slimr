@@ -11,14 +11,12 @@ import {
 	type SubscribeCallback,
 	type SyncState,
 } from "./internal/EventBus.js"
-import {
-	type MigrationManagerMigration as Migration,
-	MigrationManager,
-} from "./internal/MigrationManager.js"
+import { MigrationManager, type MigrationManagerMigration } from "./internal/MigrationManager.js"
+
+type Migration = MigrationManagerMigration
+
 import { SyncEngine } from "./internal/SyncEngine.js"
 import { applyDefaults, StorageManager } from "./internal/storage/index.js"
-
-export type { Migration }
 
 export interface DbSyncTableConfig {
 	/** Optional index names to create for the table. */
@@ -39,7 +37,7 @@ export interface DbSyncConfig {
 	tables?: Record<string, DbSyncTableConfig>
 }
 
-export interface DbSyncResolvedTable {
+interface DbSyncResolvedTable {
 	tableName: string
 	indexes?: string[]
 	migrations?: Migration[]
@@ -47,13 +45,6 @@ export interface DbSyncResolvedTable {
 	preparePut?: (value: any) => any
 	preparePatch?: (value: any) => any
 }
-
-export type {
-	TableRowChange,
-	TableSubscribeCallback,
-	TableSubscribeOptions,
-} from "./DbRepository.js"
-export type { RowChange, SubscribeCallback, SyncState } from "./internal/EventBus.js"
 
 /**
  * The public facade for the dbsync engine.

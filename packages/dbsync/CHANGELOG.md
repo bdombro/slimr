@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.27
+
+### Changed
+
+- Public types are exported from the package entry (`index.ts`) instead of re-exported through `DbSync`; removed `TableSubscribeCallback` and internal `DbSyncResolvedTable` from the public surface.
+
 ## 0.0.26
 
 ### Added
