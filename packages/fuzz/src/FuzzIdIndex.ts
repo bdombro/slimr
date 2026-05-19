@@ -1,8 +1,13 @@
 import {
+	type FuzzBoosts,
 	type FuzzExtractResult,
+	type FuzzScoreOptions,
+	type FuzzSearchOptions,
+	limitResults,
+	parseExtract,
 	resolveItemId,
-	scoreSearchables,
-	toSearchables,
+	resolveSearchLimit,
+	scoreItem,
 } from "./internal/fuzzCore.js"
 import { promiseWithResolvers, yieldToIdle } from "./util/promise.js"
 
@@ -19,11 +24,22 @@ export interface FuzzIdOptions<T> {
 	 * Required for every item added to the index.
 	 */
 	getId?: (item: T) => string
+	/** Half-life (ms) for `{ recency }` extract fields. Default: 7 days. */
+	recencyHalfLifeMs?: number
+	/** Upper bound for `{ numeric }` extract fields when normalizing to 0–1. */
+	numericMax?: number
+	/** Clock for recency decay. Defaults to `Date.now()` at search time. */
+	now?: number
+	/** Default max results returned from `search` / `searchSync`. No cap when omitted. */
+	limit?: number
 }
+
+export type { FuzzSearchOptions } from "./internal/fuzzCore.js"
 
 interface IdIndexedItem {
 	id: string
-	searchables: ReturnType<typeof toSearchables>
+	searchables: ReturnType<typeof parseExtract>["searchables"]
+	boosts: FuzzBoosts
 }
 
 /**
@@ -77,29 +93,35 @@ export class FuzzIdIndex<T> {
 	 * Searches the index for the given query asynchronously.
 	 * Waits for any pending indexing to complete before searching.
 	 */
-	async search(query: string): Promise<FuzzIdResult[]> {
+	async search(query: string, options?: FuzzSearchOptions): Promise<FuzzIdResult[]> {
 		await this.index()
-		return this.searchSync(query)
+		return this.searchSync(query, options)
 	}
 
 	/**
 	 * Searches the currently indexed items synchronously.
 	 * Does NOT wait for pending items in the queue to be indexed.
 	 */
-	searchSync(query: string): FuzzIdResult[] {
+	searchSync(query: string, options?: FuzzSearchOptions): FuzzIdResult[] {
 		const normalizedQuery = query.toLowerCase().trim()
 		if (!normalizedQuery) return []
 
 		const results: FuzzIdResult[] = []
 
 		for (const indexed of this.items) {
-			const score = scoreSearchables(indexed.searchables, normalizedQuery)
+			const score = scoreItem(
+				indexed.searchables,
+				indexed.boosts,
+				normalizedQuery,
+				this.scoreOptions(),
+			)
 			if (score > 0) {
 				results.push({ id: indexed.id, score })
 			}
 		}
 
-		return results.sort((a, b) => b.score - a.score)
+		const sorted = results.sort((a, b) => b.score - a.score)
+		return limitResults(sorted, resolveSearchLimit(options, this.options.limit))
 	}
 
 	/**
@@ -175,9 +197,19 @@ export class FuzzIdIndex<T> {
 				"[FuzzIdIndex] Items must have a resolvable id (string item.id or getId in options)",
 			)
 		}
+		const { searchables, boosts } = parseExtract(this.options.extract(item))
 		return {
 			id,
-			searchables: toSearchables(this.options.extract(item)),
+			searchables,
+			boosts,
+		}
+	}
+
+	private scoreOptions(): FuzzScoreOptions {
+		return {
+			numericMax: this.options.numericMax,
+			now: this.options.now,
+			recencyHalfLifeMs: this.options.recencyHalfLifeMs,
 		}
 	}
 

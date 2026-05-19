@@ -388,4 +388,73 @@ describe("FuzzIndex", () => {
 
 		index.destroy()
 	})
+
+	it("search respects default limit and per-search limit override", async () => {
+		const index = new FuzzIndex<Movie>({
+			...movieOptions,
+			limit: 2,
+		})
+
+		index.add([
+			{ id: "1", title: "Alpha One", description: "" },
+			{ id: "2", title: "Alpha Two", description: "" },
+			{ id: "3", title: "Alpha Three", description: "" },
+		])
+
+		await index.index()
+
+		expect(index.searchSync("alpha")).toHaveLength(2)
+		expect(index.searchSync("alpha", { limit: 1 })).toHaveLength(1)
+		expect(index.searchSync("alpha", { limit: 10 })).toHaveLength(3)
+
+		index.destroy()
+	})
+
+	it("recency boost ranks recently edited items higher", async () => {
+		const NOW = 1_700_000_000_000
+		const DAY = 24 * 60 * 60 * 1000
+
+		type Todo = { id: string; title: string; lastEditedAt: number }
+		const index = new FuzzIndex<Todo>({
+			now: NOW,
+			extract: (todo) => [
+				{ value: todo.title, weight: 1 },
+				{ recency: todo.lastEditedAt, weight: 1 },
+			],
+		})
+
+		index.add([
+			{ id: "1", title: "buy milk", lastEditedAt: NOW - 60 * DAY },
+			{ id: "2", title: "buy milk", lastEditedAt: NOW - DAY },
+		])
+
+		const results = await index.search("buy")
+		expect(results).toHaveLength(2)
+		expect(results[0].item.id).toBe("2")
+		expect(results[0].score).toBeGreaterThan(results[1].score)
+
+		index.destroy()
+	})
+
+	it("numeric boost ranks higher values higher when numericMax is set", async () => {
+		type Task = { id: string; title: string; priority: number }
+		const index = new FuzzIndex<Task>({
+			numericMax: 10,
+			extract: (task) => [
+				{ value: task.title, weight: 1 },
+				{ numeric: task.priority, weight: 1 },
+			],
+		})
+
+		index.add([
+			{ id: "1", title: "report", priority: 2 },
+			{ id: "2", title: "report", priority: 9 },
+		])
+
+		const results = await index.search("report")
+		expect(results[0].item.id).toBe("2")
+		expect(results[0].score).toBeGreaterThan(results[1].score)
+
+		index.destroy()
+	})
 })

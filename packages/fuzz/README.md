@@ -76,9 +76,12 @@ Creates a search index. Background indexing starts immediately on a 2-second int
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `chunkSize` | `number` | `500` | How many queued items to process per indexing pass before yielding to the browser. |
 | `extract` | `(item: T) => FuzzExtractResult[]` | *(required)* | Returns the searchable strings and their weights for each item. |
 | `getId` | `(item: T) => string` | `item.id` (when a string) | Stable id for deduplication on `add` and id-based `remove`. Override for non-`id` keys. |
-| `chunkSize` | `number` | `500` | How many queued items to process per indexing pass before yielding to the browser. |
+| `limit` | `number` | — | Default max results from `search` / `searchSync`. No cap when omitted. |
+| `numericMax` | `number` | — | Upper bound used to normalize `{ numeric }` values to 0–1. |
+| `recencyHalfLifeMs` | `number` | 7 days | Half-life for `{ recency }` extract fields. |
 
 ### `add(items: T | T[])`
 
@@ -105,19 +108,23 @@ Removes items when the predicate returns true.
 searchIndex.removeWhere((movie) => movie.title === "Movie title")
 ```
 
-### `search(query: string): Promise<FuzzResult<T>[]>`
+### `search(query: string, options?: FuzzSearchOptions): Promise<FuzzResult<T>[]>`
 
 Searches the full index. Awaits any in-progress indexing and processes any remaining queued items before returning results (via `index()`).
 
 Use this when you need complete, up-to-date results (e.g. on submit or when the user stops typing).
 
-### `searchSync(query: string): FuzzResult<T>[]`
+```typescript
+await searchIndex.search("matrix", { limit: 20 })
+```
+
+### `searchSync(query: string, options?: FuzzSearchOptions): FuzzResult<T>[]`
 
 Searches only items that have already been indexed. Does not wait for the queue.
 
 Use this for responsive UI filtering while typing, when showing partial results is acceptable.
 
-Returns an empty array for blank or whitespace-only queries.
+Returns an empty array for blank or whitespace-only queries. Result count is capped by `options.limit`, or the index `limit` default when set.
 
 ### `index(): Promise<void>`
 
@@ -153,11 +160,28 @@ Stops background indexing, clears the index and queue, and releases resources. C
 
 ### `FuzzExtractResult`
 
+Each item can contribute text fields (substring match), recency boosts, and numeric boosts:
+
 ```typescript
-interface FuzzExtractResult {
-  value: string  // Text to search against (normalized to lowercase at index time)
-  weight: number // Multiplier applied to match scores for this field
-}
+type FuzzExtractResult =
+  | { value: string; weight: number }   // searchable text
+  | { recency: number; weight: number } // ms timestamp; boosts when text matches
+  | { numeric: number; weight: number } // e.g. priority; boosts when text matches
+```
+
+Example — todos ranked by title match, then recency:
+
+```typescript
+const todoTitleSearchIndex = new FuzzIndex<{
+  id: string
+  lastEditedAt: number
+  title: string
+}>({
+  extract: (todo) => [
+    { value: todo.title, weight: 2 },
+    { recency: todo.lastEditedAt, weight: 1 },
+  ],
+})
 ```
 
 ### `FuzzResult<T>`
@@ -171,7 +195,9 @@ interface FuzzResult<T> {
 
 ## Scoring
 
-Each extracted field is scored independently; the highest weighted score wins for that item. Results are sorted by score descending.
+Results are sorted by score descending.
+
+**Text fields** — each `{ value, weight }` is scored independently; the highest weighted text score is used:
 
 | Match type | Base score | Example (`query: "cool"`) |
 |------------|------------|---------------------------|
@@ -180,7 +206,14 @@ Each extracted field is scored independently; the highest weighted score wins fo
 | Word boundary | 50 | `"a cool movie"` |
 | Substring | 25 | `"acool"` |
 
-Final score = base score × field weight.
+Text contribution = base score × field weight.
+
+**Recency and numeric boosts** — only apply when the item already has a text match. They are **added** to the text score:
+
+- `{ recency: ms, weight }` — exponential decay from `ms`; newer timestamps score higher. Half-life defaults to 7 days (`recencyHalfLifeMs`).
+- `{ numeric: n, weight }` — scales with `n`; when `numericMax` is set, `n` is clamped to `[0, numericMax]` and normalized to 0–1 first.
+
+Final score = text score + recency boost + numeric boost.
 
 ---
 

@@ -2,6 +2,13 @@
 
 ## UNRELEASED
 
+## 0.0.5
+
+### Added
+- `{ recency, weight }` and `{ numeric, weight }` extract fields add ranking boosts when an item has a text match.
+- `recencyHalfLifeMs` and `numericMax` index options tune boost behavior.
+- `limit` index option and `search(query, { limit })` cap how many results are returned.
+
 ## 0.0.4
 
 ### Added

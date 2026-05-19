@@ -35,6 +35,23 @@ describe("FuzzIdIndex", () => {
 		index.destroy()
 	})
 
+	it("search respects default limit", async () => {
+		const index = new FuzzIdIndex<Movie>({
+			...movieOptions,
+			limit: 1,
+		})
+
+		index.add([
+			{ id: "1", title: "Alpha", description: "", posterUrl: "" },
+			{ id: "2", title: "Alphabet", description: "", posterUrl: "" },
+		])
+
+		await index.index()
+		expect(index.searchSync("a")).toHaveLength(1)
+
+		index.destroy()
+	})
+
 	it("remove drops indexed items from search results", async () => {
 		const index = new FuzzIdIndex<Movie>(movieOptions)
 
