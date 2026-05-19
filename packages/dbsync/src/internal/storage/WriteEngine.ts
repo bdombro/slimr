@@ -25,14 +25,14 @@ export type ExecutedWrite = {
 	/** The final value written to IndexedDB, if applicable. */
 	value?: any
 	/** The record key used for the write, if one was present. */
-	key?: string | number
+	key?: string
 }
 
 type WriteOperation = {
 	type: string
 	storeName: string
 	value?: any
-	key?: string | number
+	key?: string
 }
 
 /** Accumulates deduplicated row changes for a single transaction. */
@@ -109,7 +109,7 @@ export class WriteEngine {
 		if (patchOperations.length > 0) {
 			const preTx = db.transaction(storeNames, "readonly")
 			const fetchPromises = patchOperations.map(async (op) => {
-				const recordId = String(op.key || op.value?.id)
+				const recordId = op.key || op.value?.id
 				const { promise: p, resolve: r, reject: rej } = promiseWithResolvers<any>()
 				const getReq = preTx.objectStore(op.storeName).get(recordId)
 				getReq.onsuccess = () => r(getReq.result)
@@ -139,17 +139,17 @@ export class WriteEngine {
 		operations.forEach((op) => {
 			const store = tx.objectStore(op.storeName)
 			let payloadToWrite = op.value
-			let recordId = op.key || op.value?.id
+			let recordId: string | undefined = op.key ?? op.value?.id
 			const changeKind = toRowChangeKind(op.type)
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
 				if (op.type === "put" || op.type === "add") {
 					payloadToWrite = applyDefaults(this.config.tables?.[op.storeName], payloadToWrite)
-					recordId = op.key || payloadToWrite?.id
+					recordId = op.key ?? payloadToWrite?.id
 				} else if (op.type === "patch") {
 					const existingRecord = patchRecords[`${op.storeName}-${recordId}`]
 					payloadToWrite = { ...existingRecord, ...op.value }
-					recordId = op.key || payloadToWrite?.id
+					recordId = op.key ?? payloadToWrite?.id
 				}
 
 				store.put(payloadToWrite)
@@ -159,11 +159,11 @@ export class WriteEngine {
 					value: payloadToWrite,
 					key: recordId,
 				})
-				if (changeKind && changeKind !== "clear") {
+				if (changeKind && changeKind !== "clear" && recordId) {
 					rowChanges.add({
 						table: op.storeName,
 						change: changeKind,
-						id: recordId as string | number,
+						id: recordId,
 					})
 				}
 				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
@@ -175,12 +175,15 @@ export class WriteEngine {
 					})
 				}
 			} else if (op.type === "delete") {
+				if (!recordId) {
+					throw new Error(`[dbsync]: Cannot delete record in ${op.storeName} without an id`)
+				}
 				store.delete(recordId)
 				if (changeKind && changeKind !== "clear") {
 					rowChanges.add({
 						table: op.storeName,
 						change: changeKind,
-						id: recordId as string | number,
+						id: recordId,
 					})
 				}
 				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {

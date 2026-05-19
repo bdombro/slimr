@@ -176,7 +176,7 @@ const sub = db.subscribe((updatedTables, changes?) => {
         return
     }
     const touchedIds = changes
-        ?.filter((c): c is Extract<RowChange, { id: string | number }> => c.change !== "clear")
+        ?.filter((c): c is Extract<RowChange, { id: string }> => c.change !== "clear")
         .map((c) => c.id)
     refreshPosts(touchedIds)
 })

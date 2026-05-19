@@ -2,7 +2,7 @@ export type SyncState = "idle" | "syncing" | "offline" | "error"
 
 /** Describes a single row-level change in a user table. */
 export type RowChange =
-	| { table: string; change: "insert" | "update" | "delete"; id: string | number }
+	| { table: string; change: "insert" | "update" | "delete"; id: string }
 	| { table: string; change: "clear" }
 
 /** Callback invoked when one or more tables change. */

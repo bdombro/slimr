@@ -216,11 +216,11 @@ export class QueryEngine {
 
 	/** Removes duplicate rows by primary key while preserving the first match for each id. */
 	private dedupeRecords<T>(records: T[]): T[] {
-		const seen = new Set<string | number>()
+		const seen = new Set<string>()
 		const deduped: T[] = []
 
 		for (const record of records) {
-			const key = (record as Record<string, any>).id
+			const key = (record as { id: string }).id
 			if (seen.has(key)) {
 				continue
 			}

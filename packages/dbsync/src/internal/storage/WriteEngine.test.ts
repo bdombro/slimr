@@ -4,6 +4,22 @@ import { StorageManager } from "./StorageManager.js"
 import { applyDefaults, WriteEngine } from "./WriteEngine.js"
 
 /** Verifies the extracted write engine still applies defaults, merges patches, and updates the sync queues. */
+const postsTableConfig = {
+	indexes: ["name"],
+	defaultSetter: (value: Record<string, unknown>) => ({
+		createdAt: 123,
+		...value,
+	}),
+}
+
+const testDbConfig = {
+	adapter: {} as any,
+	version: 1,
+	tables: {
+		posts: postsTableConfig,
+	},
+}
+
 describe("WriteEngine", () => {
 	let storage: StorageManager
 	let events: { notifySubscribers: ReturnType<typeof vi.fn> }
@@ -25,25 +41,13 @@ describe("WriteEngine", () => {
 		await resetDatabase()
 		events = { notifySubscribers: vi.fn() }
 		storage = new StorageManager(
-			{
-				adapter: {} as any,
-				version: 1,
-				tables: {
-					posts: {
-						indexes: ["name"],
-						defaultSetter: (value) => ({
-							createdAt: 123,
-							...value,
-						}),
-					},
-				},
-			} as any,
+			testDbConfig as any,
 			events as any,
 			() => undefined,
 			() => [{ storeName: "posts", indexes: ["name"] }],
 		)
 		await storage.init()
-		engine = new WriteEngine(storage.config, events as any, () => storage.db)
+		engine = new WriteEngine(testDbConfig as any, events as any, () => storage.db)
 	})
 
 	/** Cleans up the IndexedDB connection after each case. */ afterEach(() => {

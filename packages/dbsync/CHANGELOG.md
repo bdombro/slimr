@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.28
+
+### Changed
+
+- Record primary keys and row-change `id` fields are typed as `string` only (no `number`).
+
 ## 0.0.27
 
 ### Changed

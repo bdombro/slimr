@@ -117,7 +117,7 @@ export class StorageManager {
 	}
 
 	/** Reads a typed record by primary key from the requested store. */
-	public async get<T>(storeName: string, id: string | number): Promise<T | undefined> {
+	public async get<T>(storeName: string, id: string): Promise<T | undefined> {
 		const { promise, resolve, reject } = promiseWithResolvers<T | undefined>()
 		const tx = this.db.transaction(storeName, "readonly")
 		const req = tx.objectStore(storeName).get(id)

@@ -47,7 +47,7 @@ export class DbTable<
 	}
 
 	/** Adds a row after normalizing create input through prepareCreate(). */
-	override async add(value: CreateInput, key?: string | number): Promise<Row> {
+	override async add(value: CreateInput, key?: string): Promise<Row> {
 		const nextValue = this.prepareCreate(value)
 		const [executedWrite] = await this.db.storage.executeTransaction([
 			{ type: "add", storeName: this.tableName, value: nextValue, key },
@@ -56,7 +56,7 @@ export class DbTable<
 	}
 
 	/** Upserts a row after normalizing it through preparePut(). */
-	override async put(value: Row, key?: string | number): Promise<Row> {
+	override async put(value: Row, key?: string): Promise<Row> {
 		const nextValue = this.preparePut(value)
 		const [executedWrite] = await this.db.storage.executeTransaction([
 			{ type: "put", storeName: this.tableName, value: nextValue, key },
@@ -65,7 +65,7 @@ export class DbTable<
 	}
 
 	/** Applies partial updates after normalizing them through preparePatch(). */
-	override async patch(value: Partial<Row> & { id: string }, key?: string | number): Promise<Row> {
+	override async patch(value: Partial<Row> & { id: string }, key?: string): Promise<Row> {
 		const nextValue = this.preparePatch(value)
 		await this.db.storage.executeTransaction([
 			{ type: "patch", storeName: this.tableName, value: nextValue, key },

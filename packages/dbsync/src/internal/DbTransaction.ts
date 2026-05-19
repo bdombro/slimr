@@ -14,7 +14,7 @@ export class DbTransaction {
 		type: "put" | "add" | "delete" | "clear" | "patch"
 		storeName: string
 		value?: any
-		key?: string | number
+		key?: string
 	}[] = []
 
 	/**
@@ -33,7 +33,7 @@ export class DbTransaction {
 	 * @param value The object payload to insert.
 	 * @param key An optional explicit primary key.
 	 */
-	add(storeName: string, value: any, key?: string | number) {
+	add(storeName: string, value: any, key?: string) {
 		this.operations.push({ type: "add", storeName, value, key })
 	}
 
@@ -44,7 +44,7 @@ export class DbTransaction {
 	 * @param value The object payload to write.
 	 * @param key An optional explicit primary key.
 	 */
-	put(storeName: string, value: any, key?: string | number) {
+	put(storeName: string, value: any, key?: string) {
 		this.operations.push({ type: "put", storeName, value, key })
 	}
 
@@ -56,7 +56,7 @@ export class DbTransaction {
 	 * @param value The partial object payload containing the primary key and fields to update.
 	 * @param key An optional explicit primary key.
 	 */
-	patch(storeName: string, value: any, key?: string | number) {
+	patch(storeName: string, value: any, key?: string) {
 		this.operations.push({ type: "patch", storeName, value, key })
 	}
 
@@ -66,7 +66,7 @@ export class DbTransaction {
 	 * @param storeName The name of the target object store.
 	 * @param key The primary key of the record to remove.
 	 */
-	delete(storeName: string, key: string | number) {
+	delete(storeName: string, key: string) {
 		this.operations.push({ type: "delete", storeName, key })
 	}
 

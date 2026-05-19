@@ -14,7 +14,7 @@ export interface FindOptions {
 
 /** Row-level change for a single table (table name omitted). */
 export type TableRowChange =
-	| { change: "insert" | "update" | "delete"; id: string | number }
+	| { change: "insert" | "update" | "delete"; id: string }
 	| { change: "clear" }
 
 /** Callback invoked when this table's rows change. */
@@ -23,7 +23,7 @@ type TableSubscribeCallback = (changes?: TableRowChange[]) => void
 /** Options for table-scoped subscriptions. */
 export type TableSubscribeOptions = {
 	/** When set, only invoke the callback if one of these ids changed (or the table was cleared). */
-	ids?: Array<string | number>
+	ids?: string[]
 }
 
 /** Maps global row changes to table-scoped changes. */
@@ -59,7 +59,7 @@ export class DbRepository<T> {
 	 * @param id The primary key of the record to retrieve.
 	 * @returns A promise resolving to the typed record, or `undefined` if not found.
 	 */
-	async get(id: string | number): Promise<T | undefined> {
+	async get(id: string): Promise<T | undefined> {
 		return this.db.get<T>(this.tableName, id)
 	}
 
@@ -95,7 +95,7 @@ export class DbRepository<T> {
 	 * @param key An optional explicit primary key.
 	 * @returns A promise resolving to the newly inserted record.
 	 */
-	async add(value: Partial<T>, key?: string | number): Promise<T> {
+	async add(value: Partial<T>, key?: string): Promise<T> {
 		return this.db.add<T>(this.tableName, value, key)
 	}
 
@@ -116,7 +116,7 @@ export class DbRepository<T> {
 	 * @param key An optional explicit primary key.
 	 * @returns A promise resolving to the upserted record.
 	 */
-	async put(value: T, key?: string | number): Promise<T> {
+	async put(value: T, key?: string): Promise<T> {
 		return this.db.put<T>(this.tableName, value, key)
 	}
 
@@ -126,7 +126,7 @@ export class DbRepository<T> {
 	 * @param key The primary key of the record to delete.
 	 * @returns A promise resolving when the deletion is complete.
 	 */
-	async delete(key: string | number): Promise<void> {
+	async delete(key: string): Promise<void> {
 		return this.db.delete(this.tableName, key)
 	}
 
@@ -137,7 +137,7 @@ export class DbRepository<T> {
 	 * @param key An optional explicit primary key.
 	 * @returns A promise resolving to the final patched record.
 	 */
-	async patch(value: Partial<T>, key?: string | number): Promise<T> {
+	async patch(value: Partial<T>, key?: string): Promise<T> {
 		return this.db.patch<T>(this.tableName, value, key)
 	}
 

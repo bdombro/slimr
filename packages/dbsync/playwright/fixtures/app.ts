@@ -1,5 +1,5 @@
-import { LocalAdapter } from "../../src/adapters/LocalAdapter.ts"
-import { DbSync, DbTable } from "../../src/index.ts"
+import { LocalAdapter } from "../../src/adapters/LocalAdapter.js"
+import { DbSync, DbTable } from "../../src/index.js"
 
 interface Post {
 	id: string

@@ -3,9 +3,38 @@ import { DbSync } from "./DbSync.js"
 import { DbTable } from "./DbTable.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 
+let nextId = 0
+
+class PostsTable extends DbTable<{ id: string; title: string }, { title: string }> {
+	static tableName = "posts"
+	static indexes = ["title"]
+
+	id!: string
+	title!: string
+
+	prepareCreate(input: { title: string }) {
+		return { ...super.prepareCreate(input), title: input.title.trim() }
+	}
+}
+
+class MyAppDatabase extends DbSync {
+	posts = new PostsTable(this)
+
+	override genUuid() {
+		nextId += 1
+		return `post-${nextId}`
+	}
+}
+
+type MyAppTransaction = ReturnType<MyAppDatabase["getTransaction"]> & {
+	posts: {
+		add(value: { title: string }): void
+		commit(): Promise<void>
+	}
+}
+
 describe("DbSync tables", () => {
 	let db: MyAppDatabase
-	let nextId = 0
 
 	const resetDatabase = async () => {
 		await new Promise<void>((resolve, reject) => {
@@ -14,27 +43,6 @@ describe("DbSync tables", () => {
 			request.onerror = () => reject(request.error)
 			request.onblocked = () => resolve()
 		})
-	}
-
-	class PostsTable extends DbTable<{ id: string; title: string }, { title: string }> {
-		static tableName = "posts"
-		static indexes = ["title"]
-
-		id!: string
-		title!: string
-
-		prepareCreate(input: { title: string }) {
-			return { ...super.prepareCreate(input), title: input.title.trim() }
-		}
-	}
-
-	class MyAppDatabase extends DbSync {
-		posts = new PostsTable(this)
-
-		override genUuid() {
-			nextId += 1
-			return `post-${nextId}`
-		}
 	}
 
 	beforeEach(async () => {
@@ -68,10 +76,3 @@ describe("DbSync tables", () => {
 		])
 	})
 })
-
-type MyAppTransaction = ReturnType<MyAppDatabase["getTransaction"]> & {
-	posts: {
-		add(value: { title: string }): void
-		commit(): Promise<void>
-	}
-}

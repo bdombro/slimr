@@ -34,7 +34,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 * @param value The object payload to insert.
 	 * @param key An optional explicit primary key.
 	 */
-	add(value: CreateInput, key?: string | number): void {
+	add(value: CreateInput, key?: string): void {
 		const nextValue = this.prepare?.prepareCreate
 			? this.prepare.prepareCreate(value)
 			: (value as unknown as Row)
@@ -47,7 +47,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 * @param value The complete object to upsert.
 	 * @param key An optional explicit primary key.
 	 */
-	put(value: Row, key?: string | number): void {
+	put(value: Row, key?: string): void {
 		const nextValue = this.prepare?.preparePut ? this.prepare.preparePut(value) : value
 		this.tx.put(this.tableName, nextValue, key)
 	}
@@ -57,7 +57,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 *
 	 * @param key The primary key of the record to delete.
 	 */
-	delete(key: string | number): void {
+	delete(key: string): void {
 		this.tx.delete(this.tableName, key)
 	}
 
@@ -67,7 +67,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 * @param value The object partial payload to patch.
 	 * @param key An optional explicit primary key.
 	 */
-	patch(value: Partial<Row> & { id: string }, key?: string | number): void {
+	patch(value: Partial<Row> & { id: string }, key?: string): void {
 		const nextValue = this.prepare?.preparePatch ? this.prepare.preparePatch(value) : value
 		this.tx.patch(this.tableName, nextValue, key)
 	}

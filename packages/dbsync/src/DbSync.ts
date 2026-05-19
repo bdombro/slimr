@@ -225,7 +225,7 @@ export class DbSync {
 	} // Exported temporarily for tests
 
 	/** Reads a typed record by primary key. */
-	public async get<T>(tableName: string, id: string | number): Promise<T | undefined> {
+	public async get<T>(tableName: string, id: string): Promise<T | undefined> {
 		return this.storage.get<T>(tableName, id)
 	}
 	/**
@@ -253,7 +253,7 @@ export class DbSync {
 		return this.storage.stream<T>(tableName, options)
 	}
 	/** Inserts a new record into the given table. */
-	public async add<T>(tableName: string, value: any, key?: string | number): Promise<T> {
+	public async add<T>(tableName: string, value: any, key?: string): Promise<T> {
 		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.prepareCreate(value) : value
 		const [executedWrite] = await this.storage.executeTransaction([
@@ -262,7 +262,7 @@ export class DbSync {
 		return executedWrite?.value as T
 	}
 	/** Partially updates an existing record in the given table. */
-	public async patch<T>(tableName: string, value: Partial<T>, key?: string | number): Promise<T> {
+	public async patch<T>(tableName: string, value: Partial<T>, key?: string): Promise<T> {
 		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.preparePatch(value as never) : value
 		await this.storage.executeTransaction([
@@ -271,7 +271,7 @@ export class DbSync {
 		return nextValue as T
 	}
 	/** Upserts a record into the given table. */
-	public async put<T>(tableName: string, value: any, key?: string | number): Promise<T> {
+	public async put<T>(tableName: string, value: any, key?: string): Promise<T> {
 		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.preparePut(value) : value
 		const [executedWrite] = await this.storage.executeTransaction([
@@ -280,7 +280,7 @@ export class DbSync {
 		return executedWrite?.value as T
 	}
 	/** Deletes a record from the given table. */
-	public async delete(tableName: string, key: string | number): Promise<void> {
+	public async delete(tableName: string, key: string): Promise<void> {
 		await this.storage.executeTransaction([{ type: "delete", storeName: tableName, key }])
 	}
 	/** Clears all records from the given table. */
