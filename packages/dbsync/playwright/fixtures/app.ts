@@ -37,7 +37,7 @@ db.init().then(() => {
 	db.subscribe((stores) => {
 		log(`updated:${stores.join(",")}`)
 		if (stores.includes("posts")) {
-			db.posts.getAll().then((posts) => {
+			db.posts.find().then((posts) => {
 				window.latestPosts = posts
 				log(`total:${posts.length}`)
 			})

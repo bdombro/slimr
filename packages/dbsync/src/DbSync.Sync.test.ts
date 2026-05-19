@@ -131,7 +131,7 @@ describe("DbSync sync engine", () => {
 				}),
 			]),
 		)
-		expect(await db.getAll<any>("dirtyQueue")).toHaveLength(0)
+		expect(await db.find<any>("dirtyQueue")).toHaveLength(0)
 	})
 
 	/** Confirms delete tombstones are preserved for the backend and removed from the local dirty queue. */
@@ -153,7 +153,7 @@ describe("DbSync sync engine", () => {
 			content: "{}",
 			isDeleted: true,
 		})
-		expect(await db.getAll<any>("deletedQueue")).toHaveLength(0)
+		expect(await db.find<any>("deletedQueue")).toHaveLength(0)
 	})
 
 	/** Confirms auth checks and login/logout state transitions map to the session endpoints. */
@@ -172,8 +172,8 @@ describe("DbSync sync engine", () => {
 		expect(fetchMock.mock.calls[2][0]).toContain("/api/session/logout")
 	})
 
-	/** Confirms reset clears every store and resets cursor state so the browser starts fresh. */
-	test("reset clears local stores and sync cursors", async () => {
+	/** Confirms reset clears every table and resets cursor state so the browser starts fresh. */
+	test("reset clears local tables and sync cursors", async () => {
 		await db.put("posts", { id: "wipe-me", content: "before reset", userId: "u1" })
 		localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
 		localStorage.setItem("dbsync-pullSyncedUpTo", "2026-05-17T00:00:00.000Z")
@@ -181,8 +181,8 @@ describe("DbSync sync engine", () => {
 
 		await db.reset()
 
-		expect(await db.getAll("posts")).toEqual([])
-		expect(await db.getAll("dirtyQueue")).toEqual([])
+		expect(await db.find("posts")).toEqual([])
+		expect(await db.find("dirtyQueue")).toEqual([])
 		expect(localStorage.getItem("dbsync-lastSuccessAt")).toBeNull()
 		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBeNull()
 	})

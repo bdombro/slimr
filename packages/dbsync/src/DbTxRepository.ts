@@ -13,16 +13,20 @@ type PreparedWrite<Row, CreateInput> = {
  */
 export class DbTxRepository<Row, CreateInput = Row> {
 	/**
-	 * Initializes a new transaction repository tied to a specific object store.
+	 * Initializes a new transaction repository tied to a specific table.
 	 *
 	 * @param tx The active `DbTransaction` instance.
-	 * @param storeName The name of the object store to queue writes for.
+	 * @param tableName The name of the table to queue writes for.
 	 */
+	public readonly tableName: string
+
 	constructor(
 		protected tx: DbTransaction,
-		public readonly storeName: string,
+		tableName: string,
 		protected prepare?: PreparedWrite<Row, CreateInput>,
-	) {}
+	) {
+		this.tableName = tableName
+	}
 
 	/**
 	 * Queues an insertion operation.
@@ -34,7 +38,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 		const nextValue = this.prepare?.prepareCreate
 			? this.prepare.prepareCreate(value)
 			: (value as unknown as Row)
-		this.tx.add(this.storeName, nextValue, key)
+		this.tx.add(this.tableName, nextValue, key)
 	}
 
 	/**
@@ -45,7 +49,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 */
 	put(value: Row, key?: string | number): void {
 		const nextValue = this.prepare?.preparePut ? this.prepare.preparePut(value) : value
-		this.tx.put(this.storeName, nextValue, key)
+		this.tx.put(this.tableName, nextValue, key)
 	}
 
 	/**
@@ -54,7 +58,7 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 * @param key The primary key of the record to delete.
 	 */
 	delete(key: string | number): void {
-		this.tx.delete(this.storeName, key)
+		this.tx.delete(this.tableName, key)
 	}
 
 	/**
@@ -65,13 +69,13 @@ export class DbTxRepository<Row, CreateInput = Row> {
 	 */
 	patch(value: Partial<Row> & { id: string }, key?: string | number): void {
 		const nextValue = this.prepare?.preparePatch ? this.prepare.preparePatch(value) : value
-		this.tx.patch(this.storeName, nextValue, key)
+		this.tx.patch(this.tableName, nextValue, key)
 	}
 
 	/**
 	 * Queues an operation to remove all records from the object store.
 	 */
 	clear(): void {
-		this.tx.clear(this.storeName)
+		this.tx.clear(this.tableName)
 	}
 }

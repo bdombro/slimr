@@ -14,21 +14,21 @@ type DbQueryState<T> = {
  * background sync events alter the underlying data.
  *
  * @param db The initialized `DbSync` instance.
- * @param stores A string or array of strings containing the table names the query function reads from.
+ * @param tableOrTables A string or array of strings containing the table names the query function reads from.
  * @param queryFn An asynchronous function invoked to pull data from IndexedDB.
  * @param deps A standard React dependency array for parameters referenced inside the `queryFn`.
  * @returns An object containing the latest query result and whether the initial fetch is still pending.
  */
 export function useDbQuery<T>(
 	db: DbSync,
-	stores: string | string[],
+	tableOrTables: string | string[],
 	queryFn: () => Promise<T>,
 	deps: any[] = [],
 ): DbQueryState<T> {
 	/** Holds the latest query result and loading state. */
 	const [state, setState] = useState<DbQueryState<T>>({ value: null, loading: true })
-	/** Normalizes the store input into an array for matching. */
-	const storeArray = Array.isArray(stores) ? stores : [stores]
+	/** Normalizes the table input into an array for matching. */
+	const tableArray = Array.isArray(tableOrTables) ? tableOrTables : [tableOrTables]
 
 	useEffect(() => {
 		let isMounted = true
@@ -59,9 +59,9 @@ export function useDbQuery<T>(
 		// Initial fetch
 		fetchData()
 
-		// Subscribe to relevant stores
-		const sub = db.subscribe((updatedStores) => {
-			const shouldUpdate = updatedStores.some((s) => storeArray.includes(s))
+		// Subscribe to relevant tables
+		const sub = db.subscribe((updatedTables) => {
+			const shouldUpdate = updatedTables.some((s) => tableArray.includes(s))
 			if (shouldUpdate) {
 				fetchData()
 			}
@@ -72,7 +72,7 @@ export function useDbQuery<T>(
 			sub.close()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [JSON.stringify(storeArray), ...deps])
+	}, [JSON.stringify(tableArray), ...deps])
 
 	return state
 }
@@ -80,13 +80,13 @@ export function useDbQuery<T>(
 /** Creates a DbSync-bound query hook so consumers can avoid threading the db instance through every call. */
 export function createUseDbQuery(db: DbSync) {
 	return function useBoundDbQuery<T>(
-		/** One store name or a list of store names that the query depends on. */
-		stores: string | string[],
+		/** One table name or a list of table names that the query depends on. */
+		tableOrTables: string | string[],
 		/** Async function that reads the latest data from IndexedDB. */
 		queryFn: () => Promise<T>,
 		/** Additional dependencies that should retrigger the query when they change. */
 		deps: any[] = [],
 	): DbQueryState<T> {
-		return useDbQuery(db, stores, queryFn, deps)
+		return useDbQuery(db, tableOrTables, queryFn, deps)
 	}
 }

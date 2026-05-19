@@ -228,21 +228,38 @@ export class StorageManager {
 		return promise
 	}
 
-	/** Returns every record from the requested store. */
-	public async getAll<T>(storeName: string): Promise<T[]> {
+	/**
+	 * Returns records matching a query from the requested store.
+	 * - with no options, this returns every record from the store.
+	 * - limit+order=desc is not well-supported in IndexedDB and must use the more costly cursor read approach
+	 */
+	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
+		if (options.order === "desc" && options.limit !== undefined) {
+			const records: T[] = []
+			for await (const record of this.stream<T>(storeName, options)) {
+				records.push(record)
+			}
+			return records
+		}
+
+		const source = this.getQuerySource(
+			this.db.transaction(storeName, "readonly"),
+			storeName,
+			options.index,
+		)
+		const range = this.buildKeyRange(options)
 		const { promise, resolve, reject } = promiseWithResolvers<T[]>()
-		const tx = this.db.transaction(storeName, "readonly")
-		const req = tx.objectStore(storeName).getAll()
+		const req =
+			options.order === "desc" ? source.getAll(range) : source.getAll(range, options.limit)
 		req.onsuccess = () => resolve(req.result)
 		req.onerror = () => reject(req.error)
-		return promise
-	}
+		const records = await promise
 
-	/** Returns records matching a query from the requested store. */
-	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
-		const records = await this.getAll<T>(storeName)
-		const filtered = this.applyQuery(records, options)
-		return this.applyOrderingAndLimit(filtered, options)
+		if (options.order === "desc") {
+			return records.reverse()
+		}
+
+		return records
 	}
 
 	/** Returns the first record matching an index/value pair, if any. */
@@ -251,46 +268,112 @@ export class StorageManager {
 		indexName: string,
 		value: string | number,
 	): Promise<T | undefined> {
-		const results = await this.find<T>(storeName, { index: indexName, equals: value, limit: 1 })
-		return results[0]
+		for await (const record of this.stream<T>(storeName, {
+			index: indexName,
+			equals: value,
+			limit: 1,
+		})) {
+			return record
+		}
+
+		return undefined
 	}
 
-	/** Streams records matching a query from the requested store. */
+	/**
+	 * Streams records matching a query from the requested store.
+	 * If no options are provided, returns every record from the store.
+	 */
 	public async *stream<T>(storeName: string, options: FindOptions = {}): AsyncGenerator<T> {
-		for (const record of await this.find<T>(storeName, options)) {
-			yield record
+		const tx = this.db.transaction(storeName, "readonly")
+		const source = this.getQuerySource(tx, storeName, options.index)
+		const cursor = await this.openCursor(
+			source,
+			this.buildKeyRange(options),
+			this.getCursorDirection(options),
+		)
+		if (!cursor) {
+			return
+		}
+
+		let seen = 0
+		let currentCursor: IDBCursorWithValue | null = cursor
+
+		while (currentCursor) {
+			yield currentCursor.value as T
+			seen += 1
+			if (options.limit !== undefined && seen >= options.limit) {
+				return
+			}
+
+			currentCursor = await this.continueCursor(currentCursor)
 		}
 	}
 
-	/** Streams every record from the requested store. */
-	public async *streamAll<T>(storeName: string): AsyncGenerator<T> {
-		for (const record of await this.getAll<T>(storeName)) {
-			yield record
-		}
+	/** Resolves the object store or declared index that should service a query. */
+	private getQuerySource(tx: IDBTransaction, storeName: string, indexName?: string) {
+		const store = tx.objectStore(storeName)
+		if (indexName === undefined) return store
+
+		this.assertDeclaredIndex(storeName, indexName)
+		return store.index(indexName)
 	}
 
-	private applyQuery<T>(records: T[], options: FindOptions): T[] {
-		if (
-			options.index === undefined &&
-			options.equals === undefined &&
-			options.lowerBound === undefined &&
-			options.upperBound === undefined
-		) {
-			return records
+	/** Throws when a query names an index that the store does not declare. */
+	private assertDeclaredIndex(storeName: string, indexName: string) {
+		const table = this.getSchemaTables().find((schemaTable) => schemaTable.storeName === storeName)
+		if (table?.indexes?.includes(indexName)) {
+			return
 		}
 
-		return records.filter((record) => {
-			const candidate = (record as Record<string, any>)[options.index ?? "id"]
-			if (options.equals !== undefined) return candidate === options.equals
-			if (options.lowerBound !== undefined && candidate < options.lowerBound) return false
-			if (options.upperBound !== undefined && candidate > options.upperBound) return false
-			return true
-		})
+		throw new Error(`[dbsync]: Index ${indexName} is not declared for ${storeName}`)
 	}
 
-	private applyOrderingAndLimit<T>(records: T[], options: FindOptions): T[] {
-		const ordered = options.order === "desc" ? [...records].reverse() : records
-		return options.limit === undefined ? ordered : ordered.slice(0, options.limit)
+	/** Builds the IndexedDB key range for the supplied query options. */
+	private buildKeyRange(options: FindOptions): IDBKeyRange | undefined {
+		if (options.equals !== undefined) {
+			return IDBKeyRange.only(options.equals)
+		}
+
+		if (options.lowerBound !== undefined && options.upperBound !== undefined) {
+			return IDBKeyRange.bound(options.lowerBound, options.upperBound)
+		}
+
+		if (options.lowerBound !== undefined) {
+			return IDBKeyRange.lowerBound(options.lowerBound)
+		}
+
+		if (options.upperBound !== undefined) {
+			return IDBKeyRange.upperBound(options.upperBound)
+		}
+
+		return undefined
+	}
+
+	/** Maps the query order to the IndexedDB cursor direction. */
+	private getCursorDirection(options: FindOptions): IDBCursorDirection {
+		return options.order === "desc" ? "prev" : "next"
+	}
+
+	/** Opens a cursor request and resolves with the first cursor result. */
+	private openCursor(
+		source: IDBObjectStore | IDBIndex,
+		range: IDBKeyRange | undefined,
+		direction: IDBCursorDirection,
+	): Promise<IDBCursorWithValue | null> {
+		const { promise, resolve, reject } = promiseWithResolvers<IDBCursorWithValue | null>()
+		const req = source.openCursor(range, direction)
+		req.onsuccess = () => resolve(req.result)
+		req.onerror = () => reject(req.error)
+		return promise
+	}
+
+	/** Advances an existing cursor and resolves with the next cursor result. */
+	private continueCursor(cursor: IDBCursorWithValue): Promise<IDBCursorWithValue | null> {
+		const { promise, resolve, reject } = promiseWithResolvers<IDBCursorWithValue | null>()
+		cursor.request.onsuccess = () => resolve(cursor.request.result)
+		cursor.request.onerror = () => reject(cursor.request.error)
+		cursor.continue()
+		return promise
 	}
 
 	/** Clears every object store managed by the database. */

@@ -50,7 +50,7 @@ export class DbTable<
 	override async add(value: CreateInput, key?: string | number): Promise<Row> {
 		const nextValue = this.prepareCreate(value)
 		const [executedWrite] = await this.db.storage.executeTransaction([
-			{ type: "add", storeName: this.storeName, value: nextValue, key },
+			{ type: "add", storeName: this.tableName, value: nextValue, key },
 		])
 		return executedWrite?.value as Row
 	}
@@ -59,7 +59,7 @@ export class DbTable<
 	override async put(value: Row, key?: string | number): Promise<Row> {
 		const nextValue = this.preparePut(value)
 		const [executedWrite] = await this.db.storage.executeTransaction([
-			{ type: "put", storeName: this.storeName, value: nextValue, key },
+			{ type: "put", storeName: this.tableName, value: nextValue, key },
 		])
 		return executedWrite?.value as Row
 	}
@@ -68,7 +68,7 @@ export class DbTable<
 	override async patch(value: Partial<Row> & { id: string }, key?: string | number): Promise<Row> {
 		const nextValue = this.preparePatch(value)
 		await this.db.storage.executeTransaction([
-			{ type: "patch", storeName: this.storeName, value: nextValue, key },
+			{ type: "patch", storeName: this.tableName, value: nextValue, key },
 		])
 		return nextValue as Row
 	}

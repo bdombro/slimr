@@ -6,6 +6,14 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.22
+
+- renamed several public `storeName` parameters and repository properties to `tableName` to match the table-centric API exposed by `DbTable`.
+- removed the `getAll()`, `findAll()`, and `streamAll()` convenience methods from the public API so `get()`, `getBy()`, `find()` and `stream()` are the only read entry points.
+- `find()` now handles the full-store case when no options are provided, and descending queries with a limit use a cursor so they can stop early instead of loading everything first.
+- `stream()` now handles the full-store case when no options are provided, so the generator can iterate an entire store without a separate helper.
+- queries that name an undeclared index now throw instead of silently falling back.
+
 ## 0.0.21
 
 - useDbQuery does equality checks on query results and only triggers updates when the result actually changes, preventing unnecessary re-renders in React apps.

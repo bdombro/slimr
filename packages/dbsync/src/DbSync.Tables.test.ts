@@ -53,16 +53,16 @@ describe("DbSync tables", () => {
 
 	test("creates stores from runtime tables and normalizes writes", async () => {
 		expect(db.posts).toBeInstanceOf(PostsTable)
-		expect(db.posts.storeName).toBe("posts")
+		expect(db.posts.tableName).toBe("posts")
 
 		await db.posts.add({ title: "  hello world  " })
-		expect(await db.getAll("posts")).toEqual([{ id: "post-1", title: "hello world" }])
+		expect(await db.find("posts")).toEqual([{ id: "post-1", title: "hello world" }])
 
 		const tx = db.getTransaction() as MyAppTransaction
 		tx.posts.add({ title: "  from tx  " })
 		await tx.commit()
 
-		expect(await db.getAll("posts")).toEqual([
+		expect(await db.find("posts")).toEqual([
 			{ id: "post-1", title: "hello world" },
 			{ id: "post-2", title: "from tx" },
 		])

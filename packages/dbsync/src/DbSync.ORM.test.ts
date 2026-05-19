@@ -68,8 +68,8 @@ describe("DbSync ORM", () => {
 
 		expect(typedDb.todos).toBeInstanceOf(DbRepository)
 		expect(typedDb.users).toBeInstanceOf(DbRepository)
-		expect(typedDb.todos.storeName).toBe("todos")
-		expect(typedDb.users.storeName).toBe("users")
+		expect(typedDb.todos.tableName).toBe("todos")
+		expect(typedDb.users.tableName).toBe("users")
 
 		await typedDb.todos.put({ id: "todo-1", title: "Typed API", createdAt: 123 })
 		expect(await typedDb.todos.get("todo-1")).toMatchObject({
@@ -89,10 +89,10 @@ describe("DbSync ORM", () => {
 	/** Confirms initialization creates the configured tables plus the sync queues. */
 	test("initializes tables and sync queues", async () => {
 		expect(db.initted).toBe(true)
-		expect(await db.getAll("posts")).toEqual([])
-		expect(await db.getAll("users")).toEqual([])
-		expect(await db.getAll("dirtyQueue")).toEqual([])
-		expect(await db.getAll("deletedQueue")).toEqual([])
+		expect(await db.find("posts")).toEqual([])
+		expect(await db.find("users")).toEqual([])
+		expect(await db.find("dirtyQueue")).toEqual([])
+		expect(await db.find("deletedQueue")).toEqual([])
 	})
 
 	/** Confirms the public upgradeRecord helper applies configured migrations on demand without writing to IndexedDB. */
@@ -149,7 +149,7 @@ describe("DbSync ORM", () => {
 			createdAt: 123,
 		})
 		expect(importedPost).toEqual({ title: "custom title" })
-		expect(await db.findAll<any>("posts")).toEqual([])
+		expect(await db.find<any>("posts")).toEqual([])
 	})
 
 	/** Confirms table migrations run during init so existing records upgrade automatically when the app boots. */
@@ -185,7 +185,7 @@ describe("DbSync ORM", () => {
 		})
 	})
 
-	/** Confirms writes are readable immediately so the local store acts like a usable database instead of a remote cache. */
+	/** Confirms writes are readable immediately so the local table acts like a usable database instead of a remote cache. */
 	test("adds and retrieves record", async () => {
 		await db.put("posts", { id: "1", content: "hello", userId: "u1" })
 		const record = await db.get<any>("posts", "1")
@@ -216,7 +216,7 @@ describe("DbSync ORM", () => {
 			userId: "u-default",
 		})
 
-		expect(await db.findAll<any>("dirtyQueue")).toEqual(
+		expect(await db.find<any>("dirtyQueue")).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: "auto-post",
@@ -245,7 +245,7 @@ describe("DbSync ORM", () => {
 			draft: true,
 		})
 
-		expect(await db.findAll<any>("dirtyQueue")).toEqual(
+		expect(await db.find<any>("dirtyQueue")).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: "patch-1",
@@ -264,7 +264,7 @@ describe("DbSync ORM", () => {
 	/** Confirms updates enter the dirty queue so sync can eventually flush them. */
 	test("queues dirty records on write", async () => {
 		await db.put("posts", { id: "2", content: "test queue", userId: "u1" })
-		const dirty = await db.findAll<any>("dirtyQueue")
+		const dirty = await db.find<any>("dirtyQueue")
 		expect(dirty).toHaveLength(1)
 		expect(dirty[0]).toMatchObject({ id: "2", table: "posts" })
 	})
@@ -274,21 +274,21 @@ describe("DbSync ORM", () => {
 		await db.put("posts", { id: "3", content: "to delete", userId: "u1" })
 		await db.delete("posts", "3")
 		expect(await db.get("posts", "3")).toBeUndefined()
-		expect(await db.findAll<any>("dirtyQueue")).toHaveLength(0)
-		expect(await db.findAll<any>("deletedQueue")).toEqual([
+		expect(await db.find<any>("dirtyQueue")).toHaveLength(0)
+		expect(await db.find<any>("deletedQueue")).toEqual([
 			expect.objectContaining({ id: "3", table: "posts" }),
 		])
 	})
 
-	/** Confirms clear wipes only the requested store so reset-style flows can rebuild state. */
-	test("clears a single store", async () => {
+	/** Confirms clear wipes only the requested table so reset-style flows can rebuild state. */
+	test("clears a single table", async () => {
 		await db.put("posts", { id: "4", content: "keep me", userId: "u1" })
 		await db.put("users", { id: "u1", email: "user@example.com" })
 
 		await db.clear("posts")
 
-		expect(await db.getAll("posts")).toEqual([])
-		expect(await db.getAll("users")).toHaveLength(1)
+		expect(await db.find("posts")).toEqual([])
+		expect(await db.find("users")).toHaveLength(1)
 	})
 
 	/** Confirms buffered transactions commit atomically and notify subscribers once. */
@@ -326,7 +326,7 @@ describe("DbSync ORM", () => {
 			userId: "u-tx-default",
 		})
 
-		expect(await db.findAll<any>("dirtyQueue")).toEqual(
+		expect(await db.find<any>("dirtyQueue")).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: "tx-auto-post",

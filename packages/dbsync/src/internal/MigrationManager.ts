@@ -76,7 +76,7 @@ export class MigrationManager {
 	 * @param migrations The ordered array of migrations applicable to the store.
 	 */
 	private async upgradeStore(storeName: string, migrations: MigrationManagerMigration[]) {
-		const allRecords = await this.db.getAll(storeName)
+		const allRecords = await this.db.find(storeName)
 		const tx = this.db.getTransaction()
 
 		for (const recordCurrent of allRecords) {

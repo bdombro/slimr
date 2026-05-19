@@ -6,7 +6,7 @@ import type { EventBus } from "./EventBus.js"
 import type { StorageManager } from "./StorageManager.js"
 
 type SchemaTable = {
-	storeName: string
+	tableName: string
 	indexes?: string[]
 }
 
@@ -120,10 +120,10 @@ export class SyncEngine {
 	private get schemaSignature() {
 		const tables = this.getSchemaTables()
 			.slice()
-			.sort((left, right) => left.storeName.localeCompare(right.storeName))
+			.sort((left, right) => left.tableName.localeCompare(right.tableName))
 			.map((table) => {
 				return {
-					table: table.storeName,
+					table: table.tableName,
 					indexes: table.indexes?.slice().sort() || [],
 				}
 			})
@@ -167,8 +167,8 @@ export class SyncEngine {
 
 	/** Pushes queued local mutations to the backend and clears the queues. */
 	private async syncPush() {
-		const dirty = await this.storage.getAll<any>("dirtyQueue")
-		const deleted = await this.storage.getAll<any>("deletedQueue")
+		const dirty = await this.storage.find<any>("dirtyQueue")
+		const deleted = await this.storage.find<any>("deletedQueue")
 
 		const payload = [
 			...dirty.map((d) => ({

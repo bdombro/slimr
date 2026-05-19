@@ -16,7 +16,7 @@ import { SyncEngine } from "./internal/SyncEngine.js"
 export type { Migration }
 
 export interface DbSyncTableConfig {
-	/** Optional index names to create for the store. */
+	/** Optional index names to create for the table. */
 	indexes?: string[]
 	/** Optional callback that fills in default fields before write operations. */
 	defaultSetter?: (value: any) => any
@@ -30,12 +30,12 @@ export interface DbSyncConfig {
 
 	/** Optional fixed IndexedDB version. */
 	version?: number
-	/** The object stores and their index definitions. */
+	/** The tables and their index definitions. */
 	tables?: Record<string, DbSyncTableConfig>
 }
 
 export interface DbSyncResolvedTable {
-	storeName: string
+	tableName: string
 	indexes?: string[]
 	migrations?: Migration[]
 	prepareCreate?: (value: any) => any
@@ -79,7 +79,10 @@ export class DbSync {
 		const onSchemaChange = () => this.onSchemaChangeDetected()
 
 		this.storage = new StorageManager(config, this.events, onSchemaChange, () =>
-			this.getSchemaTables(),
+			this.getSchemaTables().map((table) => ({
+				storeName: table.tableName,
+				indexes: table.indexes,
+			})),
 		)
 
 		this.authManager = new AuthManager(adapter, this.storage, () => {
@@ -97,18 +100,18 @@ export class DbSync {
 			() => this.getSchemaTables(),
 		)
 
-		for (const storeName of Object.keys(config.tables ?? {})) {
-			;(this as Record<string, unknown>)[storeName] = new DbRepository(this, storeName)
+		for (const tableName of Object.keys(config.tables ?? {})) {
+			;(this as Record<string, unknown>)[tableName] = new DbRepository(this, tableName)
 		}
 
 		// Return a Proxy interceptor so that subclasses declaring typed table properties
 		// (e.g. `todos!: DbRepository<Todo>`) do not overwrite the repositories with `undefined`
 		// when their field initializers run.
-		const knownStores = config.tables ?? {}
+		const knownTables = config.tables ?? {}
 		// biome-ignore lint/correctness/noConstructorReturn: the constructor intentionally returns a Proxy
 		return new Proxy(this, {
 			defineProperty(target, prop, desc) {
-				if (typeof prop === "string" && prop in knownStores && desc.value === undefined) {
+				if (typeof prop === "string" && prop in knownTables && desc.value === undefined) {
 					return true
 				}
 				return Reflect.defineProperty(target, prop, desc)
@@ -118,9 +121,9 @@ export class DbSync {
 
 	/** Registers a runtime table instance and makes it available to schema-aware helpers. */
 	public registerTable(table: DbTable<any, any>) {
-		this.tableRegistry.set(table.storeName, table)
-		if (!(table.storeName in this)) {
-			;(this as Record<string, unknown>)[table.storeName] = table
+		this.tableRegistry.set(table.tableName, table)
+		if (!(table.tableName in this)) {
+			;(this as Record<string, unknown>)[table.tableName] = table
 		}
 	}
 
@@ -128,9 +131,9 @@ export class DbSync {
 	private getSchemaTables(): DbSyncResolvedTable[] {
 		const resolvedTables = new Map<string, DbSyncResolvedTable>()
 
-		for (const [storeName, tableConfig] of Object.entries(this.config.tables ?? {})) {
-			resolvedTables.set(storeName, {
-				storeName,
+		for (const [tableName, tableConfig] of Object.entries(this.config.tables ?? {})) {
+			resolvedTables.set(tableName, {
+				tableName: tableName,
 				indexes: tableConfig.indexes?.slice(),
 				migrations: tableConfig.migrations?.slice(),
 				prepareCreate: (value) => applyDefaults(tableConfig, value),
@@ -141,8 +144,8 @@ export class DbSync {
 
 		for (const table of this.tableRegistry.values()) {
 			const tableConstructor = table.constructor as { indexes?: string[]; migrations?: Migration[] }
-			resolvedTables.set(table.storeName, {
-				storeName: table.storeName,
+			resolvedTables.set(table.tableName, {
+				tableName: table.tableName,
 				indexes: tableConstructor.indexes?.slice(),
 				migrations: tableConstructor.migrations?.slice(),
 				prepareCreate: (value) => table.prepareCreate(value),
@@ -152,13 +155,13 @@ export class DbSync {
 		}
 
 		return [...resolvedTables.values()].sort((left, right) =>
-			left.storeName.localeCompare(right.storeName),
+			left.tableName.localeCompare(right.tableName),
 		)
 	}
 
-	/** Resolves a single table definition by store name, if one exists. */
-	private getSchemaTable(storeName: string) {
-		return this.getSchemaTables().find((table) => table.storeName === storeName)
+	/** Resolves a single table definition by table name, if one exists. */
+	private getSchemaTable(tableName: string) {
+		return this.getSchemaTables().find((table) => table.tableName === tableName)
 	}
 
 	/** Returns a fresh RFC-4122 UUID. */
@@ -178,7 +181,7 @@ export class DbSync {
 		let hasMigrations = false
 		for (const table of this.getSchemaTables()) {
 			if (table.migrations && table.migrations.length > 0) {
-				schemaMigrations[table.storeName] = table.migrations
+				schemaMigrations[table.tableName] = table.migrations
 				hasMigrations = true
 			}
 		}
@@ -188,12 +191,12 @@ export class DbSync {
 			await migrationManager.runAll(schemaMigrations)
 		}
 	}
-	/** Applies the configured migrations for a single store to the provided record. */
+	/** Applies the configured migrations for a single table to the provided record. */
 	public async upgradeRecord<T extends Record<string, any>>(
-		storeName: string,
+		tableName: string,
 		record: T,
 	): Promise<T> {
-		const migrations = this.getSchemaTable(storeName)?.migrations || []
+		const migrations = this.getSchemaTable(tableName)?.migrations || []
 		if (migrations.length === 0) {
 			return record
 		}
@@ -202,92 +205,90 @@ export class DbSync {
 		await MigrationManager.upgradeRecord(upgradedRecord, migrations)
 		return upgradedRecord as T
 	}
-	/** Applies the configured defaultSetter/defaulting logic for a single store without persisting. */
-	public applyDefaults<T extends Record<string, any>>(storeName: string, record: T): T {
-		const registeredTable = this.tableRegistry.get(storeName)
+	/** Applies the configured defaultSetter/defaulting logic for a single table without persisting. */
+	public applyDefaults<T extends Record<string, any>>(tableName: string, record: T): T {
+		const registeredTable = this.tableRegistry.get(tableName)
 		if (registeredTable) {
 			return registeredTable.prepareCreate(record) as T
 		}
-		return applyDefaults(this.config.tables?.[storeName], record)
+		return applyDefaults(this.config.tables?.[tableName], record)
 	}
 	/** Returns a queued transaction object for batched writes. */
 	public getTransaction() {
 		const tx = this.storage.getTransaction()
 		const txWithTables = tx as unknown as Record<string, unknown>
 		for (const table of this.getSchemaTables()) {
-			txWithTables[table.storeName] = new DbTxRepository(tx, table.storeName, table)
+			txWithTables[table.tableName] = new DbTxRepository(tx, table.tableName, table)
 		}
 		return tx
 	} // Exported temporarily for tests
 
 	/** Reads a typed record by primary key. */
-	public async get<T>(storeName: string, id: string | number): Promise<T | undefined> {
-		return this.storage.get<T>(storeName, id)
+	public async get<T>(tableName: string, id: string | number): Promise<T | undefined> {
+		return this.storage.get<T>(tableName, id)
 	}
-	/** Reads all records from the given object store. */
-	public async getAll<T>(storeName: string): Promise<T[]> {
-		return this.storage.getAll<T>(storeName)
-	}
-	/** Reads records matching a query from the given object store. */
-	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
-		return this.storage.find<T>(storeName, options)
+	/**
+	 * Reads records matching a query from the given table.
+	 *
+	 * - with no options, this returns every record from the table.
+	 * - limit+order=desc is not well-supported in IndexedDB and must use the more costly cursor read approach
+	 */
+	public async find<T>(tableName: string, options: FindOptions = {}): Promise<T[]> {
+		return this.storage.find<T>(tableName, options)
 	}
 	/** Reads the first record matching an index/value pair. */
 	public async getBy<T>(
-		storeName: string,
+		tableName: string,
 		indexName: string,
 		value: string | number,
 	): Promise<T | undefined> {
-		return this.storage.getBy<T>(storeName, indexName, value)
+		return this.storage.getBy<T>(tableName, indexName, value)
 	}
-	/** Streams records matching a query from the given object store. */
-	public stream<T>(storeName: string, options: FindOptions = {}): AsyncGenerator<T> {
-		return this.storage.stream<T>(storeName, options)
+	/**
+	 * Streams records matching a query from the given table.
+	 * If no options are provided, returns every record from the table.
+	 */
+	public stream<T>(tableName: string, options: FindOptions = {}): AsyncGenerator<T> {
+		return this.storage.stream<T>(tableName, options)
 	}
-	/** Streams every record from the given object store. */
-	public streamAll<T>(storeName: string): AsyncGenerator<T> {
-		return this.storage.streamAll<T>(storeName)
-	}
-	/** @deprecated Use getAll(). */
-	public async findAll<T>(storeName: string): Promise<T[]> {
-		return this.getAll<T>(storeName)
-	}
-	/** Inserts a new record into the given object store. */
-	public async add<T>(storeName: string, value: any, key?: string | number): Promise<T> {
-		const registeredTable = this.tableRegistry.get(storeName)
+	/** Inserts a new record into the given table. */
+	public async add<T>(tableName: string, value: any, key?: string | number): Promise<T> {
+		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.prepareCreate(value) : value
 		const [executedWrite] = await this.storage.executeTransaction([
-			{ type: "add", storeName, value: nextValue, key },
+			{ type: "add", storeName: tableName, value: nextValue, key },
 		])
 		return executedWrite?.value as T
 	}
-	/** Partially updates an existing record in the given object store. */
-	public async patch<T>(storeName: string, value: Partial<T>, key?: string | number): Promise<T> {
-		const registeredTable = this.tableRegistry.get(storeName)
+	/** Partially updates an existing record in the given table. */
+	public async patch<T>(tableName: string, value: Partial<T>, key?: string | number): Promise<T> {
+		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.preparePatch(value as never) : value
-		await this.storage.executeTransaction([{ type: "patch", storeName, value: nextValue, key }])
+		await this.storage.executeTransaction([
+			{ type: "patch", storeName: tableName, value: nextValue, key },
+		])
 		return nextValue as T
 	}
-	/** Upserts a record into the given object store. */
-	public async put<T>(storeName: string, value: any, key?: string | number): Promise<T> {
-		const registeredTable = this.tableRegistry.get(storeName)
+	/** Upserts a record into the given table. */
+	public async put<T>(tableName: string, value: any, key?: string | number): Promise<T> {
+		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.preparePut(value) : value
 		const [executedWrite] = await this.storage.executeTransaction([
-			{ type: "put", storeName, value: nextValue, key },
+			{ type: "put", storeName: tableName, value: nextValue, key },
 		])
 		return executedWrite?.value as T
 	}
-	/** Deletes a record from the given object store. */
-	public async delete(storeName: string, key: string | number): Promise<void> {
-		await this.storage.executeTransaction([{ type: "delete", storeName, key }])
+	/** Deletes a record from the given table. */
+	public async delete(tableName: string, key: string | number): Promise<void> {
+		await this.storage.executeTransaction([{ type: "delete", storeName: tableName, key }])
 	}
-	/** Clears all records from the given object store. */
-	public async clear(storeName: string): Promise<void> {
-		await this.storage.executeTransaction([{ type: "clear", storeName }])
+	/** Clears all records from the given table. */
+	public async clear(tableName: string): Promise<void> {
+		await this.storage.executeTransaction([{ type: "clear", storeName: tableName }])
 	}
 
-	/** Subscribes to store update notifications. */
-	public subscribe(callback: (stores: string[]) => void) {
+	/** Subscribes to table update notifications. */
+	public subscribe(callback: (tables: string[]) => void) {
 		return this.events.subscribe(callback)
 	}
 	/** Subscribes to sync state changes. */

@@ -1,28 +1,63 @@
-import { describe, expect, test, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, test } from "vitest"
+import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
 import { StorageManager } from "./StorageManager.js"
 
 /** Verifies the storage manager's query helpers preserve the expected ordering and selection semantics. */
 describe("StorageManager query helpers", () => {
-	test("supports getAll, find, getBy, stream, and streamAll", async () => {
-		const records = [
+	let storage: StorageManager
+
+	const resetDatabase = async () => {
+		await new Promise<void>((resolve, reject) => {
+			const request = indexedDB.deleteDatabase("dbsync")
+			request.onsuccess = () => resolve()
+			request.onerror = () => reject(request.error)
+			request.onblocked = () => resolve()
+		})
+	}
+
+	beforeEach(async () => {
+		installIndexedDbTestShim()
+		await resetDatabase()
+		storage = new StorageManager(
+			{
+				adapter: {} as any,
+				version: 1,
+				tables: { posts: { indexes: ["name", "createdAt"] } },
+			} as any,
+			{ notifySubscribers: () => undefined } as any,
+			() => undefined,
+			() => [{ storeName: "posts", indexes: ["name", "createdAt"] }],
+		)
+		await storage.init()
+		await storage.executeTransaction([
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "1", name: "alpha", score: 1, createdAt: 100 },
+			},
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "2", name: "beta", score: 2, createdAt: 200 },
+			},
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "3", name: "beta", score: 3, createdAt: 300 },
+			},
+		])
+	})
+
+	afterEach(() => {
+		storage.dispose()
+	})
+
+	test("supports find, getBy, and stream", async () => {
+		expect(await storage.find("posts")).toEqual([
 			{ id: "1", name: "alpha", score: 1, createdAt: 100 },
 			{ id: "2", name: "beta", score: 2, createdAt: 200 },
 			{ id: "3", name: "beta", score: 3, createdAt: 300 },
-		]
-
-		const storage = new StorageManager(
-			{
-				adapter: {} as any,
-				tables: { posts: { indexes: ["name", "createdAt"] } },
-			} as any,
-			{ notifySubscribers: vi.fn() } as any,
-			vi.fn(),
-			() => [{ storeName: "posts", indexes: ["name", "createdAt"] }],
-		)
-
-		vi.spyOn(storage, "getAll").mockResolvedValue(records as any)
-
-		expect(await storage.getAll("posts")).toEqual(records)
+		])
 		expect(await storage.find("posts", { index: "name", equals: "beta" })).toEqual([
 			{ id: "2", name: "beta", score: 2, createdAt: 200 },
 			{ id: "3", name: "beta", score: 3, createdAt: 300 },
@@ -43,6 +78,11 @@ describe("StorageManager query helpers", () => {
 		expect(await Array.fromAsync(storage.stream("posts", { limit: 1 }))).toEqual([
 			{ id: "1", name: "alpha", score: 1, createdAt: 100 },
 		])
-		expect(await Array.fromAsync(storage.streamAll("posts"))).toEqual(records)
+	})
+
+	test("throws when querying an undeclared index", async () => {
+		await expect(storage.find("posts", { index: "missing", equals: "beta" })).rejects.toThrow(
+			"Index missing is not declared for posts",
+		)
 	})
 })
