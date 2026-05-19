@@ -123,4 +123,105 @@ describe("useDbQuery", () => {
 		expect(subscriber).toBeDefined()
 		expect(queryFn).toHaveBeenCalledTimes(1)
 	})
+
+	/** Confirms shouldRefetchFilter can skip refetches when changes are irrelevant. */
+	test("skips refetch when shouldRefetchFilter returns false", async () => {
+		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
+		const db = {
+			initted: true,
+			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		const queryFn = vi.fn(async () => [{ id: "1", content: "stable" }])
+		const shouldRefetchFilter = (changes: any[]) =>
+			changes.some((c) => c.change === "clear" || (c.id !== undefined && c.id === "1"))
+
+		function FilteredList({ currentDb }: { currentDb: any }) {
+			const { value: posts } = useDbQuery(currentDb, "posts", queryFn, [], {
+				shouldRefetchFilter,
+			})
+			return <span>{posts?.[0]?.content}</span>
+		}
+
+		render(<FilteredList currentDb={db} />)
+		expect(await screen.findByText("stable")).not.toBeNull()
+		queryFn.mockClear()
+
+		await act(async () => {
+			subscriber?.(["posts"], [{ table: "posts", change: "update", id: "other-post" }])
+		})
+
+		expect(queryFn).not.toHaveBeenCalled()
+	})
+
+	/** Confirms shouldRefetchFilter allows refetches when changes match. */
+	test("refetches when shouldRefetchFilter returns true", async () => {
+		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
+		const db = {
+			initted: true,
+			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		let currentPosts = [{ id: "1", content: "stable" }]
+		const queryFn = vi.fn(async () => currentPosts)
+		const shouldRefetchFilter = (changes: any[]) =>
+			changes.some((c) => c.id === "1" || c.change === "clear")
+
+		function FilteredList({ currentDb }: { currentDb: any }) {
+			const { value: posts } = useDbQuery(currentDb, "posts", queryFn, [], {
+				shouldRefetchFilter,
+			})
+			return <span>{posts?.[0]?.content}</span>
+		}
+
+		render(<FilteredList currentDb={db} />)
+		expect(await screen.findByText("stable")).not.toBeNull()
+		queryFn.mockClear()
+
+		currentPosts = [{ id: "1", content: "updated" }]
+		await act(async () => {
+			subscriber?.(["posts"], [{ table: "posts", change: "update", id: "1" }])
+		})
+
+		expect(await screen.findByText("updated")).not.toBeNull()
+		expect(queryFn).toHaveBeenCalledTimes(1)
+	})
+
+	/** Confirms missing changes still refetch on table hit when filter is provided. */
+	test("refetches on table hit when changes are omitted", async () => {
+		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
+		const db = {
+			initted: true,
+			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
+				subscriber = callback
+				return { close: vi.fn() }
+			},
+		}
+		let currentPosts = [{ id: "1", content: "stable" }]
+		const queryFn = vi.fn(async () => currentPosts)
+		const shouldRefetchFilter = () => false
+
+		function FilteredList({ currentDb }: { currentDb: any }) {
+			const { value: posts } = useDbQuery(currentDb, "posts", queryFn, [], {
+				shouldRefetchFilter,
+			})
+			return <span>{posts?.[0]?.content}</span>
+		}
+
+		render(<FilteredList currentDb={db} />)
+		expect(await screen.findByText("stable")).not.toBeNull()
+		queryFn.mockClear()
+
+		currentPosts = [{ id: "1", content: "cross-tab" }]
+		await act(async () => {
+			subscriber?.(["posts"])
+		})
+
+		expect(await screen.findByText("cross-tab")).not.toBeNull()
+		expect(queryFn).toHaveBeenCalledTimes(1)
+	})
 })

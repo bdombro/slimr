@@ -6,6 +6,13 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.25
+
+### Added
+
+- `subscribe` callbacks now receive an optional second argument, `changes`, with per-row `{ table, change, id }` events (or `{ table, change: "clear" }` for whole-table writes); existing table-only subscribers are unchanged.
+- `useDbQuery` accepts an optional fifth argument, `options.shouldRefetchFilter`, to skip refetches when row-level changes are not relevant to the query.
+
 ## 0.0.24
 
 - query options now reject incompatible combinations instead of silently prioritizing one branch, so `equalsAny` and `startsWith` must be used on a declared index and cannot be mixed with conflicting range filters.

@@ -167,11 +167,23 @@ Use transactions when several writes should land together, or when you want to s
 `dbsync` already knows when data changes — locally, from another tab, or from the sync engine. Subscribe directly, or use the React hook.
 
 ```typescript
-const sub = db.subscribe((updatedTables) => {
-    if (updatedTables.includes("posts")) refresh()
+import type { RowChange } from "@slimr/dbsync"
+
+const sub = db.subscribe((updatedTables, changes?) => {
+    if (!updatedTables.includes("posts")) return
+    if (changes?.some((c) => c.table === "posts" && c.change === "clear")) {
+        refreshAllPosts()
+        return
+    }
+    const touchedIds = changes
+        ?.filter((c): c is Extract<RowChange, { id: string | number }> => c.change !== "clear")
+        .map((c) => c.id)
+    refreshPosts(touchedIds)
 })
 sub.close()
 ```
+
+Each `RowChange` is either `{ table, change: "insert" | "update" | "delete", id }` or `{ table, change: "clear" }` for whole-table invalidation. The second argument is optional for backward compatibility; cross-tab broadcasts omit row details when a batch exceeds 100 changes.
 
 ```tsx
 // In a useDbQuery.ts file
@@ -193,6 +205,21 @@ function PostList() {
             ))}
         </ul>
     )
+}
+
+function PostDetail({ postId }: { postId: string }) {
+    const { value: post, loading } = useDbQuery(
+        "posts",
+        () => db.get("posts", postId),
+        [postId],
+        {
+            shouldRefetchFilter: (changes) =>
+                changes.some((c) => c.change === "clear" || ("id" in c && String(c.id) === postId)),
+        },
+    )
+
+    if (loading) return <p>Loading…</p>
+    return <p>{post?.content}</p>
 }
 ```
 

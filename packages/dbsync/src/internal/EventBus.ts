@@ -1,11 +1,22 @@
 export type SyncState = "idle" | "syncing" | "offline" | "error"
 
+/** Describes a single row-level change in a user table. */
+export type RowChange =
+	| { table: string; change: "insert" | "update" | "delete"; id: string | number }
+	| { table: string; change: "clear" }
+
+/** Callback invoked when one or more tables change. */
+export type SubscribeCallback = (tables: string[], changes?: RowChange[]) => void
+
+/** Maximum row changes sent over BroadcastChannel before omitting the payload. */
+const BROADCAST_CHANGES_CAP = 100
+
 /**
  * Broadcasts store updates and sync state changes to local subscribers.
  */
 export class EventBus {
 	/** Subscribers that listen for store updates. */
-	private subscribers = new Set<(stores: string[]) => void>()
+	private subscribers = new Set<SubscribeCallback>()
 	/** Subscribers that listen for sync state transitions. */
 	private stateListeners = new Set<(state: SyncState) => void>()
 	/** Broadcast channel used to mirror updates across tabs. */
@@ -17,22 +28,30 @@ export class EventBus {
 		if (this.bc) {
 			this.bc.onmessage = (e) => {
 				if (e.data.type === "DATA_UPDATED") {
-					this.notifySubscribers(e.data.stores)
+					this.notifySubscribers(e.data.stores, e.data.changes, { skipBroadcast: true })
 				}
 			}
 		}
 	}
 
 	/** Adds a store-update subscriber and returns a handle for removing it. */
-	public subscribe(callback: (stores: string[]) => void) {
+	public subscribe(callback: SubscribeCallback) {
 		this.subscribers.add(callback)
 		return { close: () => this.subscribers.delete(callback) }
 	}
 
 	/** Notifies all store subscribers and mirrors the update to other tabs. */
-	public notifySubscribers(stores: string[]) {
-		this.subscribers.forEach((cb) => cb(stores))
-		if (this.bc) this.bc.postMessage({ type: "DATA_UPDATED", stores })
+	public notifySubscribers(
+		stores: string[],
+		changes?: RowChange[],
+		options?: { skipBroadcast?: boolean },
+	) {
+		this.subscribers.forEach((cb) => cb(stores, changes))
+		if (this.bc && !options?.skipBroadcast) {
+			const broadcastChanges =
+				changes && changes.length > BROADCAST_CHANGES_CAP ? undefined : changes
+			this.bc.postMessage({ type: "DATA_UPDATED", stores, changes: broadcastChanges })
+		}
 	}
 
 	/** Adds a sync-state subscriber and returns a handle for removing it. */

@@ -113,6 +113,56 @@ describe("WriteEngine", () => {
 				},
 			}),
 		])
-		expect(events.notifySubscribers).toHaveBeenCalledWith(["posts", "dirtyQueue", "deletedQueue"])
+		expect(events.notifySubscribers).toHaveBeenCalledWith(
+			["posts", "dirtyQueue", "deletedQueue"],
+			[{ table: "posts", change: "update", id: "post-1" }],
+		)
+	})
+
+	test("notifies insert changes for add operations", async () => {
+		events.notifySubscribers.mockClear()
+		await engine.executeTransaction([
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "post-1", name: "alpha" },
+			},
+		])
+		expect(events.notifySubscribers).toHaveBeenCalledWith(
+			["posts", "dirtyQueue", "deletedQueue"],
+			[{ table: "posts", change: "insert", id: "post-1" }],
+		)
+	})
+
+	test("notifies delete changes for delete operations", async () => {
+		await engine.executeTransaction([
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "post-1", name: "alpha" },
+			},
+		])
+		events.notifySubscribers.mockClear()
+		await engine.executeTransaction([{ type: "delete", storeName: "posts", key: "post-1" }])
+		expect(events.notifySubscribers).toHaveBeenCalledWith(
+			["posts", "dirtyQueue", "deletedQueue"],
+			[{ table: "posts", change: "delete", id: "post-1" }],
+		)
+	})
+
+	test("notifies clear changes and drops prior row ops in the same batch", async () => {
+		events.notifySubscribers.mockClear()
+		await engine.executeTransaction([
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "post-1", name: "alpha" },
+			},
+			{ type: "clear", storeName: "posts" },
+		])
+		expect(events.notifySubscribers).toHaveBeenCalledWith(
+			["posts", "dirtyQueue", "deletedQueue"],
+			[{ table: "posts", change: "clear" }],
+		)
 	})
 })

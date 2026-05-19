@@ -1,11 +1,14 @@
 import type { DbSyncConfig } from "../../DbSync.js"
 import { promiseWithResolvers } from "../../util/promises.js"
-import type { EventBus } from "../EventBus.js"
+import type { EventBus, RowChange } from "../EventBus.js"
 
 type TableDefaults = {
 	/** Callback that fills in default fields before a write is persisted. */
 	defaultSetter?: (value: any) => any
 }
+
+/** Internal queue stores excluded from row-level change notifications. */
+const INTERNAL_STORES = new Set(["dirtyQueue", "deletedQueue"])
 
 /** Applies a table's defaultSetter logic to a shallow copy without mutating the original input. */
 export const applyDefaults = <T>(tableConfig: TableDefaults | undefined, value: T): T => {
@@ -32,6 +35,53 @@ type WriteOperation = {
 	key?: string | number
 }
 
+/** Accumulates deduplicated row changes for a single transaction. */
+class RowChangeAccumulator {
+	private clearedTables = new Set<string>()
+	private changesByKey = new Map<string, RowChange>()
+
+	/** Records a row-level change, applying clear-vs-row deduplication rules. */
+	public add(change: RowChange) {
+		if (INTERNAL_STORES.has(change.table)) return
+
+		if (change.change === "clear") {
+			this.clearedTables.add(change.table)
+			for (const key of this.changesByKey.keys()) {
+				if (key.startsWith(`${change.table}:`)) {
+					this.changesByKey.delete(key)
+				}
+			}
+			this.changesByKey.set(`${change.table}:clear`, change)
+			return
+		}
+
+		if (this.clearedTables.has(change.table)) return
+		this.changesByKey.set(`${change.table}:${change.id}`, change)
+	}
+
+	/** Returns the deduplicated row changes for this transaction. */
+	public toArray(): RowChange[] {
+		return Array.from(this.changesByKey.values())
+	}
+}
+
+/** Maps a write operation type to a row change kind. */
+const toRowChangeKind = (type: string): "insert" | "update" | "delete" | "clear" | undefined => {
+	switch (type) {
+		case "add":
+			return "insert"
+		case "put":
+		case "patch":
+			return "update"
+		case "delete":
+			return "delete"
+		case "clear":
+			return "clear"
+		default:
+			return undefined
+	}
+}
+
 /** Owns write batching, patch prefetching, and queue bookkeeping for IndexedDB transactions. */
 export class WriteEngine {
 	constructor(
@@ -48,6 +98,7 @@ export class WriteEngine {
 			"deletedQueue",
 		])
 		const executedWrites: ExecutedWrite[] = []
+		const rowChanges = new RowChangeAccumulator()
 
 		// Pre-fetch objects for patch operations using a separate read-only transaction.
 		// A standard IndexedDB transaction auto-commits if we await inside it, so we must
@@ -79,7 +130,8 @@ export class WriteEngine {
 		const { promise, resolve, reject } = promiseWithResolvers<ExecutedWrite[]>()
 		const tx = db.transaction(storeNames, "readwrite")
 		tx.oncomplete = () => {
-			this.events.notifySubscribers(storeNames)
+			const changes = rowChanges.toArray()
+			this.events.notifySubscribers(storeNames, changes.length > 0 ? changes : undefined)
 			resolve(executedWrites)
 		}
 		tx.onerror = () => reject(tx.error)
@@ -88,6 +140,7 @@ export class WriteEngine {
 			const store = tx.objectStore(op.storeName)
 			let payloadToWrite = op.value
 			let recordId = op.key || op.value?.id
+			const changeKind = toRowChangeKind(op.type)
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
 				if (op.type === "put" || op.type === "add") {
@@ -106,6 +159,13 @@ export class WriteEngine {
 					value: payloadToWrite,
 					key: recordId,
 				})
+				if (changeKind && changeKind !== "clear") {
+					rowChanges.add({
+						table: op.storeName,
+						change: changeKind,
+						id: recordId as string | number,
+					})
+				}
 				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
 					tx.objectStore("dirtyQueue").put({
 						id: recordId,
@@ -116,6 +176,13 @@ export class WriteEngine {
 				}
 			} else if (op.type === "delete") {
 				store.delete(recordId)
+				if (changeKind && changeKind !== "clear") {
+					rowChanges.add({
+						table: op.storeName,
+						change: changeKind,
+						id: recordId as string | number,
+					})
+				}
 				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
 					tx.objectStore("deletedQueue").put({
 						id: recordId,
@@ -126,6 +193,9 @@ export class WriteEngine {
 				}
 			} else if (op.type === "clear") {
 				store.clear()
+				if (changeKind === "clear") {
+					rowChanges.add({ table: op.storeName, change: "clear" })
+				}
 			}
 		})
 

@@ -5,7 +5,12 @@ import { DbRepository } from "./DbRepository.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
-import { EventBus, type SyncState } from "./internal/EventBus.js"
+import {
+	EventBus,
+	type RowChange,
+	type SubscribeCallback,
+	type SyncState,
+} from "./internal/EventBus.js"
 import {
 	type MigrationManagerMigration as Migration,
 	MigrationManager,
@@ -43,7 +48,7 @@ export interface DbSyncResolvedTable {
 	preparePatch?: (value: any) => any
 }
 
-export type { SyncState }
+export type { RowChange, SubscribeCallback, SyncState }
 
 /**
  * The public facade for the dbsync engine.
@@ -288,7 +293,7 @@ export class DbSync {
 	}
 
 	/** Subscribes to table update notifications. */
-	public subscribe(callback: (tables: string[]) => void) {
+	public subscribe(callback: SubscribeCallback) {
 		return this.events.subscribe(callback)
 	}
 	/** Subscribes to sync state changes. */

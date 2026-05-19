@@ -2,7 +2,7 @@ import type { FindOptions } from "../../DbRepository.js"
 import type { DbSyncConfig } from "../../DbSync.js"
 import { promiseWithResolvers } from "../../util/promises.js"
 import { DbTransaction } from "../DbTransaction.js"
-import type { EventBus } from "../EventBus.js"
+import type { EventBus, RowChange } from "../EventBus.js"
 import { QueryEngine } from "../QueryEngine.js"
 import { getSchemaSignature } from "./SchemaSignature.js"
 import { WriteEngine } from "./WriteEngine.js"
@@ -147,10 +147,21 @@ export class StorageManager {
 
 	/** Clears every object store managed by the database. */
 	public async clearAllStores() {
-		const tx = this.db.transaction(Array.from(this.db.objectStoreNames), "readwrite")
-		Array.from(this.db.objectStoreNames).forEach((name) => tx.objectStore(name).clear())
+		const storeNames = Array.from(this.db.objectStoreNames)
+		const tx = this.db.transaction(storeNames, "readwrite")
+		storeNames.forEach((name) => tx.objectStore(name).clear())
 		return new Promise<void>((resolve, reject) => {
-			tx.oncomplete = () => resolve()
+			tx.oncomplete = () => {
+				const userStores = storeNames.filter(
+					(name) => name !== "dirtyQueue" && name !== "deletedQueue",
+				)
+				const changes: RowChange[] = userStores.map((table) => ({
+					table,
+					change: "clear",
+				}))
+				this.events.notifySubscribers(storeNames, changes)
+				resolve()
+			}
 			tx.onerror = () => reject(tx.error)
 		})
 	}

@@ -1,11 +1,21 @@
 import { areEqualDeep } from "@slimr/util"
 import { useEffect, useState } from "react"
-import type { DbSync } from "./DbSync.js"
+import type { DbSync, RowChange } from "./DbSync.js"
 import { sleep } from "./util/promises.js"
 
 type DbQueryState<T> = {
 	value: T | null
 	loading: boolean
+}
+
+/** Options for fine-grained control over when useDbQuery refetches. */
+export type UseDbQueryOptions = {
+	/**
+	 * Return false to skip refetching when the given row changes are not relevant.
+	 * Receives only changes for tables the hook subscribes to.
+	 * Memoize with `useCallback` when defined inline in a component.
+	 */
+	shouldRefetchFilter?: (changes: RowChange[]) => boolean
 }
 
 /**
@@ -17,6 +27,7 @@ type DbQueryState<T> = {
  * @param tableOrTables A string or array of strings containing the table names the query function reads from.
  * @param queryFn An asynchronous function invoked to pull data from IndexedDB.
  * @param deps A standard React dependency array for parameters referenced inside the `queryFn`.
+ * @param options Optional settings such as row-level refetch filtering.
  * @returns An object containing the latest query result and whether the initial fetch is still pending.
  */
 export function useDbQuery<T>(
@@ -24,11 +35,13 @@ export function useDbQuery<T>(
 	tableOrTables: string | string[],
 	queryFn: () => Promise<T>,
 	deps: any[] = [],
+	options?: UseDbQueryOptions,
 ): DbQueryState<T> {
 	/** Holds the latest query result and loading state. */
 	const [state, setState] = useState<DbQueryState<T>>({ value: null, loading: true })
 	/** Normalizes the table input into an array for matching. */
 	const tableArray = Array.isArray(tableOrTables) ? tableOrTables : [tableOrTables]
+	const shouldRefetchFilter = options?.shouldRefetchFilter
 
 	useEffect(() => {
 		let isMounted = true
@@ -60,11 +73,19 @@ export function useDbQuery<T>(
 		fetchData()
 
 		// Subscribe to relevant tables
-		const sub = db.subscribe((updatedTables) => {
-			const shouldUpdate = updatedTables.some((s) => tableArray.includes(s))
-			if (shouldUpdate) {
-				fetchData()
+		const sub = db.subscribe((updatedTables, changes) => {
+			const tableHit = updatedTables.some((s) => tableArray.includes(s))
+			if (!tableHit) return
+
+			if (shouldRefetchFilter) {
+				if (changes) {
+					const relevantChanges = changes.filter((c) => tableArray.includes(c.table))
+					if (relevantChanges.length === 0) return
+					if (!shouldRefetchFilter(relevantChanges)) return
+				}
 			}
+
+			fetchData()
 		})
 
 		return () => {
@@ -72,7 +93,7 @@ export function useDbQuery<T>(
 			sub.close()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [JSON.stringify(tableArray), ...deps])
+	}, [JSON.stringify(tableArray), shouldRefetchFilter, ...deps])
 
 	return state
 }
@@ -86,7 +107,9 @@ export function createUseDbQuery(db: DbSync) {
 		queryFn: () => Promise<T>,
 		/** Additional dependencies that should retrigger the query when they change. */
 		deps: any[] = [],
+		/** Optional settings such as row-level refetch filtering. */
+		options?: UseDbQueryOptions,
 	): DbQueryState<T> {
-		return useDbQuery(db, tableOrTables, queryFn, deps)
+		return useDbQuery(db, tableOrTables, queryFn, deps, options)
 	}
 }
