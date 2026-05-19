@@ -26,13 +26,6 @@ class MyAppDatabase extends DbSync {
 	}
 }
 
-type MyAppTransaction = ReturnType<MyAppDatabase["getTransaction"]> & {
-	posts: {
-		add(value: { title: string }): void
-		commit(): Promise<void>
-	}
-}
-
 describe("DbSync tables", () => {
 	let db: MyAppDatabase
 
@@ -66,7 +59,7 @@ describe("DbSync tables", () => {
 		await db.posts.add({ title: "  hello world  " })
 		expect(await db.find("posts")).toEqual([{ id: "post-1", title: "hello world" }])
 
-		const tx = db.getTransaction() as MyAppTransaction
+		const tx = db.getTransaction()
 		tx.posts.add({ title: "  from tx  " })
 		await tx.commit()
 

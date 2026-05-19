@@ -17,6 +17,7 @@ type Migration = MigrationManagerMigration
 
 import { SyncEngine } from "./internal/SyncEngine.js"
 import { applyDefaults, StorageManager } from "./internal/storage/index.js"
+import type { TransactionOf } from "./transactionTypes.js"
 
 export interface DbSyncTableConfig {
 	/** Optional index names to create for the table. */
@@ -215,14 +216,14 @@ export class DbSync {
 		return applyDefaults(this.config.tables?.[tableName], record)
 	}
 	/** Returns a queued transaction object for batched writes. */
-	public getTransaction() {
+	public getTransaction(this: DbSync): TransactionOf<this> {
 		const tx = this.storage.getTransaction()
 		const txWithTables = tx as unknown as Record<string, unknown>
 		for (const table of this.getSchemaTables()) {
 			txWithTables[table.tableName] = new DbTxRepository(tx, table.tableName, table)
 		}
-		return tx
-	} // Exported temporarily for tests
+		return tx as TransactionOf<this>
+	}
 
 	/** Reads a typed record by primary key. */
 	public async get<T>(tableName: string, id: string): Promise<T | undefined> {

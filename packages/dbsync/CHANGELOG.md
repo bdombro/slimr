@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.29
+
+### Added
+
+- `getTransaction()` is now typed as `TransactionOf<this>`, so subclasses with table properties (e.g. `todos`) get matching `tx.todos` write facades without manual casts. Export helper type `TransactionOf` from `@slimr/dbsync`.
+
 ## 0.0.28
 
 ### Changed
