@@ -1,15 +1,15 @@
+import { BaseFuzzIndex } from "./internal/BaseFuzzIndex.js"
 import {
 	type FuzzBoosts,
 	type FuzzExtractResult,
+	type FuzzRemoveId,
 	type FuzzScoreOptions,
-	type FuzzSearchOptions,
-	limitResults,
+	normalizeRemoveIds,
 	parseExtract,
 	resolveItemId,
-	resolveSearchLimit,
-	scoreItem,
 } from "./internal/fuzzCore.js"
-import { promiseWithResolvers, yieldToIdle } from "./util/promise.js"
+
+export type { FuzzSearchOptions } from "./internal/fuzzCore.js"
 
 /**
  * Options for configuring a {@link FuzzIdIndex}.
@@ -32,9 +32,9 @@ export interface FuzzIdOptions<T> {
 	now?: number
 	/** Default max results returned from `search` / `searchSync`. No cap when omitted. */
 	limit?: number
+	/** When true, blank queries return all indexed items by default. */
+	matchEmpty?: boolean
 }
-
-export type { FuzzSearchOptions } from "./internal/fuzzCore.js"
 
 interface IdIndexedItem {
 	id: string
@@ -54,19 +54,16 @@ export interface FuzzIdResult {
  * Memory-efficient index that stores only item ids and searchable text — not full items.
  * Use when items are large and search hits will be resolved elsewhere by id.
  */
-export class FuzzIdIndex<T> {
-	private items: IdIndexedItem[] = []
-	private queue: IdIndexedItem[] = []
+export class FuzzIdIndex<T> extends BaseFuzzIndex<IdIndexedItem, IdIndexedItem, FuzzIdResult> {
 	private options: FuzzIdOptions<T> & { chunkSize: number }
-	private indexPromise: Promise<void> | null = null
-	private indexInterval: ReturnType<typeof setInterval> | null = null
 
 	constructor(options: FuzzIdOptions<T>) {
-		this.options = {
+		const fullOptions = {
 			chunkSize: 500,
 			...options,
 		}
-		this.indexIntervalStart()
+		super(fullOptions)
+		this.options = fullOptions
 	}
 
 	/**
@@ -82,112 +79,10 @@ export class FuzzIdIndex<T> {
 
 	/**
 	 * Removes items by id from the index and indexing queue.
+	 * Ids not present in the index or queue are ignored.
 	 */
-	remove(id: string | string[]) {
-		const ids = new Set(Array.isArray(id) ? id : [id])
-		this.items = this.items.filter((indexed) => !ids.has(indexed.id))
-		this.queue = this.queue.filter((queued) => !ids.has(queued.id))
-	}
-
-	/**
-	 * Searches the index for the given query asynchronously.
-	 * Waits for any pending indexing to complete before searching.
-	 */
-	async search(query: string, options?: FuzzSearchOptions): Promise<FuzzIdResult[]> {
-		await this.index()
-		return this.searchSync(query, options)
-	}
-
-	/**
-	 * Searches the currently indexed items synchronously.
-	 * Does NOT wait for pending items in the queue to be indexed.
-	 */
-	searchSync(query: string, options?: FuzzSearchOptions): FuzzIdResult[] {
-		const normalizedQuery = query.toLowerCase().trim()
-		if (!normalizedQuery) return []
-
-		const results: FuzzIdResult[] = []
-
-		for (const indexed of this.items) {
-			const score = scoreItem(
-				indexed.searchables,
-				indexed.boosts,
-				normalizedQuery,
-				this.scoreOptions(),
-			)
-			if (score > 0) {
-				results.push({ id: indexed.id, score })
-			}
-		}
-
-		const sorted = results.sort((a, b) => b.score - a.score)
-		return limitResults(sorted, resolveSearchLimit(options, this.options.limit))
-	}
-
-	/**
-	 * Empties all indexed and queued items. Does not stop background indexing.
-	 */
-	clear() {
-		this.items = []
-		this.queue = []
-	}
-
-	/**
-	 * Cleans up the interval and clears the index.
-	 */
-	destroy() {
-		if (this.indexInterval) {
-			clearInterval(this.indexInterval)
-			this.indexInterval = null
-		}
-		this.clear()
-	}
-
-	/**
-	 * Pauses the indexing interval and any in-progress indexing run.
-	 */
-	async pause() {
-		if (this.indexInterval) {
-			clearInterval(this.indexInterval)
-			this.indexInterval = null
-		}
-		if (this.indexPromise) {
-			const queue = this.queue
-			this.queue = []
-			await this.indexPromise
-			this.queue = queue
-		}
-	}
-
-	/**
-	 * Resumes the indexing interval.
-	 */
-	async resume() {
-		this.indexIntervalStart()
-		await this.index()
-	}
-
-	/**
-	 * Moves queued entries into the searchable index in chunks.
-	 */
-	async index() {
-		if (this.queue.length === 0) return
-		if (this.indexPromise) return this.indexPromise
-
-		const { promise, resolve } = promiseWithResolvers<void>()
-		this.indexPromise = promise
-
-		while (this.queue.length > 0) {
-			const chunk = this.queue.splice(0, this.options.chunkSize)
-			this.items.push(...chunk)
-
-			if (this.queue.length > 0) {
-				await yieldToIdle()
-			}
-		}
-
-		resolve()
-		this.indexPromise = null
+	remove(id: FuzzRemoveId) {
+		this.removeByIds(normalizeRemoveIds(id))
 	}
 
 	private prepareEntry(item: T): IdIndexedItem {
@@ -205,35 +100,27 @@ export class FuzzIdIndex<T> {
 		}
 	}
 
-	private scoreOptions(): FuzzScoreOptions {
+	protected toIndexedItem(item: IdIndexedItem): IdIndexedItem {
+		return item
+	}
+
+	protected queueItemId(item: IdIndexedItem): string | undefined {
+		return item.id
+	}
+
+	protected entryId(entry: IdIndexedItem): string | undefined {
+		return entry.id
+	}
+
+	protected toResult(entry: IdIndexedItem, score: number): FuzzIdResult {
+		return { id: entry.id, score }
+	}
+
+	protected scoreOptions(): FuzzScoreOptions {
 		return {
 			numericMax: this.options.numericMax,
 			now: this.options.now,
 			recencyHalfLifeMs: this.options.recencyHalfLifeMs,
 		}
-	}
-
-	private upsert(entry: IdIndexedItem) {
-		const indexedIdx = this.items.findIndex((indexed) => indexed.id === entry.id)
-		if (indexedIdx >= 0) {
-			this.items[indexedIdx] = entry
-			this.queue = this.queue.filter((queued) => queued.id !== entry.id)
-			return
-		}
-
-		const queueIdx = this.queue.findIndex((queued) => queued.id === entry.id)
-		if (queueIdx >= 0) {
-			this.queue[queueIdx] = entry
-			return
-		}
-
-		this.queue.push(entry)
-	}
-
-	private indexIntervalStart() {
-		if (this.indexInterval) return
-		this.indexInterval = setInterval(() => {
-			this.index()
-		}, 2000)
 	}
 }

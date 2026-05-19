@@ -80,6 +80,7 @@ Creates a search index. Background indexing starts immediately on a 2-second int
 | `extract` | `(item: T) => FuzzExtractResult[]` | *(required)* | Returns the searchable strings and their weights for each item. |
 | `getId` | `(item: T) => string` | `item.id` (when a string) | Stable id for deduplication on `add` and id-based `remove`. Override for non-`id` keys. |
 | `limit` | `number` | — | Default max results from `search` / `searchSync`. No cap when omitted. |
+| `matchEmpty` | `boolean` | `false` | When true, blank queries return all indexed items (sorted by boost fields). |
 | `numericMax` | `number` | — | Upper bound used to normalize `{ numeric }` values to 0–1. |
 | `recencyHalfLifeMs` | `number` | 7 days | Half-life for `{ recency }` extract fields. |
 
@@ -116,6 +117,7 @@ Use this when you need complete, up-to-date results (e.g. on submit or when the 
 
 ```typescript
 await searchIndex.search("matrix", { limit: 20 })
+await searchIndex.search("", { matchEmpty: true }) // default list, e.g. sorted by recency
 ```
 
 ### `searchSync(query: string, options?: FuzzSearchOptions): FuzzResult<T>[]`
@@ -124,7 +126,7 @@ Searches only items that have already been indexed. Does not wait for the queue.
 
 Use this for responsive UI filtering while typing, when showing partial results is acceptable.
 
-Returns an empty array for blank or whitespace-only queries. Result count is capped by `options.limit`, or the index `limit` default when set.
+Returns an empty array for blank or whitespace-only queries unless `matchEmpty: true` (on the search call or index default). With `matchEmpty`, every indexed item is returned and ranked by `{ recency }` / `{ numeric }` boosts only. Result count is capped by `options.limit`, or the index `limit` default when set.
 
 ### `index(): Promise<void>`
 

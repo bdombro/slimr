@@ -1,5 +1,6 @@
 /** Build workspace packages in dependency order so dirty and included packages stay in sync. */
 import { parseArgs } from "node:util"
+import { $ } from "bun"
 import { execPromise } from "./util/process"
 import {
 	runWorkspaceTaskPhases,
@@ -22,10 +23,6 @@ Options:
   -e, --exclude     Exclude a workspace name, or part of, from being built
   -i, --include     Include a workspace name, or part of, for building
 `
-
-/************************************************************************
- * Types
-/************************************************************************/
 
 /************************************************************************
  * Entry point(s)
@@ -54,6 +51,8 @@ export async function buildWorkspaces(p: WorkspaceTaskSelection = {}) {
 	await runWorkspaceTaskPhases("BUILD", toBuild, async (workspace) => {
 		console.log(`[BUILD]: ${workspace.name}@${workspace.config.version}...`)
 		console.log(await execPromise("npm run build", { cwd: workspace.path }))
+		await $`find esm -name '*.test.*' -type f -delete`.cwd(workspace.path)
+		await $`find cjs -name '*.test.*' -type f -delete`.cwd(workspace.path)
 	})
 
 	console.log("BUILD:end")

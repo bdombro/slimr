@@ -35,6 +35,24 @@ describe("FuzzIdIndex", () => {
 		index.destroy()
 	})
 
+	it("matchEmpty on the constructor applies to search without per-search override", async () => {
+		const index = new FuzzIdIndex<Movie>({
+			...movieOptions,
+			matchEmpty: true,
+		})
+
+		index.add([
+			{ id: "1", title: "Alpha", description: "", posterUrl: "" },
+			{ id: "2", title: "Beta", description: "", posterUrl: "" },
+		])
+
+		await index.index()
+		expect(index.searchSync("")).toHaveLength(2)
+		expect(index.searchSync("", { matchEmpty: false })).toHaveLength(0)
+
+		index.destroy()
+	})
+
 	it("search respects default limit", async () => {
 		const index = new FuzzIdIndex<Movie>({
 			...movieOptions,

@@ -13,6 +13,15 @@ export type FuzzExtractResult =
 	| FuzzExtractRecencyResult
 	| FuzzExtractNumericResult
 
+/** Argument for id-based removal. Missing ids in the index are ignored. */
+export type FuzzRemoveId = string | string[] | { id: string | string[] }
+
+/** Normalizes {@link FuzzRemoveId} into a set of id strings. */
+export function normalizeRemoveIds(id: FuzzRemoveId): Set<string> {
+	const raw = typeof id === "object" && "id" in id ? id.id : id
+	return new Set(Array.isArray(raw) ? raw : [raw])
+}
+
 /** Normalized searchable text and field weight stored in the index. */
 export type Searchable = { text: string; weight: number }
 
@@ -26,6 +35,8 @@ export interface FuzzBoosts {
 export interface FuzzSearchOptions {
 	/** Max results to return. Overrides the index default when set. */
 	limit?: number
+	/** When true, blank queries return all indexed items (ranked by boost fields). */
+	matchEmpty?: boolean
 }
 
 /** Options that affect recency and numeric boost calculation. */
@@ -127,6 +138,18 @@ export function scoreNumericBoost(
 	return weight * normalized * BOOST_SCALE
 }
 
+/** Recency and numeric boosts without a text match. */
+export function scoreBoosts(boosts: FuzzBoosts, options: FuzzScoreOptions = {}): number {
+	let boost = 0
+	for (const { at, weight } of boosts.recency) {
+		boost += scoreRecencyBoost(at, weight, options)
+	}
+	for (const { value, weight } of boosts.numeric) {
+		boost += scoreNumericBoost(value, weight, options)
+	}
+	return boost
+}
+
 /** Combined text match score plus recency and numeric boosts (boosts only apply when text matches). */
 export function scoreItem(
 	searchables: Searchable[],
@@ -136,16 +159,7 @@ export function scoreItem(
 ): number {
 	const textScore = scoreSearchables(searchables, normalizedQuery)
 	if (textScore <= 0) return 0
-
-	let boost = 0
-	for (const { at, weight } of boosts.recency) {
-		boost += scoreRecencyBoost(at, weight, options)
-	}
-	for (const { value, weight } of boosts.numeric) {
-		boost += scoreNumericBoost(value, weight, options)
-	}
-
-	return textScore + boost
+	return textScore + scoreBoosts(boosts, options)
 }
 
 /** Truncates a sorted result list when `limit` is a positive finite number. */
@@ -162,6 +176,14 @@ export function resolveSearchLimit(
 	defaultLimit?: number,
 ): number | undefined {
 	return searchOptions?.limit ?? defaultLimit
+}
+
+/** Resolves whether an empty query should return results. */
+export function resolveMatchEmpty(
+	searchOptions?: FuzzSearchOptions,
+	defaultMatchEmpty?: boolean,
+): boolean {
+	return searchOptions?.matchEmpty ?? defaultMatchEmpty ?? false
 }
 
 /** Resolves an item id via `getId` or a string `id` property on the item. */

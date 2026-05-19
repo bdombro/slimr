@@ -154,6 +154,68 @@ describe("FuzzIndex", () => {
 		index.destroy()
 	})
 
+	it("matchEmpty returns all indexed items for a blank query", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add([
+			{ id: "1", title: "Alpha", description: "" },
+			{ id: "2", title: "Beta", description: "" },
+		])
+
+		await index.index()
+		expect(index.searchSync("")).toHaveLength(0)
+		expect(index.searchSync("", { matchEmpty: true })).toHaveLength(2)
+		expect(index.searchSync("   ", { matchEmpty: true })).toHaveLength(2)
+
+		index.destroy()
+	})
+
+	it("matchEmpty on the constructor applies to search without per-search override", async () => {
+		const index = new FuzzIndex<Movie>({
+			...movieOptions,
+			matchEmpty: true,
+		})
+
+		index.add([
+			{ id: "1", title: "Alpha", description: "" },
+			{ id: "2", title: "Beta", description: "" },
+		])
+
+		await index.index()
+		expect(index.searchSync("")).toHaveLength(2)
+		expect(await index.search("   ")).toHaveLength(2)
+		expect(index.searchSync("", { matchEmpty: false })).toHaveLength(0)
+
+		index.destroy()
+	})
+
+	it("matchEmpty ranks items by recency boost when query is blank", async () => {
+		const NOW = 1_700_000_000_000
+		const DAY = 24 * 60 * 60 * 1000
+
+		type Todo = { id: string; title: string; lastEditedAt: number }
+		const index = new FuzzIndex<Todo>({
+			now: NOW,
+			extract: (todo) => [
+				{ value: todo.title, weight: 1 },
+				{ recency: todo.lastEditedAt, weight: 1 },
+			],
+		})
+
+		index.add([
+			{ id: "1", title: "task", lastEditedAt: NOW - 60 * DAY },
+			{ id: "2", title: "task", lastEditedAt: NOW - DAY },
+		])
+
+		await index.index()
+		const results = index.searchSync("", { matchEmpty: true })
+		expect(results).toHaveLength(2)
+		expect(results[0].item.id).toBe("2")
+		expect(results[0].score).toBeGreaterThan(results[1].score)
+
+		index.destroy()
+	})
+
 	it("searchSync should search only already-indexed items without awaiting", async () => {
 		const index = new FuzzIndex<Movie>({
 			...movieOptions,
