@@ -11,6 +11,8 @@ A tiny fuzzy text search library with zero dependencies and a low memory footpri
 
 ## Usage
 
+This lib provides two search Classes, `FuzzIndex` and `FuzzIdIndex`. `FuzzIndex` is more full-featured by storing and returning the entire index object, while `FuzzIdIndex` stores only the indexing and returns only the id and score of the results. Scroll down for more info on `FuzzIdIndex`.
+
 ```typescript
 import { FuzzIndex } from "@slimr/fuzz"
 
@@ -75,14 +77,33 @@ Creates a search index. Background indexing starts immediately on a 2-second int
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `extract` | `(item: T) => FuzzExtractResult[]` | *(required)* | Returns the searchable strings and their weights for each item. |
+| `getId` | `(item: T) => string` | `item.id` (when a string) | Stable id for deduplication on `add` and id-based `remove`. Override for non-`id` keys. |
 | `chunkSize` | `number` | `500` | How many queued items to process per indexing pass before yielding to the browser. |
 
 ### `add(items: T | T[])`
 
 Appends one or more items to the indexing queue. Pass a single item or an array. Items are normalized and moved into the searchable index during the next background indexing pass (or when `search()` flushes the queue).
 
-Does not block. Newly added items are not visible to `searchSync()` until they have been indexed.
+Does not block. Newly added items are not visible to `searchSync()` until they have been indexed (unless `getId` updates an already-indexed item — see below).
 
+When an item id can be resolved (`getId`, or a string `item.id` by default), adding an item whose id already exists **replaces** the previous entry instead of duplicating it. If the prior item was already indexed, the index is updated immediately and any queued copy with that id is dropped. Items without a resolvable id are always appended.
+
+### `remove(id: string | string[])`
+
+Removes items by id from the searchable index and the indexing queue. Pass a single id or an array. Uses `getId` or `item.id` by default. Does not block.
+
+```typescript
+searchIndex.remove("m1")
+searchIndex.remove(["m1", "m2"])
+```
+
+### `removeWhere(match: (item: T) => boolean)`
+
+Removes items when the predicate returns true.
+
+```typescript
+searchIndex.removeWhere((movie) => movie.title === "Movie title")
+```
 
 ### `search(query: string): Promise<FuzzResult<T>[]>`
 
@@ -156,4 +177,52 @@ Each extracted field is scored independently; the highest weighted score wins fo
 | Substring | 25 | `"acool"` |
 
 Final score = base score × field weight.
+
+---
+
+## FuzzIdIndex (memory-efficient)
+
+Use **`FuzzIdIndex`** when items are large (many fields, blobs, URLs) and you only need **ids back from search** — you resolve full records elsewhere (e.g. from a store or cache by id).
+
+Same scoring and indexing behavior as `FuzzIndex`, but:
+
+- On `add`, searchable text is extracted immediately; the **original item is not kept**.
+- `search` / `searchSync` return `{ id, score }`, not `{ item, score }`.
+- Every item must have a resolvable id (`item.id` or `getId`).
+- Supports `add`, `remove`, `search`, `searchSync`, `index`, `pause`, `resume`, and `destroy` — no `removeWhere` (there is no full item to match against).
+
+```typescript
+import { FuzzIdIndex } from "@slimr/fuzz"
+
+interface Movie {
+  id: string
+  title: string
+  description: string
+  posterUrl: string // not stored in the index
+}
+
+const index = new FuzzIdIndex<Movie>({
+  extract: (movie) => [
+    { value: movie.title, weight: 2.0 },
+    { value: movie.description, weight: 1.0 },
+  ],
+})
+
+index.add(largeMovieList)
+
+const hits = await index.search("matrix")
+// [{ id: "m1", score: 100 }, ...]
+
+// Hydrate full records from your data layer
+const movies = await Promise.all(hits.map((h) => loadMovie(h.id)))
+
+index.destroy()
+```
+
+| | `FuzzIndex` | `FuzzIdIndex` |
+|--|-------------|---------------|
+| Stores full item | Yes | No (id + searchables only) |
+| Search result | `{ item, score }` | `{ id, score }` |
+| `removeWhere` | Yes | No |
+| Item id required | No (for dedup/remove) | Yes |
 

@@ -1,2 +1,5 @@
-export type { FuzzExtractResult, FuzzOptions, FuzzResult } from "./FuzzIndex.js"
+export type { FuzzIdOptions, FuzzIdResult } from "./FuzzIdIndex.js"
+export { FuzzIdIndex } from "./FuzzIdIndex.js"
+export type { FuzzOptions, FuzzResult } from "./FuzzIndex.js"
 export { FuzzIndex } from "./FuzzIndex.js"
+export type { FuzzExtractResult } from "./internal/fuzzCore.js"

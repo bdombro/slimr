@@ -7,11 +7,13 @@ interface Movie {
 	description: string
 }
 
+const movieOptions = {
+	extract: (m: Movie) => [{ value: m.title, weight: 1 }],
+}
+
 describe("FuzzIndex", () => {
 	it("should find exact matches with highest score", async () => {
-		const index = new FuzzIndex<Movie>({
-			extract: (m) => [{ value: m.title, weight: 1 }],
-		})
+		const index = new FuzzIndex<Movie>(movieOptions)
 
 		index.add([
 			{ id: "1", title: "The Matrix", description: "" },
@@ -28,9 +30,7 @@ describe("FuzzIndex", () => {
 	})
 
 	it("should score word boundary matches higher than substring matches", async () => {
-		const index = new FuzzIndex<Movie>({
-			extract: (m) => [{ value: m.title, weight: 1 }],
-		})
+		const index = new FuzzIndex<Movie>(movieOptions)
 
 		index.add([
 			{ id: "1", title: "Acool B", description: "" }, // substring match
@@ -49,9 +49,7 @@ describe("FuzzIndex", () => {
 	})
 
 	it("should score prefix matches higher than word boundary matches", async () => {
-		const index = new FuzzIndex<Movie>({
-			extract: (m) => [{ value: m.title, weight: 1 }],
-		})
+		const index = new FuzzIndex<Movie>(movieOptions)
 
 		index.add([
 			{ id: "1", title: "The Cool Movie", description: "" }, // word boundary match
@@ -106,8 +104,8 @@ describe("FuzzIndex", () => {
 
 	it("should chunk indexing without blocking", async () => {
 		const index = new FuzzIndex<Movie>({
+			...movieOptions,
 			chunkSize: 2,
-			extract: (m) => [{ value: m.title, weight: 1 }],
 		})
 
 		const items: Movie[] = []
@@ -127,9 +125,7 @@ describe("FuzzIndex", () => {
 	})
 
 	it("should accept a single item or an array in add()", async () => {
-		const index = new FuzzIndex<Movie>({
-			extract: (m) => [{ value: m.title, weight: 1 }],
-		})
+		const index = new FuzzIndex<Movie>(movieOptions)
 
 		index.add({ id: "1", title: "Solo", description: "" })
 		index.add([{ id: "2", title: "Batch", description: "" }])
@@ -147,9 +143,7 @@ describe("FuzzIndex", () => {
 	})
 
 	it("should return empty array for empty queries", async () => {
-		const index = new FuzzIndex<Movie>({
-			extract: (m) => [{ value: m.title, weight: 1 }],
-		})
+		const index = new FuzzIndex<Movie>(movieOptions)
 
 		index.add([{ id: "1", title: "Test", description: "" }])
 
@@ -162,8 +156,8 @@ describe("FuzzIndex", () => {
 
 	it("searchSync should search only already-indexed items without awaiting", async () => {
 		const index = new FuzzIndex<Movie>({
+			...movieOptions,
 			chunkSize: 2,
-			extract: (m) => [{ value: m.title, weight: 1 }],
 		})
 
 		index.add([{ id: "1", title: "Movie 1", description: "" }])
@@ -185,8 +179,8 @@ describe("FuzzIndex", () => {
 
 	it("pause stops ongoing indexing and preserves unprocessed queue", async () => {
 		const index = new FuzzIndex<Movie>({
+			...movieOptions,
 			chunkSize: 1,
-			extract: (m) => [{ value: m.title, weight: 1 }],
 		})
 
 		index.add([
@@ -212,9 +206,7 @@ describe("FuzzIndex", () => {
 	})
 
 	it("pause stops the background indexing interval", async () => {
-		const index = new FuzzIndex<Movie>({
-			extract: (m) => [{ value: m.title, weight: 1 }],
-		})
+		const index = new FuzzIndex<Movie>(movieOptions)
 
 		await index.pause()
 
@@ -227,6 +219,153 @@ describe("FuzzIndex", () => {
 		await index.resume()
 
 		expect(index.searchSync("Late")).toHaveLength(1)
+
+		index.destroy()
+	})
+
+	it("remove drops indexed items from search results", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add([
+			{ id: "1", title: "The Matrix", description: "" },
+			{ id: "2", title: "Inception", description: "" },
+		])
+
+		await index.index()
+		expect(await index.search("matrix")).toHaveLength(1)
+
+		index.remove("1")
+		expect(index.searchSync("matrix")).toHaveLength(0)
+		expect(await index.search("inception")).toHaveLength(1)
+
+		index.destroy()
+	})
+
+	it("remove drops queued items before they are indexed", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add([
+			{ id: "1", title: "The Matrix", description: "" },
+			{ id: "2", title: "Inception", description: "" },
+		])
+
+		index.remove("1")
+		await index.index()
+
+		expect(index.searchSync("matrix")).toHaveLength(0)
+		expect(index.searchSync("inception")).toHaveLength(1)
+
+		index.destroy()
+	})
+
+	it("remove accepts a single id or an array of ids", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add([
+			{ id: "1", title: "Alpha", description: "" },
+			{ id: "2", title: "Beta", description: "" },
+			{ id: "3", title: "Gamma", description: "" },
+		])
+
+		await index.index()
+
+		index.remove(["1", "3"])
+		const results = index.searchSync("a")
+
+		expect(results).toHaveLength(1)
+		expect(results[0].item.id).toBe("2")
+
+		index.destroy()
+	})
+
+	it("remove by id uses default item.id without explicit getId", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add({ id: "1", title: "The Matrix", description: "" })
+		await index.index()
+
+		index.remove("1")
+		expect(index.searchSync("matrix")).toHaveLength(0)
+
+		index.destroy()
+	})
+
+	it("removeWhere removes items by predicate", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add([
+			{ id: "1", title: "Alpha", description: "" },
+			{ id: "2", title: "Beta", description: "" },
+		])
+
+		await index.index()
+
+		index.removeWhere((m) => m.title.startsWith("A"))
+		expect(index.searchSync("alpha")).toHaveLength(0)
+		expect(index.searchSync("beta")).toHaveLength(1)
+
+		index.destroy()
+	})
+
+	it("add replaces queued items with the same id when getId is set", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add({ id: "1", title: "Old Title", description: "" })
+		index.add({ id: "1", title: "New Title", description: "" })
+
+		await index.index()
+
+		const results = index.searchSync("new")
+		expect(results).toHaveLength(1)
+		expect(results[0].item.title).toBe("New Title")
+		expect(index.searchSync("old")).toHaveLength(0)
+
+		index.destroy()
+	})
+
+	it("add updates indexed items immediately when getId matches", async () => {
+		const index = new FuzzIndex<Movie>(movieOptions)
+
+		index.add({ id: "1", title: "Old Title", description: "" })
+		await index.index()
+
+		index.add({ id: "1", title: "New Title", description: "" })
+
+		const results = index.searchSync("new")
+		expect(results).toHaveLength(1)
+		expect(results[0].item.title).toBe("New Title")
+		expect(index.searchSync("old")).toHaveLength(0)
+
+		index.destroy()
+	})
+
+	it("add does not deduplicate when items have no id", async () => {
+		type TitleOnly = { title: string }
+		const index = new FuzzIndex<TitleOnly>({
+			extract: (t) => [{ value: t.title, weight: 1 }],
+		})
+
+		index.add([{ title: "Duplicate" }, { title: "Duplicate" }])
+
+		await index.index()
+		expect(index.searchSync("duplicate")).toHaveLength(2)
+
+		index.destroy()
+	})
+
+	it("custom getId overrides default item.id", async () => {
+		type SlugItem = { slug: string; title: string }
+		const index = new FuzzIndex<SlugItem>({
+			getId: (item) => item.slug,
+			extract: (item) => [{ value: item.title, weight: 1 }],
+		})
+
+		index.add({ slug: "a", title: "First" })
+		index.add({ slug: "a", title: "Second" })
+		await index.index()
+
+		expect(index.searchSync("second")).toHaveLength(1)
+		expect(index.searchSync("first")).toHaveLength(0)
 
 		index.destroy()
 	})

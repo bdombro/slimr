@@ -1,12 +1,12 @@
+import {
+	type FuzzExtractResult,
+	resolveItemId,
+	scoreSearchables,
+	toSearchables,
+} from "./internal/fuzzCore.js"
 import { promiseWithResolvers, yieldToIdle } from "./util/promise.js"
 
-/**
- * Result of the extraction function, pairing the extracted string with a weight.
- */
-export interface FuzzExtractResult {
-	value: string
-	weight: number
-}
+export type { FuzzExtractResult } from "./internal/fuzzCore.js"
 
 /**
  * Options for configuring the FuzzIndex.
@@ -16,12 +16,18 @@ export interface FuzzOptions<T> {
 	chunkSize?: number
 	/** Function to extract the string(s) to search against from an item */
 	extract: (item: T) => FuzzExtractResult[]
+	/**
+	 * Returns a stable id for an item. Defaults to `item.id` when it is a string.
+	 * When an id can be resolved, `add` replaces existing items with the same id
+	 * (indexed or queued), and `remove` can target ids directly.
+	 */
+	getId?: (item: T) => string
 }
 
 interface IndexedItem<T> {
 	original: T
 	/** The normalized, lowercased strings extracted from the item */
-	searchables: { text: string; weight: number }[]
+	searchables: ReturnType<typeof toSearchables>
 }
 
 /**
@@ -38,7 +44,7 @@ export interface FuzzResult<T> {
 export class FuzzIndex<T> {
 	private items: IndexedItem<T>[] = []
 	private queue: T[] = []
-	private options: Required<FuzzOptions<T>>
+	private options: FuzzOptions<T> & { chunkSize: number }
 	private indexPromise: Promise<void> | null = null
 	private indexInterval: ReturnType<typeof setInterval> | null = null
 
@@ -52,10 +58,34 @@ export class FuzzIndex<T> {
 
 	/**
 	 * Adds one or more items to the indexing queue. They will be processed asynchronously.
+	 * When an item id can be resolved, items with an existing id replace the prior entry
+	 * (indexed immediately, or queued until the next indexing pass).
 	 */
 	add(items: T | T[]) {
 		const list = Array.isArray(items) ? items : [items]
-		this.queue.push(...list)
+		for (const item of list) {
+			this.upsert(item)
+		}
+	}
+
+	/**
+	 * Removes items by id from the index and indexing queue.
+	 * Uses `getId` from options, or `item.id` when it is a string.
+	 */
+	remove(id: string | string[]) {
+		const ids = new Set(Array.isArray(id) ? id : [id])
+		this.removeWhere((item) => {
+			const itemId = resolveItemId(item, this.options.getId)
+			return itemId !== undefined && ids.has(itemId)
+		})
+	}
+
+	/**
+	 * Removes items from the index and indexing queue that match the predicate.
+	 */
+	removeWhere(match: (item: T) => boolean) {
+		this.items = this.items.filter((indexed) => !match(indexed.original))
+		this.queue = this.queue.filter((item) => !match(item))
 	}
 
 	/**
@@ -78,31 +108,12 @@ export class FuzzIndex<T> {
 		const results: FuzzResult<T>[] = []
 
 		for (const indexed of this.items) {
-			let bestScore = 0
-
-			for (const { text, weight } of indexed.searchables) {
-				let matchScore = 0
-
-				if (text === normalizedQuery) {
-					matchScore = 100
-				} else if (text.startsWith(normalizedQuery)) {
-					matchScore = 75
-				} else if (text.includes(` ${normalizedQuery}`)) {
-					matchScore = 50
-				} else if (text.includes(normalizedQuery)) {
-					matchScore = 25
-				}
-
-				const finalScore = matchScore * weight
-				bestScore = Math.max(bestScore, finalScore)
-			}
-
+			const bestScore = scoreSearchables(indexed.searchables, normalizedQuery)
 			if (bestScore > 0) {
 				results.push({ item: indexed.original, score: bestScore })
 			}
 		}
 
-		// Sort by highest score first
 		return results.sort((a, b) => b.score - a.score)
 	}
 
@@ -160,16 +171,7 @@ export class FuzzIndex<T> {
 			const chunk = this.queue.splice(0, this.options.chunkSize)
 
 			for (const item of chunk) {
-				const extracted = this.options.extract(item)
-				const searchables = extracted.map((e) => ({
-					text: e.value.toLowerCase().trim(),
-					weight: e.weight,
-				}))
-
-				this.items.push({
-					original: item,
-					searchables,
-				})
+				this.items.push(this.toIndexedItem(item))
 			}
 
 			// Yield to the event loop if there are still items left
@@ -180,6 +182,43 @@ export class FuzzIndex<T> {
 
 		resolve()
 		this.indexPromise = null
+	}
+
+	/**
+	 * Inserts or replaces an item. Deduplicates by id when one can be resolved.
+	 */
+	private upsert(item: T) {
+		const id = resolveItemId(item, this.options.getId)
+		if (id === undefined) {
+			this.queue.push(item)
+			return
+		}
+
+		const indexedIdx = this.items.findIndex(
+			(indexed) => resolveItemId(indexed.original, this.options.getId) === id,
+		)
+		if (indexedIdx >= 0) {
+			this.items[indexedIdx] = this.toIndexedItem(item)
+			this.queue = this.queue.filter((queued) => resolveItemId(queued, this.options.getId) !== id)
+			return
+		}
+
+		const queueIdx = this.queue.findIndex(
+			(queued) => resolveItemId(queued, this.options.getId) === id,
+		)
+		if (queueIdx >= 0) {
+			this.queue[queueIdx] = item
+			return
+		}
+
+		this.queue.push(item)
+	}
+
+	private toIndexedItem(item: T): IndexedItem<T> {
+		return {
+			original: item,
+			searchables: toSearchables(this.options.extract(item)),
+		}
 	}
 
 	/**
