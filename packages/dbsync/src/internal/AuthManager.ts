@@ -1,5 +1,5 @@
 import type { BackendAdapter } from "../adapters/types.js"
-import type { StorageManager } from "./StorageManager.js"
+import type { StorageManager } from "./storage/index.js"
 
 /**
  * Coordinates authentication state and logout/reset behavior for `DbSync`.

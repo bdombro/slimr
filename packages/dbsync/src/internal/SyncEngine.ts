@@ -3,7 +3,8 @@ import type { DbSyncConfig } from "../DbSync.js"
 import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
 import type { EventBus } from "./EventBus.js"
-import type { StorageManager } from "./StorageManager.js"
+import type { StorageManager } from "./storage/index.js"
+import { getSchemaSignature } from "./storage/index.js"
 
 type SchemaTable = {
 	tableName: string
@@ -118,16 +119,7 @@ export class SyncEngine {
 
 	/** Computes the local schema signature used for version handshakes. */
 	private get schemaSignature() {
-		const tables = this.getSchemaTables()
-			.slice()
-			.sort((left, right) => left.tableName.localeCompare(right.tableName))
-			.map((table) => {
-				return {
-					table: table.tableName,
-					indexes: table.indexes?.slice().sort() || [],
-				}
-			})
-		return JSON.stringify(tables)
+		return getSchemaSignature(this.getSchemaTables(), "tableName")
 	}
 
 	/** Pulls remote changes and applies them to IndexedDB. */

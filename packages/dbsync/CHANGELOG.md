@@ -6,6 +6,11 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.24
+
+- query options now reject incompatible combinations instead of silently prioritizing one branch, so `equalsAny` and `startsWith` must be used on a declared index and cannot be mixed with conflicting range filters.
+- refactoring
+
 ## 0.0.23
 
 - added `equalsAny` to `FindOptions` for exact membership queries over an indexed field, returning the union of all matching records.

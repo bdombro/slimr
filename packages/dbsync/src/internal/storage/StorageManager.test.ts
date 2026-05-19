@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
-import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
+import { installIndexedDbTestShim } from "../../test-support/indexeddb.js"
 import { StorageManager } from "./StorageManager.js"
 
 /** Verifies the storage manager's query helpers preserve the expected ordering and selection semantics. */

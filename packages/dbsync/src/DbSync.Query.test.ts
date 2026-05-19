@@ -65,4 +65,24 @@ describe("DbSync Query Features", () => {
 
 		expect(results.map((r) => r.id).sort()).toEqual(["1", "3", "4"])
 	})
+
+	test("rejects incompatible query option combinations", async () => {
+		await expect(db.posts.find({ startsWith: "Ap" })).rejects.toThrow(
+			"startsWith requires an index",
+		)
+		await expect(
+			db.posts.find({
+				index: "title",
+				startsWith: "Ap",
+				equalsAny: ["Apple"],
+			}),
+		).rejects.toThrow("equalsAny cannot be combined with startsWith")
+		await expect(
+			db.posts.find({
+				index: "title",
+				equals: "Apple",
+				lowerBound: "A",
+			}),
+		).rejects.toThrow("equals cannot be combined with range bounds")
+	})
 })

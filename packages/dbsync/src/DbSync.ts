@@ -10,8 +10,8 @@ import {
 	type MigrationManagerMigration as Migration,
 	MigrationManager,
 } from "./internal/MigrationManager.js"
-import { applyDefaults, StorageManager } from "./internal/StorageManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
+import { applyDefaults, StorageManager } from "./internal/storage/index.js"
 
 export type { Migration }
 
