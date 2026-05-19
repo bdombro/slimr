@@ -114,6 +114,8 @@ const many = await db.posts.find()
 
 Use `db.posts`, `db.users`, and the rest of your declared typed tables as the primary API. The lower-level `db.get`, `db.put`, `db.patch`, `db.delete`, and `db.clear` helpers still exist for direct indexeddb access when you need them. `DbTable` is where you put table-specific defaults, validation, and normalization via `prepareCreate`, `preparePut`, and `preparePatch`.
 
+Use `equalsAny` for exact membership checks on an indexed field, and `startsWith` for prefix matches on string indexes. If you need case-insensitive prefix search, normalize the indexed field to lowercase when you write it.
+
 ### Query and stream without loading the whole table into memory
 
 `find()` is the blunt instrument. `find`, `getBy`, and `stream` use IndexedDB cursors for iteration and filtering when needed.
@@ -231,13 +233,13 @@ Use `db.upgradeRecord("users", imported)` to run the same chain on inbound data 
 
 ### Automatic schema versioning
 
-By default `dbsync` derives a deterministic signature from your table + index definitions. When the signature changes, the local IndexedDB version bumps and the new schema state is broadcast through sync so other devices know to upgrade. Prefer manual control? Pass an explicit `version: number` and that becomes authoritative.
+By default `dbsync` derives a deterministic signature from your table + index definitions. When the signature changes, the local IndexedDB version bumps and the new schema state is broadcast through sync so other devices know to upgrade. Newly declared indexes are created on existing stores during that upgrade path, so adding an index does not require wiping local data. Prefer manual control? Pass an explicit `version: number` and that becomes authoritative.
 
 ## Sync lifecycle and auth
 
 ```typescript
 await db.init()                    // open IndexedDB, run migrations, pull initial data
-await db.start())                  // calls `init()` and starts the sync loop and leadership election
+await db.start()                   // calls `init()` and starts the sync loop and leadership election
 await db.waitForLive()             // resolves once initial pull is settled
 
 db.onSyncStateChange((s) => console.log("sync:", s))

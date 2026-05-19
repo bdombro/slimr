@@ -87,11 +87,19 @@ export class StorageManager {
 		const upgradeFn = (e: IDBVersionChangeEvent) => {
 			const db = (e.target as IDBOpenDBRequest).result
 			this.getSchemaTables().forEach((table) => {
+				let store: IDBObjectStore
 				if (!db.objectStoreNames.contains(table.storeName)) {
-					const store = db.createObjectStore(table.storeName, { keyPath: "id" })
-					if (table.indexes) {
-						table.indexes.forEach((idx) => store.createIndex(idx, idx, { unique: false }))
-					}
+					store = db.createObjectStore(table.storeName, { keyPath: "id" })
+				} else {
+					store = (e.target as IDBOpenDBRequest).transaction!.objectStore(table.storeName)
+				}
+
+				if (table.indexes) {
+					table.indexes.forEach((idx) => {
+						if (!Array.from(store.indexNames ?? []).includes(idx)) {
+							store.createIndex(idx, idx, { unique: false })
+						}
+					})
 				}
 			})
 			if (!db.objectStoreNames.contains("dirtyQueue"))
@@ -234,6 +242,14 @@ export class StorageManager {
 	 * - limit+order=desc is not well-supported in IndexedDB and must use the more costly cursor read approach
 	 */
 	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
+		if (options.equalsAny !== undefined) {
+			return this.findAny<T>(storeName, options)
+		}
+
+		if (options.startsWith !== undefined) {
+			return this.findStartsWith<T>(storeName, options)
+		}
+
 		if (options.order === "desc" && options.limit !== undefined) {
 			const records: T[] = []
 			for await (const record of this.stream<T>(storeName, options)) {
@@ -284,6 +300,13 @@ export class StorageManager {
 	 * If no options are provided, returns every record from the store.
 	 */
 	public async *stream<T>(storeName: string, options: FindOptions = {}): AsyncGenerator<T> {
+		if (options.equalsAny !== undefined) {
+			for (const record of await this.findAny<T>(storeName, options)) {
+				yield record
+			}
+			return
+		}
+
 		const tx = this.db.transaction(storeName, "readonly")
 		const source = this.getQuerySource(tx, storeName, options.index)
 		const cursor = await this.openCursor(
@@ -328,10 +351,79 @@ export class StorageManager {
 		throw new Error(`[dbsync]: Index ${indexName} is not declared for ${storeName}`)
 	}
 
+	/** Executes exact-match lookups for several values and merges the results. */
+	private async findAny<T>(storeName: string, options: FindOptions): Promise<T[]> {
+		const distinctValues = [...new Set(options.equalsAny ?? [])]
+		if (distinctValues.length === 0) {
+			return []
+		}
+
+		const source = this.getQuerySource(
+			this.db.transaction(storeName, "readonly"),
+			storeName,
+			options.index,
+		)
+
+		const batches = await Promise.all(
+			distinctValues.map(async (value) => {
+				return this.readAll<T>(source, IDBKeyRange.only(value))
+			}),
+		)
+
+		const records = this.dedupeRecords(batches.flat())
+		return this.applyOrderingAndLimit(records, options)
+	}
+
+	/** Performs batched prefix-range lookups for `startsWith`. */
+	private async findStartsWith<T>(storeName: string, options: FindOptions): Promise<T[]> {
+		const tx = this.db.transaction(storeName, "readonly")
+		const source = this.getQuerySource(tx, storeName, options.index)
+		const range = IDBKeyRange.bound(options.startsWith, `${options.startsWith}\uffff`)
+		const records = await this.readAll<T>(source, range)
+		return this.applyOrderingAndLimit(records, options)
+	}
+
+	/** Reads all records for a source/range pair. */
+	private async readAll<T>(source: IDBObjectStore | IDBIndex, range: IDBKeyRange): Promise<T[]> {
+		const { promise, resolve, reject } = promiseWithResolvers<T[]>()
+		const req = source.getAll(range)
+		req.onsuccess = () => resolve(req.result)
+		req.onerror = () => reject(req.error)
+		return promise
+	}
+
+	/** Applies descending order and limit semantics without re-sorting merged results. */
+	private applyOrderingAndLimit<T>(records: T[], options: FindOptions): T[] {
+		const ordered = options.order === "desc" ? [...records].reverse() : records
+		return options.limit === undefined ? ordered : ordered.slice(0, options.limit)
+	}
+
+	/** Removes duplicate rows by primary key while preserving the first match for each id. */
+	private dedupeRecords<T>(records: T[]): T[] {
+		const seen = new Set<string | number>()
+		const deduped: T[] = []
+
+		for (const record of records) {
+			const key = (record as Record<string, any>).id
+			if (seen.has(key)) {
+				continue
+			}
+
+			seen.add(key)
+			deduped.push(record)
+		}
+
+		return deduped
+	}
+
 	/** Builds the IndexedDB key range for the supplied query options. */
 	private buildKeyRange(options: FindOptions): IDBKeyRange | undefined {
 		if (options.equals !== undefined) {
 			return IDBKeyRange.only(options.equals)
+		}
+
+		if (options.startsWith !== undefined) {
+			return IDBKeyRange.bound(options.startsWith, `${options.startsWith}\uffff`)
 		}
 
 		if (options.lowerBound !== undefined && options.upperBound !== undefined) {

@@ -102,7 +102,8 @@ describe("DbSync ORM", () => {
 			delete record.legacyTitle
 		})
 
-		db.config.tables.posts.migrations = [
+		const tables = db.config.tables!
+		tables.posts.migrations = [
 			{
 				version: 1,
 				note: "rename legacy title",
@@ -116,10 +117,10 @@ describe("DbSync ORM", () => {
 			storeVersion: 0,
 		}
 
-		const upgraded = await db.upgradeRecord("posts", importedPost)
+		const importResult = await db.upgradeRecord("posts", importedPost)
 
 		expect(upgrade).toHaveBeenCalledTimes(1)
-		expect(upgraded).toMatchObject({
+		expect(importResult).toMatchObject({
 			id: "imported-1",
 			title: "HELLO WORLD",
 			storeVersion: 1,
@@ -133,7 +134,8 @@ describe("DbSync ORM", () => {
 
 	/** Confirms the public applyDefaults helper applies table defaulting logic without persisting the record. */
 	test("applies defaults on demand through the public API", async () => {
-		db.config.tables.posts.defaultSetter = (value) => ({
+		const tables = db.config.tables!
+		tables.posts.defaultSetter = (value) => ({
 			id: "defaulted-post",
 			title: "default title",
 			createdAt: 123,
@@ -167,7 +169,8 @@ describe("DbSync ORM", () => {
 			delete record.lastName
 		})
 
-		db.config.tables.posts.migrations = [
+		const tables = db.config.tables!
+		tables.posts.migrations = [
 			{
 				version: 1,
 				note: "combine name fields",
@@ -194,7 +197,8 @@ describe("DbSync ORM", () => {
 
 	/** Confirms table-level default injectors can fill missing fields for add/put writes. */
 	test("applies table default injectors on add", async () => {
-		db.config.tables.posts.defaultSetter = (value) => ({
+		const tables = db.config.tables!
+		tables.posts.defaultSetter = (value) => ({
 			id: "auto-post",
 			content: "default content",
 			createdAt: 123,
@@ -232,6 +236,24 @@ describe("DbSync ORM", () => {
 		)
 	})
 
+	/** Confirms equalsAny returns all exact matches for an indexed field. */
+	test("finds records matching any of several exact index values", async () => {
+		await db.put("posts", { id: "a", content: "alpha", userId: "u1" })
+		await db.put("posts", { id: "b", content: "beta", userId: "u2" })
+		await db.put("posts", { id: "c", content: "gamma", userId: "u1" })
+		await db.put("posts", { id: "d", content: "delta", userId: "u3" })
+
+		expect(
+			await db.find<any>("posts", {
+				index: "userId",
+				equalsAny: ["u2", "u1"],
+			}),
+		).toEqual([
+			expect.objectContaining({ id: "b", userId: "u2" }),
+			expect.objectContaining({ id: "a", userId: "u1" }),
+			expect.objectContaining({ id: "c", userId: "u1" }),
+		])
+	})
 	/** Confirms patch updates only the provided fields while preserving the rest of the stored record. */
 	test("patches a record without dropping existing fields", async () => {
 		await db.put("posts", { id: "patch-1", content: "hello", userId: "u1", draft: true })
@@ -308,7 +330,8 @@ describe("DbSync ORM", () => {
 
 	/** Confirms transaction writes use the same table default injectors as direct writes. */
 	test("applies table default injectors in transactions", async () => {
-		db.config.tables.posts.defaultSetter = (value) => ({
+		const tables = db.config.tables!
+		tables.posts.defaultSetter = (value) => ({
 			id: "tx-auto-post",
 			content: "default tx content",
 			createdAt: 456,

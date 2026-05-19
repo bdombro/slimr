@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.23
+
+- added `equalsAny` to `FindOptions` for exact membership queries over an indexed field, returning the union of all matching records.
+- added `startsWith` to `FindOptions` for prefix queries over string indexes; normalize fields yourself if you need case-insensitive matching.
+- newly declared indexes are now created for existing IndexedDB stores during schema upgrades instead of only for freshly created stores.
+
 ## 0.0.22
 
 - renamed several public `storeName` parameters and repository properties to `tableName` to match the table-centric API exposed by `DbTable`.

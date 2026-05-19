@@ -75,14 +75,50 @@ describe("StorageManager query helpers", () => {
 			score: 2,
 			createdAt: 200,
 		})
-		expect(await Array.fromAsync(storage.stream("posts", { limit: 1 }))).toEqual([
-			{ id: "1", name: "alpha", score: 1, createdAt: 100 },
-		])
+		const streamResults: any[] = []
+		for await (const record of storage.stream("posts", { limit: 1 })) {
+			streamResults.push(record)
+		}
+		expect(streamResults).toEqual([{ id: "1", name: "alpha", score: 1, createdAt: 100 }])
 	})
 
 	test("throws when querying an undeclared index", async () => {
 		await expect(storage.find("posts", { index: "missing", equals: "beta" })).rejects.toThrow(
 			"Index missing is not declared for posts",
 		)
+	})
+
+	test("creates missing indexes when an existing store is upgraded", async () => {
+		storage.dispose()
+		await resetDatabase()
+
+		const initialStorage = new StorageManager(
+			{
+				adapter: {} as any,
+				version: 1,
+				tables: { posts: { indexes: ["name"] } },
+			} as any,
+			{ notifySubscribers: () => undefined } as any,
+			() => undefined,
+			() => [{ storeName: "posts", indexes: ["name"] }],
+		)
+		await initialStorage.init()
+		initialStorage.dispose()
+
+		const upgradedStorage = new StorageManager(
+			{
+				adapter: {} as any,
+				version: 2,
+				tables: { posts: { indexes: ["name", "createdAt"] } },
+			} as any,
+			{ notifySubscribers: () => undefined } as any,
+			() => undefined,
+			() => [{ storeName: "posts", indexes: ["name", "createdAt"] }],
+		)
+		await upgradedStorage.init()
+
+		const tx = upgradedStorage.db.transaction("posts", "readonly")
+		expect(tx.objectStore("posts").indexNames.contains("createdAt")).toBe(true)
+		upgradedStorage.dispose()
 	})
 })

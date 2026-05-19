@@ -3,6 +3,8 @@ import type { DbSync } from "./DbSync.js"
 export interface FindOptions {
 	index?: string
 	equals?: string | number
+	equalsAny?: Array<string | number>
+	startsWith?: string
 	lowerBound?: string | number
 	upperBound?: string | number
 	limit?: number

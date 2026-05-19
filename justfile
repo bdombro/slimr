@@ -12,6 +12,10 @@ build:
 build-dirty:
     bun scripts/build.ts --dirty --exclude demo
 
+# Check code style and TypeScript correctness
+check:
+    npx biome check && npx tsc -b --noEmit
+
 # Remove build artifacts from all workspaces
 clean:
     npm run -ws clean

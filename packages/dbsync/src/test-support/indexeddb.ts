@@ -1,4 +1,4 @@
-type RequestHandler = (() => void) | undefined
+type RequestHandler = ((event?: any) => void) | undefined
 
 type StoreData = {
 	keyPath?: string
@@ -162,6 +162,8 @@ class FakeRequest<T = any> {
 	public result!: T
 	/** The request error, if one occurred. */
 	public error: Error | null = null
+	/** The versionchange transaction for upgrade requests, if one is active. */
+	public transaction: FakeTransaction | null = null
 	/** The success handler registered by consumer code. */
 	public onsuccess: ((event: any) => void) | undefined = undefined
 	/** The error handler registered by consumer code. */
@@ -201,6 +203,11 @@ class FakeObjectStore {
 	/** Creates a fake object store from the provided data bucket. */
 	constructor(private storeData: StoreData) {}
 
+	/** The declared fake index names for the store. */
+	get indexNames() {
+		return new FakeDOMStringList([...this.storeData.indexes])
+	}
+
 	/** No-op index creation hook used by the shim. */
 	createIndex(name: string) {
 		this.storeData.indexes.add(name)
@@ -222,7 +229,7 @@ class FakeObjectStore {
 		this.storeData.values.set(recordKey, clone(value))
 		queueMicrotask(() => {
 			request.result = clone(value)
-			request.onsuccess?.()
+			request.onsuccess?.({ target: request })
 		})
 		return request
 	}
@@ -233,7 +240,7 @@ class FakeObjectStore {
 		const result = this.storeData.values.get(String(key))
 		queueMicrotask(() => {
 			request.result = result === undefined ? undefined : clone(result)
-			request.onsuccess?.()
+			request.onsuccess?.({ target: request })
 		})
 		return request
 	}
@@ -244,7 +251,7 @@ class FakeObjectStore {
 		const result = [...this.storeData.values.values()].map(clone)
 		queueMicrotask(() => {
 			request.result = result
-			request.onsuccess?.()
+			request.onsuccess?.({ target: request })
 		})
 		return request
 	}
@@ -263,7 +270,7 @@ class FakeObjectStore {
 		this.storeData.values.delete(String(key))
 		queueMicrotask(() => {
 			request.result = undefined
-			request.onsuccess?.()
+			request.onsuccess?.({ target: request })
 		})
 		return request
 	}
@@ -274,7 +281,7 @@ class FakeObjectStore {
 		this.storeData.values.clear()
 		queueMicrotask(() => {
 			request.result = undefined
-			request.onsuccess?.()
+			request.onsuccess?.({ target: request })
 		})
 		return request
 	}
@@ -360,9 +367,11 @@ class FakeIndexedDB {
 				record.version = version
 				record.db.version = version
 				request.result = record.db
+				request.transaction = record.db.transaction([...record.db.stores.keys()], "versionchange")
 				request.onupgradeneeded?.({ target: request })
 			} else if (isNewDatabase) {
 				request.result = record.db
+				request.transaction = record.db.transaction([...record.db.stores.keys()], "versionchange")
 				request.onupgradeneeded?.({ target: request })
 			}
 
@@ -378,7 +387,7 @@ class FakeIndexedDB {
 		queueMicrotask(() => {
 			databases.delete(name)
 			request.result = undefined
-			request.onsuccess?.()
+			request.onsuccess?.({ target: request })
 		})
 		return request
 	}
