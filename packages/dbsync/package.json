@@ -7,6 +7,19 @@
   "main": "cjs/index.cjs",
   "module": "esm/index.js",
   "sideEffects": false,
+  "keywords": [
+    "indexeddb",
+    "offline-first",
+    "local-first",
+    "sync",
+    "orm",
+    "pwa",
+    "react",
+    "cross-tab",
+    "broadcast-channel",
+    "mutation-queue",
+    "schema-migration"
+  ],
   "exports": {
     ".": {
       "require": "./cjs/index.cjs",
