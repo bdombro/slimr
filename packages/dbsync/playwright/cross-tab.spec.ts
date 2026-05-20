@@ -1,3 +1,4 @@
+import "./fixture-base-url.js"
 import { expect, test } from "@playwright/test"
 
 test.describe("DbSync cross-tab coordination", () => {

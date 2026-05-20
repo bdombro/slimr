@@ -1,2 +1,8 @@
 test-results
+.tsbuild
+.tsbuild-test
 .pw-fixture-port
+src/**/*.js
+src/**/*.js.map
+playwright/**/*.js
+playwright/**/*.js.map

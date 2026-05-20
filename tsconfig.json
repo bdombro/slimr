@@ -24,6 +24,7 @@
     { "path": "./tsconfig.node.json" },
     { "path": "./packages/css" },
     { "path": "./packages/dbsync" },
+    { "path": "./packages/dbsync/tsconfig.test.json" },
     { "path": "./packages/demo" },
     { "path": "./packages/forms" },
     { "path": "./packages/markdown" },

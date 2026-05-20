@@ -6,6 +6,11 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+### Changed
+
+- `tsconfig.test.json` is a composite project referenced from the repo root so `just check` (`tsc -b`) typechecks unit tests, `test-support`, and Playwright sources; declaration emit for project references goes to gitignored `.tsbuild` / `.tsbuild-test`.
+- Playwright e2e (≥1.60) uses `webServer.wait` to bind an ephemeral `127.0.0.1` port from Vite stdout; removed `ensure-port.mjs` and `.pw-fixture-port`.
+
 ## 0.0.30
 
 ### Added
@@ -15,10 +20,6 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 ### Removed
 
 - Package entry no longer exports `RowChange`, `DbSyncTableConfig`, `DbTableConstructor`, `SubscribeCallback`, `SyncState`, `TableSubscribeOptions`, `TransactionOf`, `FindOptions`, or `@slimr/dbsync/react`'s `UseDbQueryOptions`. Use subscribe/`useDbQuery` parameter inference, `ReturnType`, or inline shapes instead.
-
-### Fixed
-
-- Playwright e2e reserves a free `127.0.0.1` port per `npm run test:e2e` (fallback `41783`, or set `PW_FIXTURE_PORT`) so the fixture server does not collide with other Vite apps.
 
 ## 0.0.29
 
