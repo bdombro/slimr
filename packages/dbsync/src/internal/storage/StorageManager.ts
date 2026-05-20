@@ -1,9 +1,9 @@
-import type { FindOptions } from "../../DbRepository.js"
 import type { DbSyncConfig } from "../../DbSync.js"
 import { promiseWithResolvers } from "../../util/promises.js"
 import { DbTransaction } from "../DbTransaction.js"
 import type { EventBus, RowChange } from "../EventBus.js"
 import { QueryEngine } from "../QueryEngine.js"
+import type { FindOptions } from "../queryTypes.js"
 import { getSchemaSignature } from "./SchemaSignature.js"
 import { WriteEngine } from "./WriteEngine.js"
 
@@ -127,8 +127,11 @@ export class StorageManager {
 	}
 
 	/** Returns records matching a query from the requested store. */
-	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
-		return this.queryEngine.find<T>(storeName, options)
+	public find<T, const O extends FindOptions | undefined = undefined>(
+		storeName: string,
+		options?: O,
+	) {
+		return this.queryEngine.find<T, O>(storeName, options)
 	}
 
 	/** Returns the first record matching an index/value pair, if any. */
@@ -141,8 +144,11 @@ export class StorageManager {
 	}
 
 	/** Streams records matching a query from the requested store. */
-	public stream<T>(storeName: string, options: FindOptions = {}): AsyncGenerator<T> {
-		return this.queryEngine.stream<T>(storeName, options)
+	public stream<T, const O extends FindOptions | undefined = undefined>(
+		storeName: string,
+		options?: O,
+	) {
+		return this.queryEngine.stream<T, O>(storeName, options)
 	}
 
 	/** Clears every object store managed by the database. */

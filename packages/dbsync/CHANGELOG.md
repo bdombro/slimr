@@ -6,11 +6,25 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.30
+
+### Added
+
+- `find` and `stream` accept `select` and `omit` to return partial records; when either is set, `find` reads via cursor instead of `getAll`. Projected return types are inferred from options (`Pick` / `Omit` of the row type).
+
+### Removed
+
+- Package entry no longer exports `RowChange`, `DbSyncTableConfig`, `DbTableConstructor`, `SubscribeCallback`, `SyncState`, `TableSubscribeOptions`, `TransactionOf`, `FindOptions`, or `@slimr/dbsync/react`'s `UseDbQueryOptions`. Use subscribe/`useDbQuery` parameter inference, `ReturnType`, or inline shapes instead.
+
+### Fixed
+
+- Playwright e2e reserves a free `127.0.0.1` port per `npm run test:e2e` (fallback `41783`, or set `PW_FIXTURE_PORT`) so the fixture server does not collide with other Vite apps.
+
 ## 0.0.29
 
 ### Added
 
-- `getTransaction()` is now typed as `TransactionOf<this>`, so subclasses with table properties (e.g. `todos`) get matching `tx.todos` write facades without manual casts. Export helper type `TransactionOf` from `@slimr/dbsync`.
+- `getTransaction()` return type is inferred from your `DbSync` subclass, so table properties (e.g. `todos`) get matching `tx.todos` write facades without manual casts.
 
 ## 0.0.28
 

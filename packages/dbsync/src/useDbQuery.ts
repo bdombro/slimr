@@ -10,7 +10,7 @@ type DbQueryState<T> = {
 }
 
 /** Options for fine-grained control over when useDbQuery refetches. */
-export type UseDbQueryOptions = {
+type UseDbQueryOptions = {
 	/**
 	 * Return false to skip refetching when the given row changes are not relevant.
 	 * Receives only changes for tables the hook subscribes to.

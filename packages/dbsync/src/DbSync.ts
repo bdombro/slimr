@@ -1,6 +1,5 @@
 import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
-import type { FindOptions } from "./DbRepository.js"
 import { DbRepository } from "./DbRepository.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
@@ -11,15 +10,13 @@ import {
 	type SubscribeCallback,
 	type SyncState,
 } from "./internal/EventBus.js"
-import { MigrationManager, type MigrationManagerMigration } from "./internal/MigrationManager.js"
-
-type Migration = MigrationManagerMigration
-
+import { type Migration, MigrationManager } from "./internal/MigrationManager.js"
+import type { FindOptions } from "./internal/queryTypes.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
 import { applyDefaults, StorageManager } from "./internal/storage/index.js"
 import type { TransactionOf } from "./transactionTypes.js"
 
-export interface DbSyncTableConfig {
+interface DbSyncTableConfig {
 	/** Optional index names to create for the table. */
 	indexes?: string[]
 	/** Optional callback that fills in default fields before write operations. */
@@ -235,8 +232,11 @@ export class DbSync {
 	 * - with no options, this returns every record from the table.
 	 * - limit+order=desc is not well-supported in IndexedDB and must use the more costly cursor read approach
 	 */
-	public async find<T>(tableName: string, options: FindOptions = {}): Promise<T[]> {
-		return this.storage.find<T>(tableName, options)
+	public find<T, const O extends FindOptions | undefined = undefined>(
+		tableName: string,
+		options?: O,
+	) {
+		return this.storage.find<T, O>(tableName, options)
 	}
 	/** Reads the first record matching an index/value pair. */
 	public async getBy<T>(
@@ -250,8 +250,11 @@ export class DbSync {
 	 * Streams records matching a query from the given table.
 	 * If no options are provided, returns every record from the table.
 	 */
-	public stream<T>(tableName: string, options: FindOptions = {}): AsyncGenerator<T> {
-		return this.storage.stream<T>(tableName, options)
+	public stream<T, const O extends FindOptions | undefined = undefined>(
+		tableName: string,
+		options?: O,
+	) {
+		return this.storage.stream<T, O>(tableName, options)
 	}
 	/** Inserts a new record into the given table. */
 	public async add<T>(tableName: string, value: any, key?: string): Promise<T> {

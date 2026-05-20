@@ -3,13 +3,11 @@ import type { DbTable } from "./DbTable.js"
 import type { DbTxRepository } from "./DbTxRepository.js"
 import type { DbTransaction } from "./internal/DbTransaction.js"
 
-/** Keys on a DbSync subclass that hold table repositories. */
-export type TablePropertyKeys<TDb> = {
+type TablePropertyKeys<TDb> = {
 	[K in keyof TDb]: TDb[K] extends DbTable<any, any> | DbRepository<any> ? K : never
 }[keyof TDb]
 
-/** Maps a table repository property to its transaction-scoped write facade. */
-export type TransactionTableRepo<TValue> =
+type TransactionTableRepo<TValue> =
 	TValue extends DbTable<infer Row, infer CreateInput>
 		? DbTxRepository<Row, CreateInput>
 		: TValue extends DbRepository<infer Row>

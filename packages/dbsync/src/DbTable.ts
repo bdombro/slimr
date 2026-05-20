@@ -1,7 +1,7 @@
 import { DbRepository } from "./DbRepository.js"
 import type { DbSync } from "./DbSync.js"
 
-export type DbTableConstructor<Row extends { id: string }, CreateInput extends object> = {
+type DbTableConstructor<Row extends { id: string }, CreateInput extends object> = {
 	new (db: DbSync): DbTable<Row, CreateInput>
 	tableName: string
 	indexes?: string[]

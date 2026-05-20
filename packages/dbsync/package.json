@@ -1,6 +1,6 @@
 {
   "name": "@slimr/dbsync",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -45,7 +45,7 @@
     "clean": "rm -rf esm cjs",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node playwright/ensure-port.mjs && playwright test",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "typecheck": "tsc -noEmit && npm run typecheck:test"
   },

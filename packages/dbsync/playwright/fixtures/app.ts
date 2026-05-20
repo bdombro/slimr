@@ -29,7 +29,7 @@ const db = new FixtureDb({
 	adapter: new LocalAdapter(),
 })
 
-window.db = db
+window.db = db as unknown as Window["db"]
 window.postsRepo = db.posts
 
 db.init().then(() => {

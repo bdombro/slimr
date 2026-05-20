@@ -135,6 +135,16 @@ for await (const post of db.posts.stream({ index: "updatedAt", order: "desc" }))
 }
 ```
 
+Use `select` or `omit` when you only need a few fields. Both `find` and `stream` return partial records. Note: `find` uses a cursor whenever projection is requested (slight performance hit).
+
+```typescript
+const titles = await db.posts.find({ select: ["id", "title"] })
+
+for await (const row of db.posts.stream({ omit: ["description"] })) {
+    renderIncrementally(row)
+}
+```
+
 If you truly need everything in memory, `find()` with no options is still there. The point is to make it the exception rather than the default.
 
 ### Lower-level helpers when you need direct indexeddb access
@@ -167,23 +177,19 @@ Use transactions when several writes should land together, or when you want to s
 `dbsync` already knows when data changes — locally, from another tab, or from the sync engine. Subscribe directly, or use the React hook.
 
 ```typescript
-import type { RowChange } from "@slimr/dbsync"
-
 const sub = db.subscribe((updatedTables, changes?) => {
     if (!updatedTables.includes("posts")) return
     if (changes?.some((c) => c.table === "posts" && c.change === "clear")) {
         refreshAllPosts()
         return
     }
-    const touchedIds = changes
-        ?.filter((c): c is Extract<RowChange, { id: string }> => c.change !== "clear")
-        .map((c) => c.id)
+    const touchedIds = changes?.map((c) => c.id)
     refreshPosts(touchedIds)
 })
 sub.close()
 ```
 
-Each `RowChange` is either `{ table, change: "insert" | "update" | "delete", id }` or `{ table, change: "clear" }` for whole-table invalidation. The second argument is optional for backward compatibility; cross-tab broadcasts omit row details when a batch exceeds 100 changes.
+Changes can be "insert" | "update" | "delete" | "clear".
 
 Table repositories expose the same notifications without repeating the table name:
 

@@ -151,7 +151,7 @@ describe("DbSync ORM", () => {
 			createdAt: 123,
 		})
 		expect(importedPost).toEqual({ title: "custom title" })
-		expect(await db.find<any>("posts")).toEqual([])
+		expect(await db.find("posts")).toEqual([])
 	})
 
 	/** Confirms table migrations run during init so existing records upgrade automatically when the app boots. */
@@ -220,7 +220,7 @@ describe("DbSync ORM", () => {
 			userId: "u-default",
 		})
 
-		expect(await db.find<any>("dirtyQueue")).toEqual(
+		expect(await db.find("dirtyQueue")).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: "auto-post",
@@ -244,7 +244,7 @@ describe("DbSync ORM", () => {
 		await db.put("posts", { id: "d", content: "delta", userId: "u3" })
 
 		expect(
-			await db.find<any>("posts", {
+			await db.find("posts", {
 				index: "userId",
 				equalsAny: ["u2", "u1"],
 			}),
@@ -267,7 +267,7 @@ describe("DbSync ORM", () => {
 			draft: true,
 		})
 
-		expect(await db.find<any>("dirtyQueue")).toEqual(
+		expect(await db.find("dirtyQueue")).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: "patch-1",
@@ -286,7 +286,7 @@ describe("DbSync ORM", () => {
 	/** Confirms updates enter the dirty queue so sync can eventually flush them. */
 	test("queues dirty records on write", async () => {
 		await db.put("posts", { id: "2", content: "test queue", userId: "u1" })
-		const dirty = await db.find<any>("dirtyQueue")
+		const dirty = await db.find("dirtyQueue")
 		expect(dirty).toHaveLength(1)
 		expect(dirty[0]).toMatchObject({ id: "2", table: "posts" })
 	})
@@ -296,8 +296,8 @@ describe("DbSync ORM", () => {
 		await db.put("posts", { id: "3", content: "to delete", userId: "u1" })
 		await db.delete("posts", "3")
 		expect(await db.get("posts", "3")).toBeUndefined()
-		expect(await db.find<any>("dirtyQueue")).toHaveLength(0)
-		expect(await db.find<any>("deletedQueue")).toEqual([
+		expect(await db.find("dirtyQueue")).toHaveLength(0)
+		expect(await db.find("deletedQueue")).toEqual([
 			expect.objectContaining({ id: "3", table: "posts" }),
 		])
 	})
@@ -349,7 +349,7 @@ describe("DbSync ORM", () => {
 			userId: "u-tx-default",
 		})
 
-		expect(await db.find<any>("dirtyQueue")).toEqual(
+		expect(await db.find("dirtyQueue")).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					id: "tx-auto-post",

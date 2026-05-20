@@ -1,5 +1,6 @@
-import type { FindOptions } from "../DbRepository.js"
 import { promiseWithResolvers } from "../util/promises.js"
+import { asFindResult, asStreamResult, hasProjection, projectRecord } from "./queryProjection.js"
+import type { FindOptions } from "./queryTypes.js"
 
 type SchemaTable = {
 	storeName: string
@@ -16,43 +17,47 @@ export class QueryEngine {
 	) {}
 
 	/** Returns records matching a query from the requested store. */
-	public async find<T>(storeName: string, options: FindOptions = {}): Promise<T[]> {
-		this.assertValidOptions(options)
+	public async find<T, const O extends FindOptions | undefined = undefined>(
+		storeName: string,
+		options?: O,
+	) {
+		const resolved = options ?? ({} as FindOptions)
+		this.assertValidOptions(resolved)
 
-		if (options.equalsAny !== undefined) {
-			return this.findAny<T>(storeName, options)
-		}
-
-		if (options.startsWith !== undefined) {
-			return this.findStartsWith<T>(storeName, options)
-		}
-
-		if (options.order === "desc" && options.limit !== undefined) {
+		if (hasProjection(resolved) || (resolved.order === "desc" && resolved.limit !== undefined)) {
 			const records: T[] = []
-			for await (const record of this.stream<T>(storeName, options)) {
-				records.push(record)
+			for await (const record of this.stream<T, O>(storeName, options)) {
+				records.push(record as T)
 			}
-			return records
+			return asFindResult<T, O>(records)
+		}
+
+		if (resolved.equalsAny !== undefined) {
+			return asFindResult<T, O>(await this.findAny<T>(storeName, resolved))
+		}
+
+		if (resolved.startsWith !== undefined) {
+			return asFindResult<T, O>(await this.findStartsWith<T>(storeName, resolved))
 		}
 
 		const source = this.getQuerySource(
 			this.getDb().transaction(storeName, "readonly"),
 			storeName,
-			options.index,
+			resolved.index,
 		)
-		const range = this.buildKeyRange(options)
+		const range = this.buildKeyRange(resolved)
 		const { promise, resolve, reject } = promiseWithResolvers<T[]>()
 		const req =
-			options.order === "desc" ? source.getAll(range) : source.getAll(range, options.limit)
+			resolved.order === "desc" ? source.getAll(range) : source.getAll(range, resolved.limit)
 		req.onsuccess = () => resolve(req.result)
 		req.onerror = () => reject(req.error)
 		const records = await promise
 
-		if (options.order === "desc") {
-			return records.reverse()
+		if (resolved.order === "desc") {
+			return asFindResult<T, O>(records.reverse())
 		}
 
-		return records
+		return asFindResult<T, O>(records)
 	}
 
 	/** Returns the first record matching an index/value pair, if any. */
@@ -61,7 +66,7 @@ export class QueryEngine {
 		indexName: string,
 		value: string | number,
 	): Promise<T | undefined> {
-		for await (const record of this.stream<T>(storeName, {
+		for await (const record of this.streamRecords<T, undefined>(storeName, {
 			index: indexName,
 			equals: value,
 			limit: 1,
@@ -73,16 +78,50 @@ export class QueryEngine {
 	}
 
 	/** Streams records matching a query from the requested store. */
-	public async *stream<T>(storeName: string, options: FindOptions = {}): AsyncGenerator<T> {
+	public stream<T, const O extends FindOptions | undefined = undefined>(
+		storeName: string,
+		options?: O,
+	) {
+		return asStreamResult<T, O>(this.streamRecords<T, O>(storeName, options ?? ({} as FindOptions)))
+	}
+
+	private async *streamRecords<T, const O extends FindOptions | undefined>(
+		storeName: string,
+		options: FindOptions,
+	): AsyncGenerator<T> {
 		this.assertValidOptions(options)
 
 		if (options.equalsAny !== undefined) {
-			for (const record of await this.findAny<T>(storeName, options)) {
-				yield record
-			}
+			yield* this.streamEqualsAny<T>(storeName, options)
 			return
 		}
 
+		yield* this.iterateCursor<T>(storeName, options)
+	}
+
+	/** Streams exact-match lookups for several values and merges the results. */
+	private async *streamEqualsAny<T>(storeName: string, options: FindOptions): AsyncGenerator<T> {
+		const distinctValues = [...new Set(options.equalsAny ?? [])]
+		const collected: T[] = []
+
+		for (const value of distinctValues) {
+			for await (const record of this.iterateCursor<T>(storeName, {
+				...options,
+				equalsAny: undefined,
+				equals: value,
+			})) {
+				collected.push(record)
+			}
+		}
+
+		const records = this.applyOrderingAndLimit(this.dedupeRecords(collected), options)
+		for (const record of records) {
+			yield record
+		}
+	}
+
+	/** Streams records for a query using a cursor and optional field projection. */
+	private async *iterateCursor<T>(storeName: string, options: FindOptions): AsyncGenerator<T> {
 		const tx = this.getDb().transaction(storeName, "readonly")
 		const source = this.getQuerySource(tx, storeName, options.index)
 		const cursor = await this.openCursor(
@@ -98,7 +137,7 @@ export class QueryEngine {
 		let currentCursor: IDBCursorWithValue | null = cursor
 
 		while (currentCursor) {
-			yield currentCursor.value as T
+			yield projectRecord(currentCursor.value as T, options)
 			seen += 1
 			if (options.limit !== undefined && seen >= options.limit) {
 				return
@@ -129,6 +168,10 @@ export class QueryEngine {
 
 	/** Rejects combinations that would otherwise silently override one another. */
 	private assertValidOptions(options: FindOptions) {
+		if (options.select?.length && options.omit?.length) {
+			throw new Error("[dbsync]: select cannot be combined with omit")
+		}
+
 		if (options.equalsAny !== undefined && options.index === undefined) {
 			throw new Error("[dbsync]: equalsAny requires an index")
 		}

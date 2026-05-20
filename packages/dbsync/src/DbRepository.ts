@@ -1,27 +1,15 @@
 import type { DbSync } from "./DbSync.js"
 import type { RowChange } from "./internal/EventBus.js"
-
-export interface FindOptions {
-	index?: string
-	equals?: string | number
-	equalsAny?: Array<string | number>
-	startsWith?: string
-	lowerBound?: string | number
-	upperBound?: string | number
-	limit?: number
-	order?: "asc" | "desc"
-}
+import type { FindOptions } from "./internal/queryTypes.js"
 
 /** Row-level change for a single table (table name omitted). */
-export type TableRowChange =
-	| { change: "insert" | "update" | "delete"; id: string }
-	| { change: "clear" }
+type TableRowChange = { change: "insert" | "update" | "delete"; id: string } | { change: "clear" }
 
 /** Callback invoked when this table's rows change. */
 type TableSubscribeCallback = (changes?: TableRowChange[]) => void
 
 /** Options for table-scoped subscriptions. */
-export type TableSubscribeOptions = {
+type TableSubscribeOptions = {
 	/** When set, only invoke the callback if one of these ids changed (or the table was cleared). */
 	ids?: string[]
 }
@@ -59,7 +47,7 @@ export class DbRepository<T> {
 	 * @param id The primary key of the record to retrieve.
 	 * @returns A promise resolving to the typed record, or `undefined` if not found.
 	 */
-	async get(id: string): Promise<T | undefined> {
+	async get(id: string) {
 		return this.db.get<T>(this.tableName, id)
 	}
 
@@ -68,24 +56,26 @@ export class DbRepository<T> {
 	 *
 	 * - with no options, this returns every record from the table.
 	 * - limit+order=desc is not well-supported in IndexedDB and must use the more costly cursor read approach
+	 * - with `select` or `omit`, returns projected records (`Pick` / `Omit` of `T`)
 	 */
-	async find(options: FindOptions = {}): Promise<T[]> {
-		return this.db.find<T>(this.tableName, options)
+	async find<const O extends FindOptions | undefined = undefined>(options?: O) {
+		return this.db.find<T, O>(this.tableName, options)
 	}
 
 	/**
 	 * Retrieves the first record matching an index/value pair.
 	 */
-	async getBy(indexName: string, value: string | number): Promise<T | undefined> {
+	async getBy(indexName: string, value: string | number) {
 		return this.db.getBy<T>(this.tableName, indexName, value)
 	}
 
 	/**
 	 * Streams records matching a query from the table.
 	 * If no options are provided, returns every record from the table.
+	 * With `select` or `omit`, yields projected records (`Pick` / `Omit` of `T`).
 	 */
-	stream(options: FindOptions = {}): AsyncGenerator<T> {
-		return this.db.stream<T>(this.tableName, options)
+	stream<const O extends FindOptions | undefined = undefined>(options?: O) {
+		return this.db.stream<T, O>(this.tableName, options)
 	}
 
 	/**
@@ -95,7 +85,7 @@ export class DbRepository<T> {
 	 * @param key An optional explicit primary key.
 	 * @returns A promise resolving to the newly inserted record.
 	 */
-	async add(value: Partial<T>, key?: string): Promise<T> {
+	async add(value: Partial<T>, key?: string) {
 		return this.db.add<T>(this.tableName, value, key)
 	}
 
@@ -116,7 +106,7 @@ export class DbRepository<T> {
 	 * @param key An optional explicit primary key.
 	 * @returns A promise resolving to the upserted record.
 	 */
-	async put(value: T, key?: string): Promise<T> {
+	async put(value: T, key?: string) {
 		return this.db.put<T>(this.tableName, value, key)
 	}
 
@@ -126,7 +116,7 @@ export class DbRepository<T> {
 	 * @param key The primary key of the record to delete.
 	 * @returns A promise resolving when the deletion is complete.
 	 */
-	async delete(key: string): Promise<void> {
+	async delete(key: string) {
 		return this.db.delete(this.tableName, key)
 	}
 
@@ -137,7 +127,7 @@ export class DbRepository<T> {
 	 * @param key An optional explicit primary key.
 	 * @returns A promise resolving to the final patched record.
 	 */
-	async patch(value: Partial<T>, key?: string): Promise<T> {
+	async patch(value: Partial<T>, key?: string) {
 		return this.db.patch<T>(this.tableName, value, key)
 	}
 
@@ -146,7 +136,7 @@ export class DbRepository<T> {
 	 *
 	 * @returns A promise resolving when the table has been completely cleared.
 	 */
-	async clear(): Promise<void> {
+	async clear() {
 		return this.db.clear(this.tableName)
 	}
 

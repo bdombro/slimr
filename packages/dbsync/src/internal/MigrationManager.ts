@@ -3,7 +3,7 @@
  * Migrations allow existing offline data to be selectively upgraded rather than wiped
  * when backend domain modeling changes.
  */
-export interface MigrationManagerMigration<T = any> {
+export interface Migration<T = any> {
 	/**
 	 * An ascending integer determining execution order. A record currently at `storeVersion: 1`
 	 * will only trigger migrations where `version >= 2`.
@@ -42,7 +42,7 @@ export class MigrationManager {
 	 *
 	 * @param schemaMigrations A dictionary mapping store names to arrays of `IMigration` steps.
 	 */
-	async runAll(schemaMigrations: Record<string, MigrationManagerMigration[]>) {
+	async runAll(schemaMigrations: Record<string, Migration[]>) {
 		for (const [storeName, migrations] of Object.entries(schemaMigrations)) {
 			await this.upgradeStore(storeName, migrations)
 		}
@@ -56,7 +56,7 @@ export class MigrationManager {
 	 * @param migrations The full list of potential migrations for the record's domain type.
 	 * @returns The functionally upgraded record with an updated `storeVersion`.
 	 */
-	public static async upgradeRecord<T>(record: any, migrations: MigrationManagerMigration<T>[]) {
+	public static async upgradeRecord<T>(record: any, migrations: Migration<T>[]) {
 		const sortedMigrations = [...migrations].sort((a, b) => a.version - b.version)
 		for (const migration of sortedMigrations) {
 			const currentVersion = record.storeVersion || 0
@@ -75,7 +75,7 @@ export class MigrationManager {
 	 * @param storeName The name of the target object store.
 	 * @param migrations The ordered array of migrations applicable to the store.
 	 */
-	private async upgradeStore(storeName: string, migrations: MigrationManagerMigration[]) {
+	private async upgradeStore(storeName: string, migrations: Migration[]) {
 		const allRecords = await this.db.find(storeName)
 		const tx = this.db.getTransaction()
 
