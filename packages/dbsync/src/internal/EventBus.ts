@@ -23,15 +23,31 @@ export class EventBus {
 	private bc =
 		typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("dbsync_events") : null
 
+	/** Auth message listeners (login/logout across tabs). */
+	private authListeners = new Set<(type: "AUTH_LOGIN" | "AUTH_LOGOUT") => void>()
+
 	/** Initializes the broadcast listener for cross-tab update propagation. */
 	constructor() {
 		if (this.bc) {
 			this.bc.onmessage = (e) => {
 				if (e.data.type === "DATA_UPDATED") {
 					this.notifySubscribers(e.data.stores, e.data.changes, { skipBroadcast: true })
+				} else if (e.data.type === "AUTH_LOGIN" || e.data.type === "AUTH_LOGOUT") {
+					this.authListeners.forEach((cb) => cb(e.data.type))
 				}
 			}
 		}
+	}
+
+	/** Subscribes to cross-tab auth events. */
+	public onAuthMessage(callback: (type: "AUTH_LOGIN" | "AUTH_LOGOUT") => void) {
+		this.authListeners.add(callback)
+		return { close: () => this.authListeners.delete(callback) }
+	}
+
+	/** Broadcasts an auth state change to other tabs. */
+	public broadcastAuth(type: "AUTH_LOGIN" | "AUTH_LOGOUT") {
+		if (this.bc) this.bc.postMessage({ type })
 	}
 
 	/** Adds a store-update subscriber and returns a handle for removing it. */

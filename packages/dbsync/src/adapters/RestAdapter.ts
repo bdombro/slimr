@@ -12,6 +12,9 @@ export interface RestAdapterConfig {
  * A REST-backed implementation of the backend adapter contract.
  */
 export class RestAdapter implements BackendAdapter {
+	/** REST apps require login before data APIs and sync. */
+	public readonly requiresAuth = true as const
+
 	/**
 	 * Stores the adapter configuration, including the API base URL.
 	 *

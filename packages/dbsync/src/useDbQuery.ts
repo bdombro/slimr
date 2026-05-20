@@ -47,7 +47,14 @@ export function useDbQuery<T>(
 	useEffect(() => {
 		let isMounted = true
 
+		const adapter = db.config?.adapter
+		const requiresAuth = adapter != null && adapter.requiresAuth !== false
+
 		const fetchData = async () => {
+			if (requiresAuth && !db.isLoggedIn) {
+				if (isMounted) setState({ value: null, loading: true })
+				return
+			}
 			// If attempting to query before init(), safely wait.
 			while (isMounted && !db.initted) await sleep(50)
 			if (!isMounted) return
@@ -94,7 +101,7 @@ export function useDbQuery<T>(
 			sub.close()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [JSON.stringify(tableArray), shouldRefetchFilter, ...deps])
+	}, [JSON.stringify(tableArray), shouldRefetchFilter, db.isLoggedIn, ...deps])
 
 	return state
 }

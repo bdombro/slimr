@@ -6,10 +6,46 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.31
+
+### Added
+
+- `db.isLoggedIn` (persisted across tab refresh via `localStorage`).
+- `db.offline` and `db.online` getters (`online` is `!offline`); sync `"offline"` state when the browser is offline or sync cannot reach the network.
+- Documented refresh boot: hydrated `isLoggedIn` keeps app shell and route without login redirect or initial offline gate.
+- `db.onLogin`, `db.onLogout`, and `db.bootstrapSession()` for session-driven app boot (see [docs/Offline.md](./docs/Offline.md)).
+- `useDbSession` exposes `isBootstrapping` and `isDbReady` (`db.initted`) for in-app loading during boot.
+- `db.revalidateSession()` for optional manual session probes.
+- `DbSyncOfflineError` when `login()` or `revalidateSession()` is called offline.
+- `DbSyncNotAuthenticatedError` when guarded APIs run without a session.
+- `BackendAdapter.requiresAuth` — `LocalAdapter` sets `false`; REST adapters default `true`.
+- `useDbSession` and optional `DbProvider` in `@slimr/dbsync/react` (`DbProvider.fallback` shown while `!isDbReady` when provided).
+- [docs/Offline.md](./docs/Offline.md) — offline-first session, cross-tab auth, React, and service worker notes.
+- Vitest coverage for auth/session (`AuthManager`, `DbSync.Auth`, `useDbSession`, `EventBus` auth messages).
+- Playwright e2e for offline logout, refresh hydration, and cross-tab `AUTH_LOGIN` / `AUTH_LOGOUT` (`playwright/auth-*.spec.ts`).
+
+### Fixed
+
+- Playwright fixture server no longer binds to Vite’s default port 5173 or hangs `just test` when that port is taken; uses ephemeral `server.port: 0` and `reuseExistingServer: false`.
+
 ### Changed
 
+- Split package [README](./README.md) into focused guides under [docs/](./docs/README.md) (getting started, data access, schema, React, sync).
+- **Renamed `isAuth` → `isLoggedIn`** (breaking).
+- `DbSync.logout()` clears all local IndexedDB stores and sync cursor markers; remote `adapter.logout()` may defer when offline (`dbsync-pendingLogout`).
+- Offline logout: local wipe and `onLogout` run immediately; server session destroyed when back online.
+- Cross-tab `AUTH_LOGIN` / `AUTH_LOGOUT` via `BroadcastChannel` (+ `storage` fallback); passive tabs run `onLogout` early without re-clearing IDB.
+- Online revalidation: when connectivity returns, internal session check runs; invalid session or sync `401` fires `onLogout`.
+- `init`, `start`, and data APIs throw when not logged in (`requiresAuth` adapters).
+- `useDbQuery` returns `{ loading: true, value: null }` and skips `queryFn` when not logged in (`requiresAuth` adapters).
 - `tsconfig.test.json` is a composite project referenced from the repo root so `just check` (`tsc -b`) typechecks unit tests, `test-support`, and Playwright sources; declaration emit for project references goes to gitignored `.tsbuild` / `.tsbuild-test`.
 - Playwright e2e (≥1.60) uses `webServer.wait` to bind an ephemeral `127.0.0.1` port from Vite stdout; removed `ensure-port.mjs` and `.pw-fixture-port`.
+
+### Removed
+
+- `DbSync.reset()` — use `logout()` instead.
+- `DbSync.isAuth` — use `isLoggedIn`.
+- `DbSync.checkAuth()` — session revalidation is automatic; use `revalidateSession()` only if you need an explicit probe.
 
 ## 0.0.30
 

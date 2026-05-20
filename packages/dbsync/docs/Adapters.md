@@ -2,9 +2,11 @@
 
 `@slimr/dbsync` relies on a modular `BackendAdapter` architecture to handle remote synchronization. By default, it expects you to use `RestAdapter`, but the interface is designed to let you plug your local IndexedDB database into any backend (like Firebase, GraphQL, or websockets).
 
+For offline-first session flows, see [Offline.md](./Offline.md). Package docs: [docs/README.md](./README.md).
+
 ## The `BackendAdapter` Interface
 
-When writing a custom adapter, you simply need to implement the following TypeScript interface:
+When writing a custom adapter, implement the following TypeScript interface:
 
 ```typescript
 export interface SyncPullResult {
@@ -13,6 +15,9 @@ export interface SyncPullResult {
 }
 
 export interface BackendAdapter {
+    /** When false, DbSync skips auth guards (e.g. LocalAdapter). Default true if omitted. */
+    readonly requiresAuth?: boolean
+
     checkAuth(): Promise<boolean>
     login(email: string, code: string): Promise<boolean>
     logout(): Promise<void>
@@ -21,24 +26,44 @@ export interface BackendAdapter {
 }
 ```
 
+### `requiresAuth`
+
+| Value | Meaning |
+| --- | --- |
+| `true` (default) | `init`, `start`, and data APIs require `db.isLoggedIn`. `login` / session flow expected. |
+| `false` | Local-only semantics (`LocalAdapter`). No login required; guards skipped. |
+
+Set `requiresAuth: false` on adapters that always satisfy `checkAuth()` without a real session (tests, local-only tools).
+
 ### Authentication Contract
 
-- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`.
-- **`login(email, code)`**: Validates the login against your backend and resolves to `true` on success.
-- **`logout()`**: Destroys the remote session. (Note: `DbSync` will automatically handle clearing the local IndexedDB database when logout occurs).
+- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online` (via `revalidateSession()`). Apps use `db.isLoggedIn` and `onLogin` / `onLogout`; optional `db.revalidateSession()` for a manual probe (not `db.checkAuth()`).
+- **`login(email, code)`**: Validates credentials and establishes a session. Requires network.
+- **`logout()`**: Destroys the remote session on the server.
+
+**How `DbSync` uses logout:**
+
+1. On `db.logout()`, dbsync clears local IndexedDB and sets `isLoggedIn` false **immediately**, and fires `onLogout` **before** slow work.
+2. Then it calls **`adapter.logout()`** if online.
+3. If **offline**, it sets `dbsync-pendingLogout` and calls `adapter.logout()` on the next `online` event (only from the originating tab / flush path — not from passive tabs).
+
+Passive tabs never invoke `adapter.logout()`; they receive `AUTH_LOGOUT` over `BroadcastChannel` and run `onLogout` only.
 
 ### Synchronization Contract
 
 The sync engine handles pushing queued modifications and pulling new global data independently of your adapter. Your adapter's job is simply to broker the JSON.
 
-- **`pull(cursor: string)`**: Responsible for fetching newly updated records from your backend. It receives a `cursor` (typically an ISO timestamp) indicating the newest record the client already has. It must return a `SyncPullResult` containing the rows, and a `hasMore` boolean to let the SyncEngine loop handle pagination.
-- **`push(payload)`**: Responsible for taking an array of mutated records and executing their writes to the backend database.
+- **`pull(cursor: string)`**: Fetches records updated after the cursor (typically an ISO timestamp). Returns `items` and `hasMore` for pagination.
+- **`push(payload)`**: Applies queued local mutations on the backend.
+
+Sync is skipped while `dbsync-pendingLogout` is set (prevents repopulating local data before the server session ends).
 
 ### Schema Versioning Records
 
-Because `@slimr/dbsync` handles local schema migrations automatically via signature diffing, it must occasionally send a "System Record" in the `push()` payload to alert other tabs and devices of the schema change. 
+Because `@slimr/dbsync` handles local schema migrations automatically via signature diffing, it must occasionally send a "System Record" in the `push()` payload to alert other tabs and devices of the schema change.
 
 These records arrive in `push(payload)` formatted roughly like this:
+
 ```json
 {
     "id": "version",
@@ -48,11 +73,12 @@ These records arrive in `push(payload)` formatted roughly like this:
     "updatedAt": "2026-05-17T12:00:00.000Z"
 }
 ```
+
 **Your custom backend adapter must save these records securely alongside the rest of your user data,** as they must be returned in future `pull()` queries so other clients remain fully in sync.
 
 ---
 
 ### Included Adapters
 
-- [LocalAdapter](./LocalAdapter.md) — A no-op adapter if you just want to use the IndexedDB ORM features without any backend syncing.
-- [RestAdapter](./RestAdapter.md) — The default REST adapter built to pair seamlessly with `swift-crud`.
+- [LocalAdapter](./LocalAdapter.md) — `requiresAuth: false`; IndexedDB ORM without network sync.
+- [RestAdapter](./RestAdapter.md) — `requiresAuth: true` (default); pairs with `swift-crud`.

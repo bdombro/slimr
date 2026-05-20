@@ -2,6 +2,7 @@ import type { BackendAdapter } from "../adapters/types.js"
 import type { DbSyncConfig } from "../DbSync.js"
 import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
+import type { ConnectivityTracker } from "./ConnectivityTracker.js"
 import type { EventBus } from "./EventBus.js"
 import type { StorageManager } from "./storage/index.js"
 import { getSchemaSignature } from "./storage/index.js"
@@ -20,14 +21,6 @@ export class SyncEngine {
 
 	/**
 	 * Creates a sync engine bound to the given storage, auth, and adapter instances.
-	 *
-	 * @param config The active dbsync configuration.
-	 * @param syncInterval The polling interval in milliseconds.
-	 * @param events The event bus used for sync state notifications.
-	 * @param storage The storage manager used to read and write records.
-	 * @param auth The auth manager used to update authentication state.
-	 * @param adapter The backend adapter used for pull and push requests.
-	 * @param onSchemaChange Callback fired when schema versions diverge.
 	 */
 	constructor(
 		private config: DbSyncConfig,
@@ -35,6 +28,7 @@ export class SyncEngine {
 		private events: EventBus,
 		private storage: StorageManager,
 		private auth: AuthManager,
+		private connectivity: ConnectivityTracker,
 		private adapter: BackendAdapter,
 		private onSchemaChange: () => void,
 		private getSchemaTables: () => SchemaTable[],
@@ -101,19 +95,26 @@ export class SyncEngine {
 
 	/** Performs pull, push, and sync-state bookkeeping for one cycle. */
 	private async performSync() {
+		if (this.connectivity.offline) {
+			this.events.setState("offline")
+			return
+		}
+		if (!this.auth.canSync()) {
+			return
+		}
+
 		this.events.setState("syncing")
 		try {
 			await this.syncPull()
 			await this.syncPush()
 			this.events.setState("idle")
-			this.auth.isAuth = true
 			localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
 		} catch (err: any) {
 			if (err.status === 401) {
-				this.auth.isAuth = false
+				await this.auth.invalidateSession()
 				this.stop()
 			}
-			this.events.setState("error")
+			this.events.setState(this.connectivity.offline ? "offline" : "error")
 		}
 	}
 

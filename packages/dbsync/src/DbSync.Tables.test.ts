@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
+import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { DbTable } from "./DbTable.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
@@ -42,7 +43,7 @@ describe("DbSync tables", () => {
 		installIndexedDbTestShim()
 		await resetDatabase()
 		db = new MyAppDatabase({
-			adapter: {} as any,
+			adapter: new LocalAdapter(),
 			version: 1,
 		})
 		await db.init()

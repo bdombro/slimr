@@ -4,6 +4,7 @@ import { DbRepository } from "./DbRepository.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
+import { ConnectivityTracker } from "./internal/ConnectivityTracker.js"
 import {
 	EventBus,
 	type RowChange,
@@ -61,7 +62,9 @@ export class DbSync {
 	public storage: StorageManager // Public for tests currently (we can wrap it later)
 	/** The engine responsible for network synchronization. */
 	private syncEngine: SyncEngine
-	/** The manager handling authentication and logout/reset behavior. */
+	/** Tracks browser online/offline state. */
+	private connectivity: ConnectivityTracker
+	/** The manager handling authentication and logout behavior. */
 	private authManager: AuthManager
 
 	/**
@@ -84,9 +87,16 @@ export class DbSync {
 			})),
 		)
 
-		this.authManager = new AuthManager(adapter, this.storage, () => {
-			void this.stop()
-		})
+		this.connectivity = new ConnectivityTracker()
+		this.authManager = new AuthManager(
+			adapter,
+			this.storage,
+			this.events,
+			this.connectivity,
+			() => {
+				void this.stop()
+			},
+		)
 
 		this.syncEngine = new SyncEngine(
 			config,
@@ -94,6 +104,7 @@ export class DbSync {
 			this.events,
 			this.storage,
 			this.authManager,
+			this.connectivity,
 			adapter,
 			onSchemaChange,
 			() => this.getSchemaTables(),
@@ -174,6 +185,7 @@ export class DbSync {
 	}
 	/** Initializes the underlying IndexedDB stores. */
 	public async init() {
+		this.authManager.assertAuthenticated()
 		await this.storage.init()
 
 		const schemaMigrations: Record<string, Migration[]> = {}
@@ -214,6 +226,7 @@ export class DbSync {
 	}
 	/** Returns a queued transaction object for batched writes. */
 	public getTransaction(this: DbSync): TransactionOf<this> {
+		this.authManager.assertAuthenticated()
 		const tx = this.storage.getTransaction()
 		const txWithTables = tx as unknown as Record<string, unknown>
 		for (const table of this.getSchemaTables()) {
@@ -222,8 +235,13 @@ export class DbSync {
 		return tx as TransactionOf<this>
 	}
 
+	private assertDataAccess() {
+		this.authManager.assertAuthenticated()
+	}
+
 	/** Reads a typed record by primary key. */
 	public async get<T>(tableName: string, id: string): Promise<T | undefined> {
+		this.assertDataAccess()
 		return this.storage.get<T>(tableName, id)
 	}
 	/**
@@ -236,6 +254,7 @@ export class DbSync {
 		tableName: string,
 		options?: O,
 	) {
+		this.assertDataAccess()
 		return this.storage.find<T, O>(tableName, options)
 	}
 	/** Reads the first record matching an index/value pair. */
@@ -244,6 +263,7 @@ export class DbSync {
 		indexName: string,
 		value: string | number,
 	): Promise<T | undefined> {
+		this.assertDataAccess()
 		return this.storage.getBy<T>(tableName, indexName, value)
 	}
 	/**
@@ -254,10 +274,12 @@ export class DbSync {
 		tableName: string,
 		options?: O,
 	) {
+		this.assertDataAccess()
 		return this.storage.stream<T, O>(tableName, options)
 	}
 	/** Inserts a new record into the given table. */
 	public async add<T>(tableName: string, value: any, key?: string): Promise<T> {
+		this.assertDataAccess()
 		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.prepareCreate(value) : value
 		const [executedWrite] = await this.storage.executeTransaction([
@@ -267,6 +289,7 @@ export class DbSync {
 	}
 	/** Partially updates an existing record in the given table. */
 	public async patch<T>(tableName: string, value: Partial<T>, key?: string): Promise<T> {
+		this.assertDataAccess()
 		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.preparePatch(value as never) : value
 		await this.storage.executeTransaction([
@@ -276,6 +299,7 @@ export class DbSync {
 	}
 	/** Upserts a record into the given table. */
 	public async put<T>(tableName: string, value: any, key?: string): Promise<T> {
+		this.assertDataAccess()
 		const registeredTable = this.tableRegistry.get(tableName)
 		const nextValue = registeredTable ? registeredTable.preparePut(value) : value
 		const [executedWrite] = await this.storage.executeTransaction([
@@ -285,10 +309,12 @@ export class DbSync {
 	}
 	/** Deletes a record from the given table. */
 	public async delete(tableName: string, key: string): Promise<void> {
+		this.assertDataAccess()
 		await this.storage.executeTransaction([{ type: "delete", storeName: tableName, key }])
 	}
 	/** Clears all records from the given table. */
 	public async clear(tableName: string): Promise<void> {
+		this.assertDataAccess()
 		await this.storage.executeTransaction([{ type: "clear", storeName: tableName }])
 	}
 
@@ -301,25 +327,53 @@ export class DbSync {
 		return this.events.onSyncStateChange(callback)
 	}
 
-	/** Whether the current backend session is authenticated. */
-	public get isAuth() {
-		return this.authManager.isAuth
+	/** Whether the app considers the user signed in (hydrated from localStorage). */
+	public get isLoggedIn() {
+		return this.authManager.isLoggedIn
 	}
-	/** Verifies authentication against the backend adapter. */
-	public async checkAuth() {
-		return this.authManager.checkAuth()
+	/** Whether the browser reports offline connectivity. */
+	public get offline() {
+		return this.connectivity.offline
 	}
-	/** Logs in with the given credentials. */
+	/** Whether the browser reports online connectivity. */
+	public get online() {
+		return this.connectivity.online
+	}
+	/** Whether a remote logout is queued until online. */
+	public get pendingLogout() {
+		return this.authManager.pendingLogout
+	}
+	/** Whether the first `onLogin` boot is in flight. */
+	public get isBootstrapping() {
+		return this.authManager.isBootstrapping
+	}
+	/** Subscribes to session/boot state changes. */
+	public onSessionChange(callback: () => void) {
+		return this.authManager.onSessionChange(callback)
+	}
+	/** Registers a callback for login and cross-tab `AUTH_LOGIN`. */
+	public onLogin(callback: () => void | Promise<void>) {
+		return this.authManager.onLogin(callback)
+	}
+	/** Registers a callback fired early on logout / 401 / cross-tab `AUTH_LOGOUT`. */
+	public onLogout(callback: () => void | Promise<void>) {
+		return this.authManager.onLogout(callback)
+	}
+	/** Replays a hydrated session by firing `onLogin` once (not awaitable). */
+	public bootstrapSession() {
+		this.authManager.bootstrapSession()
+	}
+	/** Logs in with the given credentials (network required). */
 	public async login(email: string, code: string) {
 		return this.authManager.login(email, code)
 	}
-	/** Logs out and clears auth state. */
+	/** Logs out, clears local data, and may defer remote logout when offline. */
 	public async logout() {
 		return this.authManager.logout()
 	}
-	/** Logs out and clears the local database. */
-	public async reset() {
-		return this.authManager.reset()
+	/** Optional manual server session probe (network required). */
+	public async revalidateSession() {
+		return this.authManager.revalidateSession()
 	}
 
 	/** Whether background sync is currently enabled. */
@@ -332,6 +386,7 @@ export class DbSync {
 	}
 	/** Starts periodic background synchronization. */
 	public async start() {
+		this.authManager.assertAuthenticated()
 		if (!this.initted) await this.init()
 
 		this.syncEngine.start()

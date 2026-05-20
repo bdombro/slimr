@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
+import { writeIsLoggedIn } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 
 /** Creates a clean shared database for each sync test so queue and cursor state never leaks between cases. */
@@ -13,8 +14,9 @@ const resetDatabase = async () => {
 	})
 }
 
-/** Creates a database with the minimum tables needed to exercise sync, auth, and reset behavior. */
+/** Creates a database with the minimum tables needed to exercise sync, auth, and logout behavior. */
 const createDb = async () => {
+	writeIsLoggedIn(true)
 	const db = new DbSync({
 		adapter: new RestAdapter({ url: "http://localhost:3000" }),
 		version: 1,
@@ -158,32 +160,58 @@ describe("DbSync sync engine", () => {
 
 	/** Confirms auth checks and login/logout state transitions map to the session endpoints. */
 	test("auth lifecycle updates session state", async () => {
+		await db.logout()
+		fetchMock.mockClear()
 		fetchMock
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 
-		expect(await db.checkAuth()).toBe(true)
+		expect(await db.revalidateSession()).toBe(true)
 		await db.login("user@example.com", "123456")
-		expect(db.isAuth).toBe(true)
+		expect(db.isLoggedIn).toBe(true)
 		await db.logout()
-		expect(db.isAuth).toBe(false)
-		expect(fetchMock.mock.calls[1][0]).toContain("/api/session/login")
-		expect(fetchMock.mock.calls[2][0]).toContain("/api/session/logout")
+		expect(db.isLoggedIn).toBe(false)
+		const urls = fetchMock.mock.calls.map((call) => String(call[0]))
+		expect(urls.some((url) => url.includes("/api/session/login"))).toBe(true)
+		expect(urls.some((url) => url.includes("/api/session/logout"))).toBe(true)
 	})
 
-	/** Confirms reset clears every table and resets cursor state so the browser starts fresh. */
-	test("reset clears local tables and sync cursors", async () => {
-		await db.put("posts", { id: "wipe-me", content: "before reset", userId: "u1" })
+	test("data APIs throw when not logged in", async () => {
+		await db.logout()
+		await expect(db.get("posts", "x")).rejects.toThrow("not logged in")
+	})
+
+	test("sync skips pull/push while pendingLogout", async () => {
+		const freshDb = await createDb()
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
+		await freshDb.logout()
+		fetchMock.mockClear()
+		await freshDb.triggerSync()
+		expect(fetchMock).not.toHaveBeenCalled()
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+		freshDb.dispose()
+	})
+
+	/** Confirms logout clears every table and resets cursor state so the browser starts fresh. */
+	test("logout clears local tables and sync cursors", async () => {
+		const freshDb = await createDb()
+		await freshDb.put("posts", { id: "wipe-me", content: "before logout", userId: "u1" })
 		localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
 		localStorage.setItem("dbsync-pullSyncedUpTo", "2026-05-17T00:00:00.000Z")
 		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 
-		await db.reset()
+		await freshDb.logout()
 
-		expect(await db.find("posts")).toEqual([])
-		expect(await db.find("dirtyQueue")).toEqual([])
 		expect(localStorage.getItem("dbsync-lastSuccessAt")).toBeNull()
 		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBeNull()
+		await expect(freshDb.get("posts", "wipe-me")).rejects.toThrow("not logged in")
+
+		writeIsLoggedIn(true)
+		const afterLogout = await createDb()
+		expect(await afterLogout.find("posts")).toEqual([])
+		expect(await afterLogout.find("dirtyQueue")).toEqual([])
+		afterLogout.dispose()
+		freshDb.dispose()
 	})
 })

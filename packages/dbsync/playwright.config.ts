@@ -1,25 +1,31 @@
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { defineConfig } from "@playwright/test"
+import { allocateLoopbackPort } from "./playwright/allocate-port.ts"
 
 const packageRoot = dirname(fileURLToPath(import.meta.url))
 const fixtureDir = resolve(packageRoot, "playwright/fixtures")
 const viteBin = resolve(packageRoot, "../../node_modules/.bin/vite")
 
-/** Vite prints `Local: http://127.0.0.1:<port>/` when ready; capture group → `PW_FIXTURE_PORT`. */
-const viteReady = /Local:\s+http:\/\/127\.0\.0\.1:(?<pw_fixture_port>\d+)/
+const fixtureBaseUrl =
+	process.env.PW_FIXTURE_BASE_URL || `http://127.0.0.1:${await allocateLoopbackPort()}`
+const fixturePort = new URL(fixtureBaseUrl).port
 
-/** Playwright config: ephemeral fixture Vite on IPv4 loopback (port from `webServer.wait`). */
+// Workers that call `browser.newContext()` must pass this as `baseURL` (not inherited from `use`).
+process.env.PW_FIXTURE_BASE_URL = fixtureBaseUrl
+
+/** Playwright config: ephemeral fixture Vite on IPv4 loopback. */
 export default defineConfig({
 	testDir: resolve(packageRoot, "playwright"),
 	fullyParallel: true,
 	use: {
 		browserName: "chromium",
+		baseURL: fixtureBaseUrl,
 	},
 	webServer: {
-		command: `cd ${fixtureDir} && ${viteBin} --config vite.config.ts --host 127.0.0.1 --port 0 --strictPort`,
-		stdout: "pipe",
-		wait: { stdout: viteReady },
-		reuseExistingServer: !process.env.CI,
+		command: `cd ${fixtureDir} && ${viteBin} --config vite.config.ts --host 127.0.0.1 --port ${fixturePort} --strictPort`,
+		url: fixtureBaseUrl,
+		reuseExistingServer: false,
+		timeout: 60_000,
 	},
 })

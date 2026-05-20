@@ -1,9 +1,9 @@
-import "./fixture-base-url.js"
 import { expect, test } from "@playwright/test"
+import { getFixtureBaseUrl } from "./test-base-url.js"
 
 test.describe("DbSync cross-tab coordination", () => {
 	test("broadcasts data updates across tabs", async ({ browser }) => {
-		const context = await browser.newContext()
+		const context = await browser.newContext({ baseURL: getFixtureBaseUrl() })
 		const page1 = await context.newPage()
 		const page2 = await context.newPage()
 
@@ -22,7 +22,7 @@ test.describe("DbSync cross-tab coordination", () => {
 	})
 
 	test("elects a single polling leader via Web Locks", async ({ browser }) => {
-		const context = await browser.newContext()
+		const context = await browser.newContext({ baseURL: getFixtureBaseUrl() })
 
 		const page1 = await context.newPage()
 		await page1.goto("/")

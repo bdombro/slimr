@@ -6,6 +6,9 @@ import type { BackendAdapter, SyncPullResult } from "./types.js"
  * so your local `dirtyQueue` doesn't grow infinitely if synchronization is enabled.
  */
 export class LocalAdapter implements BackendAdapter {
+	/** Local-only apps skip login and auth guards. */
+	public readonly requiresAuth = false as const
+
 	/** Always returns true so session checks pass locally. */
 	async checkAuth(): Promise<boolean> {
 		return true

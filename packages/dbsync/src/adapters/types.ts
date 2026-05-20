@@ -12,6 +12,11 @@ export interface SyncPullResult {
  * The contract implemented by all sync backends.
  */
 export interface BackendAdapter {
+	/**
+	 * When false, DbSync skips auth guards (e.g. LocalAdapter).
+	 * Defaults to true when omitted.
+	 */
+	readonly requiresAuth?: boolean
 	/** Checks whether the current session is authenticated. */
 	checkAuth(): Promise<boolean>
 	/** Logs the current user in against the backend. */

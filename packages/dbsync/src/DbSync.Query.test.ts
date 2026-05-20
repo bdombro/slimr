@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, test, vi } from "vitest"
-import { RestAdapter } from "./adapters/RestAdapter.js"
+import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { DbTable } from "./DbTable.js"
 import type { FindOptions, FindQueryResult } from "./internal/queryTypes.js"
@@ -32,7 +32,7 @@ describe("DbSync Query Features", () => {
 		installIndexedDbTestShim()
 		await resetDatabase()
 		db = new SearchDatabase({
-			adapter: new RestAdapter({ url: "http://localhost" }),
+			adapter: new LocalAdapter(),
 		})
 		await db.init()
 	})

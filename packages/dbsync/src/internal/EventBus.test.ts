@@ -67,6 +67,27 @@ describe("EventBus", () => {
 		targetBus.dispose()
 	})
 
+	test("forwards AUTH_LOGIN and AUTH_LOGOUT to auth listeners", () => {
+		installMockBroadcastChannel()
+		const sourceBus = new EventBus()
+		const targetBus = new EventBus()
+		const authCallback = vi.fn()
+		targetBus.onAuthMessage(authCallback)
+
+		sourceBus.broadcastAuth("AUTH_LOGIN")
+		expect(channelInstances[0]?.postMessage).toHaveBeenCalledWith({ type: "AUTH_LOGIN" })
+
+		channelInstances[1]?.onmessage?.({ data: { type: "AUTH_LOGIN" } } as MessageEvent)
+		expect(authCallback).toHaveBeenCalledWith("AUTH_LOGIN")
+
+		sourceBus.broadcastAuth("AUTH_LOGOUT")
+		channelInstances[1]?.onmessage?.({ data: { type: "AUTH_LOGOUT" } } as MessageEvent)
+		expect(authCallback).toHaveBeenCalledWith("AUTH_LOGOUT")
+
+		sourceBus.dispose()
+		targetBus.dispose()
+	})
+
 	test("forwards broadcast changes to subscribers", () => {
 		installMockBroadcastChannel()
 		const sourceBus = new EventBus()

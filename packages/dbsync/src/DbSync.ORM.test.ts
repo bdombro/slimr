@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
-import { RestAdapter } from "./adapters/RestAdapter.js"
+import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { DbRepository } from "./DbRepository.js"
 import { DbSync } from "./DbSync.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
@@ -23,7 +23,7 @@ describe("DbSync ORM", () => {
 		installIndexedDbTestShim()
 		await resetDatabase()
 		db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost" }),
+			adapter: new LocalAdapter(),
 			version: 1,
 			tables: {
 				posts: { indexes: ["userId"] },
@@ -55,7 +55,7 @@ describe("DbSync ORM", () => {
 		await resetDatabase()
 
 		const typedDb = new MyAppDatabase({
-			adapter: new RestAdapter({ url: "http://localhost" }),
+			adapter: new LocalAdapter(),
 			version: 1,
 			tables: {
 				todos: { indexes: ["createdAt"] },
