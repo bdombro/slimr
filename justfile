@@ -14,7 +14,7 @@ build-dirty:
 
 # Check code style and TypeScript correctness
 check:
-    npx biome check && npx tsc -b
+    npx biome check && npm run typecheck
 
 # Remove build artifacts from all workspaces
 clean:

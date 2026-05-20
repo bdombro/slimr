@@ -25,7 +25,8 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build-lib.ts --pkg .",
-    "clean": "rm -rf esm cjs"
+    "clean": "rm -rf esm cjs",
+    "typecheck": "tsc -b"
   },
   "files": [
     "cjs",

@@ -13,7 +13,8 @@
     "packages/*"
   ],
   "scripts": {
-    "//just": "common tasks are in the justfile"
+    "//just": "common tasks are in the justfile",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -b tsconfig.node.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",

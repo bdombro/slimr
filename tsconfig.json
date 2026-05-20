@@ -19,20 +19,5 @@
     "sourceMap": true,
     "types": ["vitest/globals"]
   },
-  "include": [],
-  "references": [
-    { "path": "./tsconfig.node.json" },
-    { "path": "./packages/css" },
-    { "path": "./packages/dbsync/tsconfig.test.json" },
-    { "path": "./packages/demo" },
-    { "path": "./packages/forms" },
-    { "path": "./packages/markdown" },
-    { "path": "./packages/mdi-paths" },
-    { "path": "./packages/react" },
-    { "path": "./packages/react-util" },
-    { "path": "./packages/router" },
-    { "path": "./packages/styled" },
-    { "path": "./packages/swr" },
-    { "path": "./packages/util" }
-  ]
+  "files": []
 }

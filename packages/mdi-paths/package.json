@@ -18,7 +18,8 @@
   },
   "scripts": {
     "build": "run-s clean && node scripts/generate.js && cp components/* .",
-    "clean": "find . -maxdepth 1 \\( -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" \\) -delete"
+    "clean": "find . -maxdepth 1 \\( -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" \\) -delete",
+    "typecheck": "tsc -b"
   },
   "devDependencies": {
     "@mdi/svg": "7.1.96"

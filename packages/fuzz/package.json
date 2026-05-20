@@ -34,6 +34,7 @@
   "scripts": {
     "build": "bun ../../scripts/build-lib.ts --pkg .",
     "clean": "rm -rf esm cjs",
+    "typecheck": "tsc -b",
     "test": "vitest run"
   },
   "files": [
