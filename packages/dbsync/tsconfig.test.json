@@ -1,17 +1,9 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-    "outDir": ".tsbuild-test",
-    "rootDir": "."
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "composite": true
   },
-  "include": [
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/**/*.spec.ts",
-    "src/**/test-support/**/*.ts",
-    "playwright/**/*.ts",
-    "playwright/**/*.d.ts"
-  ],
-  "references": [{ "path": "./tsconfig.json" }]
+  "include": ["src", "playwright/**/*.ts", "playwright/**/*.d.ts"]
 }

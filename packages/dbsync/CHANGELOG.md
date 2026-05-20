@@ -6,6 +6,18 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.35
+
+## 0.0.34
+
+## 0.0.33
+
+## 0.0.32
+
+### Changed
+
+- `tsconfig.test.json` is a composite project referenced from the repo root so `just check` (`tsc -b`) typechecks source, unit tests, `test-support`, and Playwright sources (main `tsconfig.json` matches other packages and excludes tests from publish typecheck).
+
 ## 0.0.31
 
 ### Added

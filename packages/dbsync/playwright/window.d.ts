@@ -2,7 +2,7 @@ export {}
 
 /** Minimal `DbSync` surface exposed to Playwright fixture pages. */
 type PlaywrightDb = {
-	syncEngine?: { performSync: () => Promise<void> }
+	syncEngine: { performSync: () => Promise<void> }
 	triggerSync: () => Promise<unknown>
 	isLoggedIn: boolean
 	initted: boolean
