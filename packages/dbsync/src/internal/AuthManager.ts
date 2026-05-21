@@ -1,5 +1,5 @@
 import type { BackendAdapter } from "../adapters/types.js"
-import { DbSyncNotAuthenticatedError, DbSyncOfflineError } from "../errors.js"
+import { DbSyncAuthError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "../errors.js"
 import {
 	AUTH_IS_LOGGED_IN_KEY,
 	AUTH_PENDING_LOGOUT_KEY,
@@ -25,6 +25,7 @@ export class AuthManager {
 	private logoutCallbacks = new Set<SessionCallback>()
 	private sessionListeners = new Set<SessionChangeListener>()
 	private bootstrapped = false
+	private isBootedValue = false
 	private bootPromise: Promise<void> | null = null
 	private onLoginInFlight: Promise<void> | null = null
 	private isBootstrappingValue = false
@@ -70,14 +71,19 @@ export class AuthManager {
 		return this.isBootstrappingValue
 	}
 
+	/** True after the boot pipeline has finished (session replay and authenticated hooks when logged in). */
+	public get isBooted() {
+		return this.isBootedValue
+	}
+
 	/** Subscribes to session/boot state changes (for React hooks). */
 	public onSessionChange(listener: SessionChangeListener) {
 		this.sessionListeners.add(listener)
 		return { close: () => this.sessionListeners.delete(listener) }
 	}
 
-	/** Registers a callback invoked on login and cross-tab `AUTH_LOGIN`. */
-	public onLogin(callback: SessionCallback) {
+	/** Registers a callback invoked on login, boot, and cross-tab `AUTH_LOGIN`. */
+	public onAuthenticated(callback: SessionCallback) {
 		this.loginCallbacks.add(callback)
 		return { close: () => this.loginCallbacks.delete(callback) }
 	}
@@ -89,7 +95,7 @@ export class AuthManager {
 	}
 
 	/**
-	 * Replays a hydrated session: flushes pending remote logout, then runs all `onLogin` callbacks if logged in.
+	 * Replays a hydrated session: flushes pending remote logout, then runs authenticated callbacks if logged in.
 	 * Resolves when that work finishes (concurrent calls share one run).
 	 */
 	public async boot(): Promise<void> {
@@ -99,17 +105,17 @@ export class AuthManager {
 		return this.bootPromise
 	}
 
-	/** @deprecated Use `boot()` instead. */
-	public async bootstrapSession(): Promise<void> {
-		return this.boot()
-	}
-
 	private async runBoot(): Promise<void> {
 		if (this.bootstrapped) return
 		this.bootstrapped = true
-		await this.flushPendingRemoteLogout()
-		if (this.isLoggedInValue && !this.pendingLogout) {
-			await this.fireOnLogin()
+		try {
+			await this.flushPendingRemoteLogout()
+			if (this.isLoggedInValue && !this.pendingLogout) {
+				await this.fireOnLogin()
+			}
+		} finally {
+			this.isBootedValue = true
+			this.notifySessionChange()
 		}
 	}
 
@@ -145,7 +151,10 @@ export class AuthManager {
 	public async login(email: string, code: string) {
 		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
 		if (this.pendingLogout) {
-			throw new Error("dbsync: cannot login while remote logout is pending")
+			throw new DbSyncAuthError(
+				"pending_logout",
+				"dbsync: cannot login while remote logout is pending",
+			)
 		}
 		await this.adapter.login(email, code)
 		this.setLoggedIn(true)

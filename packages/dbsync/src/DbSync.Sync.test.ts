@@ -24,8 +24,11 @@ const createDb = async () => {
 			posts: {},
 			users: {},
 		},
+		auth: { onLogout: async () => {} },
+		lifecycle: { manual: true },
 	})
-	await db.init()
+	await db.start()
+	await db.stop()
 	return db
 }
 
@@ -40,6 +43,15 @@ describe("DbSync sync engine", () => {
 		await resetDatabase()
 		fetchMock = vi.fn()
 		vi.stubGlobal("fetch", fetchMock)
+		vi.stubGlobal("navigator", {
+			...navigator,
+			onLine: true,
+			locks: {
+				request: async (_name: string, fn: () => Promise<void>) => {
+					await fn()
+				},
+			},
+		})
 		db = await createDb()
 	})
 
@@ -54,24 +66,27 @@ describe("DbSync sync engine", () => {
 
 	/** Confirms the polling lifecycle starts and stops as expected without calling the network more than once per tick. */
 	test("start schedules polling and stop stops it", async () => {
-		vi.useFakeTimers()
 		fetchMock.mockResolvedValue(
 			new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
 		)
+		db.syncInterval = 25
 
 		await db.start()
 		expect(db.isStarted).toBe(true)
 
-		await vi.advanceTimersByTimeAsync(db.syncInterval)
+		await db.triggerSync()
 		expect(fetchMock).toHaveBeenCalled()
 
-		const callsAfterFirstTick = fetchMock.mock.calls.length
+		fetchMock.mockClear()
+		await new Promise<void>((resolve) => setTimeout(resolve, 30))
+		expect(fetchMock).toHaveBeenCalled()
+
 		await db.stop()
 		expect(db.isStarted).toBe(false)
 
-		await vi.advanceTimersByTimeAsync(db.syncInterval)
-		expect(fetchMock.mock.calls.length).toBe(callsAfterFirstTick)
-		vi.useRealTimers()
+		fetchMock.mockClear()
+		await new Promise<void>((resolve) => setTimeout(resolve, 30))
+		expect(fetchMock).not.toHaveBeenCalled()
 	})
 
 	/** Confirms syncPull writes remote records locally and advances the cursor. */
@@ -160,17 +175,17 @@ describe("DbSync sync engine", () => {
 
 	/** Confirms auth checks and login/logout state transitions map to the session endpoints. */
 	test("auth lifecycle updates session state", async () => {
-		await db.logout()
+		await db.auth.logout()
 		fetchMock.mockClear()
 		fetchMock
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 
-		expect(await db.revalidateSession()).toBe(true)
-		await db.login("user@example.com", "123456")
+		expect(await db.auth.revalidate()).toBe(true)
+		await db.auth.login("user@example.com", "123456")
 		expect(db.isLoggedIn).toBe(true)
-		await db.logout()
+		await db.auth.logout()
 		expect(db.isLoggedIn).toBe(false)
 		const urls = fetchMock.mock.calls.map((call) => String(call[0]))
 		expect(urls.some((url) => url.includes("/api/session/login"))).toBe(true)
@@ -178,14 +193,14 @@ describe("DbSync sync engine", () => {
 	})
 
 	test("data APIs throw when not logged in", async () => {
-		await db.logout()
+		await db.auth.logout()
 		await expect(db.get("posts", "x")).rejects.toThrow("not logged in")
 	})
 
 	test("sync skips pull/push while pendingLogout", async () => {
 		const freshDb = await createDb()
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
-		await freshDb.logout()
+		await freshDb.auth.logout()
 		fetchMock.mockClear()
 		await freshDb.triggerSync()
 		expect(fetchMock).not.toHaveBeenCalled()
@@ -201,7 +216,7 @@ describe("DbSync sync engine", () => {
 		localStorage.setItem("dbsync-pullSyncedUpTo", "2026-05-17T00:00:00.000Z")
 		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 
-		await freshDb.logout()
+		await freshDb.auth.logout()
 
 		expect(localStorage.getItem("dbsync-lastSuccessAt")).toBeNull()
 		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBeNull()

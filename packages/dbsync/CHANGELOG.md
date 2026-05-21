@@ -6,6 +6,29 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.40
+
+### Breaking
+
+- **Session config:** `DbSyncConfig.auth` with `onLogout` (required for session adapters) and optional `onAuthenticated` — replaces `db.onLogin()` / `db.onLogout()` hook registration.
+- **Auth namespace:** `db.auth.sendCode`, `login`, `logout`, `revalidate` — removed top-level `db.sendCode`, `login`, `logout`, `revalidateSession`.
+- **Readiness:** `db.isReady` (IndexedDB open), `db.isBooted`, `db.waitForBooted()` — removed `db.initted`, `db.ready()`, `DbReadyResult`, `db.whenReady()`, `db.whenBooted()`, `db.bootstrapSession()`. Public `db.boot()` only when `lifecycle.manual`.
+- **Lifecycle:** adapter-inferred automatic boot + `start()`; optional `lifecycle: { manual: true }` only — removed `autoStart`, `autoBoot`, `db.autoStart`, `db.autoBoot`.
+- **Removed:** `DbProvider`, `useDb`, public `db.init()`, `startSyncInterval()` / `stopSyncInterval()`.
+- **`useDbSession`:** `isDbReady` renamed to `isReady`.
+
+### Added
+
+- `DbSyncAuthError` (`code`: `offline` | `pending_logout` | `server`) for REST auth failures and blocked login during pending logout.
+- `DbAuthConfig` exported from `@slimr/dbsync`.
+
+### Changed
+
+- `RestAdapter` `sendCode` / `login` throw `DbSyncAuthError` with `serverMessage` from swift-crud `{ message }`.
+- `storage` is private on `DbSync`; `SyncEngine` reads `syncInterval` live via getter.
+- Docs: headless-first golden path (`await db.waitForBooted()` before data); constructor `auth`; env-swap `LocalAdapter`; [Migrating.md](./docs/Migrating.md); consistency sweep across guides.
+- `useDbSession` exposes `isBooted`.
+
 ## 0.0.39
 
 ### Added

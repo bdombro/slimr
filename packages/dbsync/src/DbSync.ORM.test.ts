@@ -30,7 +30,7 @@ describe("DbSync ORM", () => {
 				users: { indexes: ["email"] },
 			},
 		})
-		await db.init()
+		await db.start()
 	})
 
 	/** Confirms the preferred schema-class pattern exposes typed table properties and works at runtime. */
@@ -64,7 +64,7 @@ describe("DbSync ORM", () => {
 		})
 		db = typedDb
 
-		await typedDb.init()
+		await typedDb.start()
 
 		expect(typedDb.todos).toBeInstanceOf(DbRepository)
 		expect(typedDb.users).toBeInstanceOf(DbRepository)
@@ -88,7 +88,7 @@ describe("DbSync ORM", () => {
 
 	/** Confirms initialization creates the configured tables plus the sync queues. */
 	test("initializes tables and sync queues", async () => {
-		expect(db.initted).toBe(true)
+		expect(db.isReady).toBe(true)
 		expect(await db.find("posts")).toEqual([])
 		expect(await db.find("users")).toEqual([])
 		expect(await db.find("dirtyQueue")).toEqual([])
@@ -154,8 +154,8 @@ describe("DbSync ORM", () => {
 		expect(await db.find("posts")).toEqual([])
 	})
 
-	/** Confirms table migrations run during init so existing records upgrade automatically when the app boots. */
-	test("runs configured table migrations during init", async () => {
+	/** Confirms table migrations run during start so existing records upgrade automatically when the app boots. */
+	test("runs configured table migrations during start", async () => {
 		await db.put("posts", {
 			id: "post-1",
 			firstName: "Ada",
@@ -178,7 +178,8 @@ describe("DbSync ORM", () => {
 			},
 		]
 
-		await db.init()
+		const { MigrationManager } = await import("./internal/MigrationManager.js")
+		await new MigrationManager(db).runAll({ posts: tables.posts.migrations! })
 
 		expect(upgrade).toHaveBeenCalledTimes(1)
 		expect(await db.get<any>("posts", "post-1")).toMatchObject({

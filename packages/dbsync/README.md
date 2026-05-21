@@ -15,8 +15,8 @@ If you've ever tried to bolt offline support onto a normal REST app, you know th
 | Tabs drift out of sync | Mutations broadcast over `BroadcastChannel`. |
 | Multiple tabs hammering the server | One tab wins a Web Lock as sync leader. |
 | Schema changes break offline clients | Deterministic schema signature; automatic IndexedDB upgrades. |
-| Old records on long-offline devices have stale shapes | Per-table `migrations` on init. |
-| Auth expiry leaves stale local data | `logout()` wipes local data; deferred remote logout when offline. |
+| Old records on long-offline devices have stale shapes | Per-table `migrations` when IndexedDB opens. |
+| Auth expiry leaves stale local data | `db.auth.logout()` wipes local data; deferred remote logout when offline. |
 | Tab refresh loses login UI state | `isLoggedIn` hydrates synchronously; optimistic app shell — [Offline.md](./docs/Offline.md). |
 | Lock-in to a specific backend | Swap the `BackendAdapter` (REST, GraphQL, etc.). |
 
@@ -38,23 +38,26 @@ class AppDb extends DbSync {
     posts = new PostTable(this) // DbTable subclass — see Getting started
 }
 
-const db = new AppDb({ adapter: new RestAdapter({ url: "https://api.myapp.com" }) })
-await db.start()
+const db = new AppDb({
+    adapter: new RestAdapter({ url: "https://api.myapp.com" }),
+    auth: { onLogout: () => {/* route to login */} },
+})
 
-await db.posts.add({ userId: "u_1", content: "Hello" })
+await db.posts.add({ userId: "u_1", content: "Hello" }) // after automatic boot when logged in
 const posts = await db.posts.find({ index: "updatedAt", order: "desc", limit: 20 })
 ```
 
 Full setup (typed tables, indexes, `prepareCreate`): **[Getting started](./docs/GettingStarted.md)**.
 
-REST apps with login: register `onLogout` — `autoBoot` + `autoStart` (defaults) handle refresh — **[Sync & auth](./docs/Sync.md)** · **[Offline-first apps](./docs/Offline.md)**.
+REST apps with login: pass `auth` in the constructor — automatic boot handles refresh — **[Sync & auth](./docs/Sync.md)** · **[Offline-first apps](./docs/Offline.md)**.
 
 ## Documentation
 
 | Guide | Description |
 | --- | --- |
 | [docs/README.md](./docs/README.md) | Full doc index |
-| [Getting started](./docs/GettingStarted.md) | Tables, `init` / `start`, adapters |
+| [Getting started](./docs/GettingStarted.md) | Tables, `auth`, lifecycle, adapters |
+| [Migrating](./docs/Migrating.md) | Upgrade from pre-0.0.40 session APIs |
 | [Data access](./docs/DataAccess.md) | CRUD, queries, streams, transactions |
 | [Schema evolution](./docs/Schema.md) | Migrations and versioning |
 | [React](./docs/React.md) | `useDbQuery`, `subscribe`, `useDbSession` |

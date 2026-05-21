@@ -32,7 +32,7 @@ const db = new FixtureDb({
 window.db = db as unknown as Window["db"]
 window.postsRepo = db.posts
 
-db.init().then(() => {
+void db.waitForBooted().then(() => {
 	log("ready")
 	db.subscribe((stores) => {
 		log(`updated:${stores.join(",")}`)

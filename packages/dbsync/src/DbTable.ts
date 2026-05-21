@@ -1,5 +1,8 @@
 import { DbRepository } from "./DbRepository.js"
 import type { DbSync } from "./DbSync.js"
+import type { StorageManager } from "./internal/storage/index.js"
+
+const getStorage = (db: DbSync) => (db as unknown as { storage: StorageManager }).storage
 
 type DbTableConstructor<Row extends { id: string }, CreateInput extends object> = {
 	new (db: DbSync): DbTable<Row, CreateInput>
@@ -49,7 +52,7 @@ export class DbTable<
 	/** Adds a row after normalizing create input through prepareCreate(). */
 	override async add(value: CreateInput, key?: string): Promise<Row> {
 		const nextValue = this.prepareCreate(value)
-		const [executedWrite] = await this.db.storage.executeTransaction([
+		const [executedWrite] = await getStorage(this.db).executeTransaction([
 			{ type: "add", storeName: this.tableName, value: nextValue, key },
 		])
 		return executedWrite?.value as Row
@@ -58,7 +61,7 @@ export class DbTable<
 	/** Upserts a row after normalizing it through preparePut(). */
 	override async put(value: Row, key?: string): Promise<Row> {
 		const nextValue = this.preparePut(value)
-		const [executedWrite] = await this.db.storage.executeTransaction([
+		const [executedWrite] = await getStorage(this.db).executeTransaction([
 			{ type: "put", storeName: this.tableName, value: nextValue, key },
 		])
 		return executedWrite?.value as Row
@@ -67,7 +70,7 @@ export class DbTable<
 	/** Applies partial updates after normalizing them through preparePatch(). */
 	override async patch(value: Partial<Row> & { id: string }, key?: string): Promise<Row> {
 		const nextValue = this.preparePatch(value)
-		await this.db.storage.executeTransaction([
+		await getStorage(this.db).executeTransaction([
 			{ type: "patch", storeName: this.tableName, value: nextValue, key },
 		])
 		return nextValue as Row

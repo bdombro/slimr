@@ -55,8 +55,8 @@ export function useDbQuery<T>(
 				if (isMounted) setState({ value: null, loading: true })
 				return
 			}
-			// If attempting to query before init(), safely wait.
-			while (isMounted && !db.initted) await sleep(50)
+			// If storage is not open yet (boot/start still in flight), wait.
+			while (isMounted && !db.isReady) await sleep(50)
 			if (!isMounted) return
 			try {
 				const result = await queryFn()

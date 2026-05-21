@@ -12,8 +12,9 @@ describe("useDbSession", () => {
 		const listeners = new Set<() => void>()
 		const db = {
 			isLoggedIn: true,
+			isBooted: true,
 			isBootstrapping: false,
-			initted: true,
+			isReady: true,
 			offline: false,
 			online: true,
 			onSessionChange: (listener: () => void) => {
@@ -27,7 +28,7 @@ describe("useDbSession", () => {
 			return (
 				<div>
 					<span data-testid="logged-in">{String(session.isLoggedIn)}</span>
-					<span data-testid="db-ready">{String(session.isDbReady)}</span>
+					<span data-testid="db-ready">{String(session.isReady)}</span>
 					<span data-testid="offline">{String(session.offline)}</span>
 				</div>
 			)
@@ -39,7 +40,7 @@ describe("useDbSession", () => {
 		expect(screen.getByTestId("offline").textContent).toBe("false")
 
 		db.isBootstrapping = true
-		db.initted = false
+		db.isReady = false
 		await act(async () => {
 			listeners.forEach((listener) => listener())
 		})

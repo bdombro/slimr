@@ -5,14 +5,14 @@ type PlaywrightDb = {
 	syncEngine: { performSync: () => Promise<void> }
 	triggerSync: () => Promise<unknown>
 	isLoggedIn: boolean
-	initted: boolean
+	isReady: boolean
 	pendingLogout: boolean
 	offline: boolean
-	login: (email: string, code: string) => Promise<void>
-	logout: () => Promise<void>
-	init: () => Promise<void>
-	boot: () => Promise<void>
-	bootstrapSession: () => Promise<void>
+	auth: {
+		login: (email: string, code: string) => Promise<void>
+		logout: () => Promise<void>
+	}
+	waitForBooted: () => Promise<void>
 	get: (tableName: string, id: string) => Promise<unknown>
 }
 
@@ -23,14 +23,14 @@ declare global {
 		logs: string[]
 		latestPosts: Array<{ id: string; title: string }>
 		postsRepo: { put: (row: { id: string; title: string }) => Promise<unknown> }
-		onLoginCount: number
+		onAuthenticatedCount: number
 		onLogoutCount: number
 		getState: () => {
 			isLoggedIn: boolean
-			initted: boolean
+			isReady: boolean
 			pendingLogout: boolean
 			offline: boolean
-			onLoginCount: number
+			onAuthenticatedCount: number
 			onLogoutCount: number
 		}
 		seedLoggedIn: () => void

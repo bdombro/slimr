@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+import type { DbSyncAuthError } from "../errors.js"
 import { LocalAdapter } from "./LocalAdapter.js"
 import { RestAdapter } from "./RestAdapter.js"
 
@@ -38,14 +39,21 @@ describe("adapters sendCode", () => {
 		)
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
-		await expect(adapter.sendCode("user@example.com")).rejects.toThrow("Invalid email")
+		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
+			name: "DbSyncAuthError",
+			code: "server",
+			serverMessage: "Invalid email",
+		} satisfies Partial<DbSyncAuthError>)
 	})
 
 	test("RestAdapter falls back when send-code error body is not JSON", async () => {
 		fetchMock.mockResolvedValue(new Response("", { status: 400 }))
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
-		await expect(adapter.sendCode("user@example.com")).rejects.toThrow("Send code failed")
+		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
+			code: "server",
+			message: "Send code failed",
+		})
 	})
 
 	test("RestAdapter throws server message when login fails", async () => {
@@ -57,7 +65,10 @@ describe("adapters sendCode", () => {
 		)
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
-		await expect(adapter.login("user@example.com", "000000")).rejects.toThrow("Invalid code")
+		await expect(adapter.login("user@example.com", "000000")).rejects.toMatchObject({
+			code: "server",
+			message: "Invalid code",
+		})
 	})
 
 	test("LocalAdapter always resolves true", async () => {

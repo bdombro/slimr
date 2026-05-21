@@ -2,7 +2,7 @@
 
 `dbsync` exposes change notifications for local writes, cross-tab updates, and sync. Use **`subscribe`** directly or the hooks in `@slimr/dbsync/react`.
 
-Session boot (`onLogin`, `boot`, `useDbSession`) is covered in [Offline.md](./Offline.md).
+Session boot (`auth` config, `waitForBooted()`, `useDbSession`) is covered in [Offline.md](./Offline.md). React apps usually rely on automatic boot; call `await db.waitForBooted()` only when you need strict ordering.
 
 ## `db.subscribe`
 
@@ -46,7 +46,6 @@ sub.close()
 Bind a query to table(s); refetches on relevant local/sync changes.
 
 ```tsx
-// useDbQuery.ts
 import { createUseDbQuery } from "@slimr/dbsync/react"
 export const useDbQuery = createUseDbQuery(db)
 ```
@@ -65,26 +64,9 @@ function PostList() {
         </ul>
     )
 }
-
-function PostDetail({ postId }: { postId: string }) {
-    const { value: post, loading } = useDbQuery(
-        "posts",
-        () => db.get("posts", postId),
-        [postId],
-        {
-            shouldRefetchFilter: (changes) =>
-                changes.some(
-                    (c) => c.change === "clear" || ("id" in c && String(c.id) === postId),
-                ),
-        },
-    )
-
-    if (loading) return <p>Loading…</p>
-    return <p>{post?.content}</p>
-}
 ```
 
-When the adapter **`requiresAuth`** and `!db.isLoggedIn`, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After `onLogin` + `init()`, it refetches.
+When the adapter **`requiresAuth`** and `!db.isLoggedIn`, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After automatic boot (or `await db.waitForBooted()`), it refetches when `db.isReady` is true.
 
 ## `useDbSession`
 
@@ -94,13 +76,13 @@ Session and boot state without polling:
 import { useDbSession } from "@slimr/dbsync/react"
 
 function AppShell() {
-  const { isLoggedIn, isBootstrapping, isDbReady, offline, online } = useDbSession(db)
+  const { isLoggedIn, isBooted, isBootstrapping, isReady, offline, online } = useDbSession(db)
 
   if (!isLoggedIn) return <Navigate to="/login" replace />
 
   return (
     <AppLayout showOfflineBanner={offline}>
-      {!isDbReady ? (
+      {!isReady ? (
         <DbBootLoading active={isBootstrapping} />
       ) : (
         <Outlet />
@@ -110,30 +92,9 @@ function AppShell() {
 }
 ```
 
-See [Offline.md](./Offline.md) for the full `!isDbReady` pattern and refresh behavior.
+Use a module-scoped `db` instance — pass it explicitly to hooks (no context provider required).
 
-## `DbProvider` (optional)
-
-Registers `onLogout`, calls `boot()`, provides `db` via context. `onLogin` is optional — default `autoStart` calls `start()` for you.
-
-```tsx
-import { DbProvider } from "@slimr/dbsync/react"
-
-<DbProvider
-  db={db}
-  fallback={<DbBootLoading />}
-  onLogout={() => navigate("/login")}
->
-  <AppRoutes />
-</DbProvider>
-```
-
-| `fallback` | When `isLoggedIn && !isDbReady` |
-| --- | --- |
-| **Set** | Shows `fallback` instead of `children` |
-| **Omitted** | Always renders `children` (gate in `AppShell`) |
-
-Manual wiring in `main.tsx` without `DbProvider` is fine.
+See [Offline.md](./Offline.md) for the full `!isReady` pattern and refresh behavior.
 
 ## See also
 

@@ -13,7 +13,7 @@ db.applyDefaults("posts", partial) // shape only, no persist
 
 ## `migrations`
 
-Upgrade records already on the device. Runs during `init()` so long-offline clients catch up.
+Upgrade records already on the device. Runs when IndexedDB opens (`start()` / automatic boot) so long-offline clients catch up.
 
 Each migration is `{ version, note, upgrade(record) }`:
 

@@ -77,7 +77,7 @@ Use when several writes must land together, or when you want to stage work and `
 
 ## Auth guards
 
-With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.isLoggedIn`. See [Offline.md](./Offline.md).
+With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.isLoggedIn`. Use constructor `auth` and `await db.waitForBooted()` before reads/writes in headless code — see [Offline.md](./Offline.md).
 
 ## See also
 

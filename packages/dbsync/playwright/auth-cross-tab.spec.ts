@@ -17,13 +17,13 @@ test.describe("DbSync cross-tab auth", () => {
 		await page2.goto(authPath)
 
 		await page1.evaluate(async () => {
-			await window.db.login("user@example.com", "123456")
+			await window.db.auth.login("user@example.com", "123456")
 		})
-		await expect(page1.locator("#content")).toContainText("onLogin:1")
-		await expect(page2.locator("#content")).toContainText("onLogin:1")
+		await expect(page1.locator("#content")).toContainText("onAuthenticated:1")
+		await expect(page2.locator("#content")).toContainText("onAuthenticated:1")
 
 		await page1.evaluate(async () => {
-			await window.db.logout()
+			await window.db.auth.logout()
 		})
 
 		await expect(page1.locator("#content")).toContainText("onLogout:1")
@@ -47,17 +47,17 @@ test.describe("DbSync cross-tab auth", () => {
 		await page2.goto(authPath)
 
 		await expect(page1.locator("#content")).toContainText("boot:false")
-		await expect(page2.locator("#content")).not.toContainText("onLogin")
+		await expect(page2.locator("#content")).not.toContainText("onAuthenticated")
 
 		await page1.evaluate(async () => {
-			await window.db.login("user@example.com", "123456")
+			await window.db.auth.login("user@example.com", "123456")
 		})
 
-		await expect(page1.locator("#content")).toContainText("onLogin:1")
-		await expect(page2.locator("#content")).toContainText("onLogin:1")
+		await expect(page1.locator("#content")).toContainText("onAuthenticated:1")
+		await expect(page2.locator("#content")).toContainText("onAuthenticated:1")
 
 		const tab2 = await page2.evaluate(() => window.getState())
 		expect(tab2.isLoggedIn).toBe(true)
-		expect(tab2.initted).toBe(true)
+		expect(tab2.isReady).toBe(true)
 	})
 })

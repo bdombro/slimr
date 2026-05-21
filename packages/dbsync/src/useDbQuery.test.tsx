@@ -27,7 +27,7 @@ describe("useDbQuery", () => {
 	test("loads initial data", async () => {
 		let subscriber: ((stores: string[]) => void) | undefined
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: (callback: (stores: string[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
@@ -48,7 +48,7 @@ describe("useDbQuery", () => {
 	/** Confirms the hook reports null data once a query resolves to undefined. */
 	test("normalizes undefined results to null", async () => {
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: () => ({ close: vi.fn() }),
 		}
 		const queryFn = vi.fn(async () => undefined)
@@ -69,7 +69,7 @@ describe("useDbQuery", () => {
 	test("reacts to subscription updates", async () => {
 		let subscriber: ((stores: string[]) => void) | undefined
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: (callback: (stores: string[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
@@ -97,7 +97,7 @@ describe("useDbQuery", () => {
 	test("creates a DbSync-bound query hook", async () => {
 		let subscriber: ((stores: string[]) => void) | undefined
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: (callback: (stores: string[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
@@ -128,7 +128,7 @@ describe("useDbQuery", () => {
 	test("skips refetch when shouldRefetchFilter returns false", async () => {
 		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
@@ -160,7 +160,7 @@ describe("useDbQuery", () => {
 	test("refetches when shouldRefetchFilter returns true", async () => {
 		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
@@ -195,7 +195,7 @@ describe("useDbQuery", () => {
 	test("refetches on table hit when changes are omitted", async () => {
 		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
 		const db = {
-			initted: true,
+			isReady: true,
 			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }

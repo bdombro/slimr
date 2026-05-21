@@ -19,7 +19,7 @@ class AuthFixtureDb extends DbSync {
 }
 
 window.logs = []
-window.onLoginCount = 0
+window.onAuthenticatedCount = 0
 window.onLogoutCount = 0
 
 const log = (message: string) => {
@@ -30,6 +30,16 @@ const log = (message: string) => {
 
 const db = new AuthFixtureDb({
 	adapter: new RestAdapter({ url: window.location.origin }),
+	auth: {
+		onAuthenticated: async () => {
+			window.onAuthenticatedCount += 1
+			log(`onAuthenticated:${window.onAuthenticatedCount}`)
+		},
+		onLogout: () => {
+			window.onLogoutCount += 1
+			log(`onLogout:${window.onLogoutCount}`)
+		},
+	},
 })
 
 window.db = db as unknown as Window["db"]
@@ -37,26 +47,15 @@ window.postsRepo = db.posts
 
 window.getState = () => ({
 	isLoggedIn: db.isLoggedIn,
-	initted: db.initted,
+	isReady: db.isReady,
 	pendingLogout: db.pendingLogout,
 	offline: db.offline,
-	onLoginCount: window.onLoginCount,
+	onAuthenticatedCount: window.onAuthenticatedCount,
 	onLogoutCount: window.onLogoutCount,
 })
 
 window.seedLoggedIn = () => {
 	writeIsLoggedIn(true)
 }
-
-db.onLogin(async () => {
-	window.onLoginCount += 1
-	await db.init()
-	log(`onLogin:${window.onLoginCount}`)
-})
-
-db.onLogout(() => {
-	window.onLogoutCount += 1
-	log(`onLogout:${window.onLogoutCount}`)
-})
 
 log(`boot:${db.isLoggedIn}`)

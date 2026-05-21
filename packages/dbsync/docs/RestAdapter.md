@@ -65,20 +65,20 @@ An array of mutated records stringified exactly like the Pull response:
 The session endpoints expect basic HTTP Cookie-based authentication mechanisms.
 
 - **Check Auth:** `GET /api/session` (Returns 200 OK if the browser cookie is an authenticated session, 4xx otherwise)
-- **Send Code:** `POST /api/session/send-code` (Expects JSON body `{ "email": "..." }` and emails a one-time login code). On failure, swift-crud returns `{ "message": "..." }`; `RestAdapter` throws that string.
+- **Send Code:** `POST /api/session/send-code` (Expects JSON body `{ "email": "..." }` and emails a one-time login code). On failure, swift-crud returns `{ "message": "..." }`; `RestAdapter` throws `DbSyncAuthError` with `serverMessage`.
 - **Login:** `POST /api/session/login` (Expects JSON body `{ "email": "...", "code": "..." }` and should set the auth cookie here). On failure, same `{ "message" }` error shape.
 - **Logout:** `POST /api/session/logout` (Destroys the session cookie)
 
-`RestAdapter` uses the default **`requiresAuth: true`**. Apps must be logged in before `init()` / `start()` and data APIs. See [Offline.md](./Offline.md) for boot flow with `onLogin` / `onLogout`.
+`RestAdapter` uses the default **`requiresAuth: true`**. Pass `auth.onLogout` in the constructor; automatic boot opens IndexedDB when logged in. See [Offline.md](./Offline.md).
 
 ### Session endpoints and offline behavior
 
 | Client call | Offline behavior |
 | --- | --- |
-| `db.sendCode()` | Throws `DbSyncOfflineError` when offline — needs the network. |
-| `db.login()` | Throws `DbSyncOfflineError` — login needs the network. |
-| `db.revalidateSession()` (optional) | Throws `DbSyncOfflineError` when offline. Automatic revalidation on `online` — no public `db.checkAuth()`. Use `db.isLoggedIn` until then. |
-| `db.logout()` | Clears local IndexedDB immediately; **defers** `POST /api/session/logout` until online (`dbsync-pendingLogout`). |
-| Browser `online` + logged in | dbsync calls `GET /api/session`; if 4xx, fires `onLogout`. Also flushes pending logout. |
+| `db.auth.sendCode()` | Throws `DbSyncOfflineError` when offline — needs the network. |
+| `db.auth.login()` | Throws `DbSyncOfflineError` — login needs the network. |
+| `db.auth.revalidate()` (optional) | Throws `DbSyncOfflineError` when offline. Automatic revalidation on `online`. |
+| `db.auth.logout()` | Clears local IndexedDB immediately; **defers** `POST /api/session/logout` until online (`dbsync-pendingLogout`). |
+| Browser `online` + logged in | dbsync calls `GET /api/session`; if 4xx, runs `auth.onLogout`. Also flushes pending logout. |
 
 **Service workers:** Do not cache session routes. Use `network-only` for `/api/session`, login, and logout so offline PWAs do not read stale auth from the cache. See [Offline.md](./Offline.md).

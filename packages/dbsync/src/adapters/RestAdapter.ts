@@ -1,24 +1,21 @@
+import { DbSyncAuthError } from "../errors.js"
 import type { BackendAdapter, SyncPullResult } from "./types.js"
 
 /**
- * Throws an `Error` using the swift-crud `{ message }` body when present.
+ * Throws `DbSyncAuthError` using the swift-crud `{ message }` body when present.
  */
 async function throwIfNotOk(res: Response, fallback: string): Promise<void> {
 	if (res.ok) return
 	let message = fallback
-	let code = 0
 	try {
 		const body = await res.json()
 		if (typeof body?.message === "string" && body.message.length > 0) {
 			message = body.message
 		}
-		if (typeof body?.code === "number" && body.code > 0) {
-			code = body.code
-		}
 	} catch {
 		// Non-JSON or empty body — use fallback.
 	}
-	throw Object.assign(new Error(message), { code })
+	throw new DbSyncAuthError("server", message, { serverMessage: message })
 }
 
 /**

@@ -1,6 +1,11 @@
 import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
+import type { DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
+
+export type { DbAuthConfig, DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
+
 import { DbRepository } from "./DbRepository.js"
+import { DbSyncAuth } from "./DbSyncAuth.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
@@ -15,36 +20,8 @@ import { type Migration, MigrationManager } from "./internal/MigrationManager.js
 import type { FindOptions } from "./internal/queryTypes.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
 import { applyDefaults, StorageManager } from "./internal/storage/index.js"
+import { resolveLifecyclePolicy } from "./lifecycle.js"
 import type { TransactionOf } from "./transactionTypes.js"
-
-interface DbSyncTableConfig {
-	/** Optional index names to create for the table. */
-	indexes?: string[]
-	/** Optional callback that fills in default fields before write operations. */
-	defaultSetter?: (value: any) => any
-	/** Optional migrations to run on records when the schema evolves. */
-	migrations?: Migration[]
-}
-
-export interface DbSyncConfig {
-	/** The backend adapter used for authentication and synchronization. */
-	adapter: BackendAdapter
-
-	/**
-	 * When true (default), registers an internal `onLogin` handler that calls `start()`.
-	 * Set false to open IndexedDB or start sync manually.
-	 */
-	autoStart?: boolean
-	/**
-	 * When true (default), calls `boot()` once after the first `onLogin` / `onLogout` hook is registered.
-	 * Set false to call `boot()` (or `whenReady()`) yourself.
-	 */
-	autoBoot?: boolean
-	/** Optional fixed IndexedDB version. */
-	version?: number
-	/** The tables and their index definitions. */
-	tables?: Record<string, DbSyncTableConfig>
-}
 
 interface DbSyncResolvedTable {
 	tableName: string
@@ -63,21 +40,25 @@ export class DbSync {
 	public syncInterval = 5000
 	/** The active configuration passed by the consumer. */
 	public config: DbSyncConfig
+	/** Authentication actions (session state is on the root `db` instance). */
+	public readonly auth: DbSyncAuth
 	/** Runtime-registered table instances for class-based schemas. */
 	private tableRegistry = new Map<string, DbTable<any, any>>()
 
 	/** The event bus used for local and cross-tab notifications. */
 	private events: EventBus
 	/** The storage manager handling IndexedDB state and transactions. */
-	public storage: StorageManager // Public for tests currently (we can wrap it later)
+	private storage: StorageManager
 	/** The engine responsible for network synchronization. */
 	private syncEngine: SyncEngine
 	/** Tracks browser online/offline state. */
 	private connectivity: ConnectivityTracker
 	/** The manager handling authentication and logout behavior. */
 	private authManager: AuthManager
-	/** Whether an auto-boot microtask is already queued. */
+	/** Whether an automatic boot microtask is already queued. */
 	private autoBootScheduled = false
+	/** Whether the consumer opted into manual lifecycle (`boot()` allowed). */
+	private lifecycleManual: boolean
 
 	/**
 	 * Creates a new `DbSync` instance using the supplied configuration.
@@ -86,9 +67,15 @@ export class DbSync {
 	 */
 	constructor(config: DbSyncConfig) {
 		this.config = config
-		this.events = new EventBus()
-
 		const adapter = config.adapter
+		const policy = resolveLifecyclePolicy(adapter, config)
+		this.lifecycleManual = policy.manual
+
+		if (policy.requiresAuth && !config.auth?.onLogout) {
+			throw new Error("dbsync: auth.onLogout required for session-backed adapters")
+		}
+
+		this.events = new EventBus()
 
 		const onSchemaChange = () => this.onSchemaChangeDetected()
 
@@ -109,10 +96,11 @@ export class DbSync {
 				void this.stop()
 			},
 		)
+		this.auth = new DbSyncAuth(this.authManager)
 
 		this.syncEngine = new SyncEngine(
 			config,
-			this.syncInterval,
+			() => this.syncInterval,
 			this.events,
 			this.storage,
 			this.authManager,
@@ -122,9 +110,24 @@ export class DbSync {
 			() => this.getSchemaTables(),
 		)
 
-		if (config.autoStart !== false) {
-			this.authManager.onLogin(async () => {
+		if (policy.autoStart) {
+			this.authManager.onAuthenticated(async () => {
 				await this.start()
+			})
+		}
+
+		if (config.auth) {
+			this.authManager.onLogout(config.auth.onLogout)
+			if (config.auth.onAuthenticated) {
+				this.authManager.onAuthenticated(config.auth.onAuthenticated)
+			}
+		}
+
+		if (policy.autoBoot) {
+			this.scheduleAutoBoot()
+		} else if (policy.autoStart && !config.auth) {
+			queueMicrotask(() => {
+				void this.start()
 			})
 		}
 
@@ -132,9 +135,6 @@ export class DbSync {
 			;(this as Record<string, unknown>)[tableName] = new DbRepository(this, tableName)
 		}
 
-		// Return a Proxy interceptor so that subclasses declaring typed table properties
-		// (e.g. `todos!: DbRepository<Todo>`) do not overwrite the repositories with `undefined`
-		// when their field initializers run.
 		const knownTables = config.tables ?? {}
 		// biome-ignore lint/correctness/noConstructorReturn: the constructor intentionally returns a Proxy
 		return new Proxy(this, {
@@ -197,20 +197,13 @@ export class DbSync {
 		return createUid()
 	}
 
-	/** Whether `start()` runs automatically from an internal `onLogin` handler (default true). */
-	public get autoStart() {
-		return this.config.autoStart !== false
-	}
-	/** Whether `boot()` runs after the first session hook is registered (default true). */
-	public get autoBoot() {
-		return this.config.autoBoot !== false
-	}
-	/** Whether the storage layer has finished initializing. */
-	public get initted() {
+	/** Whether IndexedDB is open (not the same as `boot()` finished or `waitForLive()`). */
+	public get isReady() {
 		return this.storage.initted
 	}
-	/** Initializes the underlying IndexedDB stores. */
-	public async init() {
+
+	/** Opens IndexedDB and runs schema migrations. */
+	private async openStorage() {
 		this.authManager.assertAuthenticated()
 		await this.storage.init()
 
@@ -228,6 +221,7 @@ export class DbSync {
 			await migrationManager.runAll(schemaMigrations)
 		}
 	}
+
 	/** Applies the configured migrations for a single table to the provided record. */
 	public async upgradeRecord<T extends Record<string, any>>(
 		tableName: string,
@@ -369,7 +363,7 @@ export class DbSync {
 	public get pendingLogout() {
 		return this.authManager.pendingLogout
 	}
-	/** Whether the first `onLogin` boot is in flight. */
+	/** Whether authenticated callbacks are running (boot or login). */
 	public get isBootstrapping() {
 		return this.authManager.isBootstrapping
 	}
@@ -377,65 +371,39 @@ export class DbSync {
 	public onSessionChange(callback: () => void) {
 		return this.authManager.onSessionChange(callback)
 	}
-	/** Registers a callback for login and cross-tab `AUTH_LOGIN`. */
-	public onLogin(callback: () => void | Promise<void>) {
-		const sub = this.authManager.onLogin(callback)
-		this.scheduleAutoBoot()
-		return sub
+
+	/** Whether local startup has finished (not backend sync — see `waitForLive()`). */
+	public get isBooted() {
+		return this.authManager.isBooted
 	}
-	/** Registers a callback fired early on logout / 401 / cross-tab `AUTH_LOGOUT`. */
-	public onLogout(callback: () => void | Promise<void>) {
-		const sub = this.authManager.onLogout(callback)
-		this.scheduleAutoBoot()
-		return sub
-	}
+
 	/**
-	 * Resolves when the app can use the local DB: boot finished and, when logged in, `db.initted` is true.
-	 * Schedules auto-boot if needed. Not the same as `waitForLive()` (sync freshness).
+	 * Waits until the boot pipeline completes (session replay and `auth.onAuthenticated` when logged in).
+	 * Idempotent — shares the run scheduled on a microtask when lifecycle is automatic.
+	 * Does not wait for backend sync or session revalidation.
 	 */
-	public whenReady(): Promise<void> {
-		this.scheduleAutoBoot()
-		return this.boot()
+	public async waitForBooted(): Promise<void> {
+		return this.authManager.boot()
 	}
-	/** @deprecated Use `whenReady()` instead. */
-	public whenBooted(): Promise<void> {
-		return this.whenReady()
+
+	/**
+	 * Kicks local startup when `lifecycle.manual` is true. Otherwise use `waitForBooted()`.
+	 */
+	public async boot(): Promise<void> {
+		if (!this.lifecycleManual) {
+			throw new Error("dbsync: boot() is only for lifecycle.manual — use waitForBooted()")
+		}
+		return this.authManager.boot()
 	}
-	/** Queues `boot()` on the next microtask after the first session hook is registered. */
+
+	/** Queues boot on the next microtask when automatic lifecycle is enabled. */
 	private scheduleAutoBoot() {
-		if (this.config.autoBoot === false) return
 		if (this.autoBootScheduled) return
 		this.autoBootScheduled = true
 		queueMicrotask(() => {
 			this.autoBootScheduled = false
-			void this.boot()
+			void this.authManager.boot()
 		})
-	}
-	/**
-	 * Replays a hydrated session: flushes pending remote logout, then awaits all `onLogin` callbacks if logged in.
-	 */
-	public async boot(): Promise<void> {
-		return this.authManager.boot()
-	}
-	/** @deprecated Use `boot()` instead. */
-	public async bootstrapSession(): Promise<void> {
-		return this.authManager.bootstrapSession()
-	}
-	/** Sends a one-time login code to the given email (network required for REST). */
-	public async sendCode(email: string) {
-		return this.authManager.sendCode(email)
-	}
-	/** Logs in with the given credentials (network required). */
-	public async login(email: string, code: string) {
-		return this.authManager.login(email, code)
-	}
-	/** Logs out, clears local data, and may defer remote logout when offline. */
-	public async logout() {
-		return this.authManager.logout()
-	}
-	/** Optional manual server session probe (network required). */
-	public async revalidateSession() {
-		return this.authManager.revalidateSession()
 	}
 
 	/** Whether background sync is currently enabled. */
@@ -449,7 +417,7 @@ export class DbSync {
 	/** Starts periodic background synchronization. */
 	public async start() {
 		this.authManager.assertAuthenticated()
-		if (!this.initted) await this.init()
+		if (!this.isReady) await this.openStorage()
 
 		this.syncEngine.start()
 	}
@@ -464,15 +432,6 @@ export class DbSync {
 	/** Triggers a single sync cycle immediately. */
 	public async triggerSync() {
 		return this.syncEngine.triggerSync()
-	}
-
-	/** Legacy alias for `enable()`. */
-	public startSyncInterval() {
-		this.start()
-	}
-	/** Legacy alias for `disable()`. */
-	public stopSyncInterval() {
-		this.stop()
 	}
 
 	/** Responds to schema changes by disposing state and reloading the page. */

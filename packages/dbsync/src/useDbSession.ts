@@ -3,8 +3,9 @@ import type { DbSync } from "./DbSync.js"
 
 export type DbSessionState = {
 	isLoggedIn: boolean
+	isBooted: boolean
 	isBootstrapping: boolean
-	isDbReady: boolean
+	isReady: boolean
 	offline: boolean
 	online: boolean
 }
@@ -24,8 +25,9 @@ export function useDbSession(db: DbSync): DbSessionState {
 
 	return {
 		isLoggedIn: db.isLoggedIn,
+		isBooted: db.isBooted,
 		isBootstrapping: db.isBootstrapping,
-		isDbReady: db.initted,
+		isReady: db.isReady,
 		offline: db.offline,
 		online: db.online,
 	}

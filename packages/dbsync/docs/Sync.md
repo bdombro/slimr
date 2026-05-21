@@ -1,54 +1,39 @@
-# Sync and auth
+# Sync & auth
 
-Background sync pulls remote changes and pushes the durable dirty queue. One tab per origin wins a **Web Lock** and acts as sync leader; others stay passive.
+[Documentation index](./README.md) · [Offline-first apps](./Offline.md)
 
-For offline-first **session boot**, refresh behavior, and React wiring, see [Offline.md](./Offline.md).
-
-## Sync controls
+## Golden path
 
 ```typescript
-await db.start()          // calls init() if needed, then starts pull/push loop
-
-db.onSyncStateChange((s) => {
-  // "idle" | "syncing" | "offline" | "error"
+const db = new DbSync({
+    adapter: new RestAdapter({ url: API_URL }),
+    tables: { posts: {} },
+    auth: {
+        onLogout: () => navigate("/login"),
+        onAuthenticated: () => navigate("/app"), // optional
+    },
 })
 
-await db.waitForLive()    // optional: block until recent successful sync
-await db.triggerSync()    // one immediate cycle
-await db.stop()
+await db.auth.sendCode(email)
+await db.auth.login(email, code)
+await db.auth.logout()
 ```
 
-`waitForLive()` is for screens that need a fresh server pull — not for default app shell on refresh (use cached IndexedDB; see [Offline.md](./Offline.md)).
+Automatic lifecycle (default): hydrated session replay + `start()` on construction. Headless apps: `await db.waitForBooted()` before data access.
 
-## Session hooks (REST)
+## API summary
 
-```typescript
-const initialRoute = db.isLoggedIn ? "/app" : "/login"
-
-db.onLogout(() => navigate("/login"))
-// autoBoot + autoStart: refresh replays session without explicit boot()
-
-await db.sendCode("user@example.com")
-await db.login("user@example.com", "123456")
-await db.logout()
-```
-
-| API | Notes |
+| API | Role |
 | --- | --- |
-| `db.isLoggedIn` | Persisted; use for **initial route** |
-| `db.offline` / `db.online` | Connectivity hint — not login routing on first paint |
-| `db.boot()` / `whenReady()` | Awaits hydrated session → all `onLogin` callbacks; optional when `autoBoot` is true |
-| `autoStart` | Default `true` — internal `onLogin` → `start()` |
-| `autoBoot` | Default `true` — `boot()` after first session hook |
-| `db.sendCode` | Network required when `requiresAuth` |
-| `db.login` | Network required |
-| `db.logout` | Local wipe now; remote logout may defer when offline |
-| `db.revalidateSession()` | Optional manual server check |
-
-Adapters: [Adapters.md](./Adapters.md) · REST endpoints: [RestAdapter.md](./RestAdapter.md)
+| `db.auth.sendCode` | Network required when `requiresAuth` |
+| `db.auth.login` / `logout` / `revalidate` | Session actions |
+| `db.waitForBooted()` | Waits for local startup (`onAuthenticated` when logged in) |
+| `db.isBooted` | Boot pipeline finished (sync) |
+| `db.boot()` | `lifecycle.manual` only — kicks startup |
+| `db.isReady` | IndexedDB open |
+| `db.start()` / `stop()` | Manual sync control (`lifecycle.manual` or advanced) |
+| `lifecycle.manual` | Opt out of automatic boot/start |
 
 ## See also
 
-- [Offline-first apps](./Offline.md)
-- [React](./React.md)
-- [Documentation index](./README.md)
+- [Adapters](./Adapters.md) · [RestAdapter](./RestAdapter.md) · [Offline.md](./Offline.md)

@@ -5,7 +5,9 @@ import { getFixtureBaseUrl } from "./test-base-url.js"
 const authPath = "/auth.html"
 
 test.describe("DbSync offline auth", () => {
-	test("hydrates isLoggedIn on refresh and runs onLogin without onLogout", async ({ browser }) => {
+	test("hydrates isLoggedIn on refresh and runs onAuthenticated without onLogout", async ({
+		browser,
+	}) => {
 		const page = await browser.newPage({ baseURL: getFixtureBaseUrl() })
 		const stats: SessionApiStats = { logoutCalls: 0, loginCalls: 0, checkAuthCalls: 0 }
 		await mockSessionApi(page, stats)
@@ -15,12 +17,12 @@ test.describe("DbSync offline auth", () => {
 		await page.reload()
 
 		await expect(page.locator("#content")).toContainText("boot:true")
-		await expect(page.locator("#content")).toContainText("onLogin:1")
+		await expect(page.locator("#content")).toContainText("onAuthenticated:1")
 		await expect(page.locator("#content")).not.toContainText("onLogout")
 
 		const state = await page.evaluate(() => window.getState())
 		expect(state.isLoggedIn).toBe(true)
-		expect(state.initted).toBe(true)
+		expect(state.isReady).toBe(true)
 	})
 
 	test("offline logout clears local data and defers remote logout", async ({ browser }) => {
@@ -32,7 +34,7 @@ test.describe("DbSync offline auth", () => {
 		await page.goto(authPath)
 		await page.evaluate(() => window.seedLoggedIn())
 		await page.reload()
-		await expect(page.locator("#content")).toContainText("onLogin:1")
+		await expect(page.locator("#content")).toContainText("onAuthenticated:1")
 
 		await context.setOffline(true)
 
@@ -40,7 +42,7 @@ test.describe("DbSync offline auth", () => {
 			await window.postsRepo.put({ id: "1", title: "offline wipe" })
 		})
 		await page.evaluate(async () => {
-			await window.db.logout()
+			await window.db.auth.logout()
 		})
 
 		await expect(page.locator("#content")).toContainText("onLogout:1")
@@ -78,7 +80,7 @@ test.describe("DbSync offline auth", () => {
 		await context.setOffline(true)
 		const error = await page.evaluate(async () => {
 			try {
-				await window.db.login("user@example.com", "123456")
+				await window.db.auth.login("user@example.com", "123456")
 				return null
 			} catch (err: any) {
 				return err?.name ?? String(err)

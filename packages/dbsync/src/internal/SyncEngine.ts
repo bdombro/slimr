@@ -24,7 +24,7 @@ export class SyncEngine {
 	 */
 	constructor(
 		private config: DbSyncConfig,
-		private syncInterval: number,
+		private getSyncInterval: () => number,
 		private events: EventBus,
 		private storage: StorageManager,
 		private auth: AuthManager,
@@ -37,7 +37,7 @@ export class SyncEngine {
 	/** Starts periodic synchronization if it is not already running. */
 	public start() {
 		if (!this.syncSetInterval) {
-			this.syncSetInterval = setInterval(() => this.sync(), this.syncInterval)
+			this.syncSetInterval = setInterval(() => this.sync(), this.getSyncInterval())
 		}
 	}
 
@@ -58,7 +58,7 @@ export class SyncEngine {
 	public get isLive() {
 		const lastSuccess = localStorage.getItem("dbsync-lastSuccessAt")
 		if (!lastSuccess) return false
-		return Date.now() - new Date(lastSuccess).getTime() < this.syncInterval * 4
+		return Date.now() - new Date(lastSuccess).getTime() < this.getSyncInterval() * 4
 	}
 
 	/** Waits until the engine reports a live connection or rejects if disabled. */
@@ -73,7 +73,7 @@ export class SyncEngine {
 				clearInterval(check)
 				resolve()
 			}
-		}, this.syncInterval)
+		}, this.getSyncInterval())
 		return promise
 	}
 

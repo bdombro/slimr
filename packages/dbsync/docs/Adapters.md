@@ -31,25 +31,25 @@ export interface BackendAdapter {
 
 | Value | Meaning |
 | --- | --- |
-| `true` (default) | `init`, `start`, and data APIs require `db.isLoggedIn`. `login` / session flow expected. |
-| `false` | Data guards skipped (`LocalAdapter`); session APIs still run with stubbed adapter auth/sync. |
+| `true` (default) | Data APIs require `db.isLoggedIn`. Constructor `auth.onLogout` required. |
+| `false` | Data guards skipped (`LocalAdapter`); optional `auth` for session UI with stubbed adapter. |
 
-Set `requiresAuth: false` when data APIs should work without `isLoggedIn` (e.g. `LocalAdapter` for local-only or adapter-swapping demos). Session hooks still run; stub `checkAuth` / `login` / `logout` on the adapter.
+Pre-backend development: env-swap `LocalAdapter` with the same `auth` config — [Getting started](./GettingStarted.md#developing-before-the-backend).
 
 ### Authentication Contract
 
-- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online` (via `revalidateSession()`). Apps use `db.isLoggedIn` and `onLogin` / `onLogout`; optional `db.revalidateSession()` for a manual probe (not `db.checkAuth()`).
+- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online`. Apps use `db.isLoggedIn` and `auth` config; optional `db.auth.revalidate()` for a manual probe.
 - **`sendCode(email)`**: Requests a one-time login code for the given email. Requires network on REST backends.
 - **`login(email, code)`**: Validates credentials and establishes a session. Requires network.
 - **`logout()`**: Destroys the remote session on the server.
 
 **How `DbSync` uses logout:**
 
-1. On `db.logout()`, dbsync clears local IndexedDB and sets `isLoggedIn` false **immediately**, and fires `onLogout` **before** slow work.
+1. On `db.auth.logout()`, dbsync clears local IndexedDB and sets `isLoggedIn` false **immediately**, and runs **`auth.onLogout`** **before** slow work.
 2. Then it calls **`adapter.logout()`** if online.
 3. If **offline**, it sets `dbsync-pendingLogout` and calls `adapter.logout()` on the next `online` event (only from the originating tab / flush path — not from passive tabs).
 
-Passive tabs never invoke `adapter.logout()`; they receive `AUTH_LOGOUT` over `BroadcastChannel` and run `onLogout` only.
+Passive tabs never invoke `adapter.logout()`; they receive `AUTH_LOGOUT` over `BroadcastChannel` and run `auth.onLogout` only.
 
 ### Synchronization Contract
 
