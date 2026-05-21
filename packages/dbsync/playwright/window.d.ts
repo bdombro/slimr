@@ -11,7 +11,8 @@ type PlaywrightDb = {
 	login: (email: string, code: string) => Promise<void>
 	logout: () => Promise<void>
 	init: () => Promise<void>
-	bootstrapSession: () => void
+	boot: () => Promise<void>
+	bootstrapSession: () => Promise<void>
 	get: (tableName: string, id: string) => Promise<unknown>
 }
 

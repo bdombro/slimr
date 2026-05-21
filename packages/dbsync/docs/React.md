@@ -2,7 +2,7 @@
 
 `dbsync` exposes change notifications for local writes, cross-tab updates, and sync. Use **`subscribe`** directly or the hooks in `@slimr/dbsync/react`.
 
-Session boot (`onLogin`, `bootstrapSession`, `useDbSession`) is covered in [Offline.md](./Offline.md).
+Session boot (`onLogin`, `boot`, `useDbSession`) is covered in [Offline.md](./Offline.md).
 
 ## `db.subscribe`
 
@@ -114,7 +114,7 @@ See [Offline.md](./Offline.md) for the full `!isDbReady` pattern and refresh beh
 
 ## `DbProvider` (optional)
 
-Registers `onLogin` / `onLogout`, calls `bootstrapSession()`, provides `db` via context.
+Registers `onLogout`, calls `boot()`, provides `db` via context. `onLogin` is optional — default `autoStart` calls `start()` for you.
 
 ```tsx
 import { DbProvider } from "@slimr/dbsync/react"
@@ -122,7 +122,6 @@ import { DbProvider } from "@slimr/dbsync/react"
 <DbProvider
   db={db}
   fallback={<DbBootLoading />}
-  onLogin={async () => { await db.init(); await db.start() }}
   onLogout={() => navigate("/login")}
 >
   <AppRoutes />

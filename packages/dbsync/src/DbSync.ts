@@ -30,6 +30,16 @@ export interface DbSyncConfig {
 	/** The backend adapter used for authentication and synchronization. */
 	adapter: BackendAdapter
 
+	/**
+	 * When true (default), registers an internal `onLogin` handler that calls `start()`.
+	 * Set false to open IndexedDB or start sync manually.
+	 */
+	autoStart?: boolean
+	/**
+	 * When true (default), calls `boot()` once after the first `onLogin` / `onLogout` hook is registered.
+	 * Set false to call `boot()` (or `whenReady()`) yourself.
+	 */
+	autoBoot?: boolean
 	/** Optional fixed IndexedDB version. */
 	version?: number
 	/** The tables and their index definitions. */
@@ -66,6 +76,8 @@ export class DbSync {
 	private connectivity: ConnectivityTracker
 	/** The manager handling authentication and logout behavior. */
 	private authManager: AuthManager
+	/** Whether an auto-boot microtask is already queued. */
+	private autoBootScheduled = false
 
 	/**
 	 * Creates a new `DbSync` instance using the supplied configuration.
@@ -109,6 +121,12 @@ export class DbSync {
 			onSchemaChange,
 			() => this.getSchemaTables(),
 		)
+
+		if (config.autoStart !== false) {
+			this.authManager.onLogin(async () => {
+				await this.start()
+			})
+		}
 
 		for (const tableName of Object.keys(config.tables ?? {})) {
 			;(this as Record<string, unknown>)[tableName] = new DbRepository(this, tableName)
@@ -179,6 +197,14 @@ export class DbSync {
 		return createUid()
 	}
 
+	/** Whether `start()` runs automatically from an internal `onLogin` handler (default true). */
+	public get autoStart() {
+		return this.config.autoStart !== false
+	}
+	/** Whether `boot()` runs after the first session hook is registered (default true). */
+	public get autoBoot() {
+		return this.config.autoBoot !== false
+	}
 	/** Whether the storage layer has finished initializing. */
 	public get initted() {
 		return this.storage.initted
@@ -353,15 +379,47 @@ export class DbSync {
 	}
 	/** Registers a callback for login and cross-tab `AUTH_LOGIN`. */
 	public onLogin(callback: () => void | Promise<void>) {
-		return this.authManager.onLogin(callback)
+		const sub = this.authManager.onLogin(callback)
+		this.scheduleAutoBoot()
+		return sub
 	}
 	/** Registers a callback fired early on logout / 401 / cross-tab `AUTH_LOGOUT`. */
 	public onLogout(callback: () => void | Promise<void>) {
-		return this.authManager.onLogout(callback)
+		const sub = this.authManager.onLogout(callback)
+		this.scheduleAutoBoot()
+		return sub
 	}
-	/** Replays a hydrated session by firing `onLogin` once (not awaitable). */
-	public bootstrapSession() {
-		this.authManager.bootstrapSession()
+	/**
+	 * Resolves when the app can use the local DB: boot finished and, when logged in, `db.initted` is true.
+	 * Schedules auto-boot if needed. Not the same as `waitForLive()` (sync freshness).
+	 */
+	public whenReady(): Promise<void> {
+		this.scheduleAutoBoot()
+		return this.boot()
+	}
+	/** @deprecated Use `whenReady()` instead. */
+	public whenBooted(): Promise<void> {
+		return this.whenReady()
+	}
+	/** Queues `boot()` on the next microtask after the first session hook is registered. */
+	private scheduleAutoBoot() {
+		if (this.config.autoBoot === false) return
+		if (this.autoBootScheduled) return
+		this.autoBootScheduled = true
+		queueMicrotask(() => {
+			this.autoBootScheduled = false
+			void this.boot()
+		})
+	}
+	/**
+	 * Replays a hydrated session: flushes pending remote logout, then awaits all `onLogin` callbacks if logged in.
+	 */
+	public async boot(): Promise<void> {
+		return this.authManager.boot()
+	}
+	/** @deprecated Use `boot()` instead. */
+	public async bootstrapSession(): Promise<void> {
+		return this.authManager.bootstrapSession()
 	}
 	/** Sends a one-time login code to the given email (network required for REST). */
 	public async sendCode(email: string) {

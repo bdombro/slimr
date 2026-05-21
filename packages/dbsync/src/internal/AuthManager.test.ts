@@ -94,21 +94,88 @@ describe("AuthManager", () => {
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 	})
 
-	test("bootstrapSession fires onLogin when hydrated", async () => {
+	test("boot awaits onLogin when hydrated", async () => {
 		writeIsLoggedIn(true)
 		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
-		const onLogin = vi.fn(async () => {})
+		let finished = false
+		const onLogin = vi.fn(async () => {
+			finished = true
+		})
 		manager.onLogin(onLogin)
-		manager.bootstrapSession()
-		await vi.waitFor(() => expect(onLogin).toHaveBeenCalledTimes(1))
+		await manager.boot()
+		expect(onLogin).toHaveBeenCalledTimes(1)
+		expect(finished).toBe(true)
 	})
 
-	test("bootstrapSession does not fire onLogin when logged out", async () => {
+	test("boot does not fire onLogin when logged out", async () => {
 		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
 		const onLogin = vi.fn()
 		manager.onLogin(onLogin)
-		manager.bootstrapSession()
+		await manager.boot()
 		expect(onLogin).not.toHaveBeenCalled()
+	})
+
+	test("concurrent boot shares one onLogin run", async () => {
+		writeIsLoggedIn(true)
+		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		let release!: () => void
+		const gate = new Promise<void>((resolve) => {
+			release = resolve
+		})
+		const onLogin = vi.fn(async () => {
+			await gate
+		})
+		manager.onLogin(onLogin)
+		const first = manager.boot()
+		const second = manager.boot()
+		await vi.waitFor(() => expect(onLogin).toHaveBeenCalledTimes(1))
+		release()
+		await Promise.all([first, second])
+		expect(onLogin).toHaveBeenCalledTimes(1)
+	})
+
+	test("login during boot awaits in-flight onLogin", async () => {
+		writeIsLoggedIn(true)
+		const adapter = createAdapter()
+		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const order: string[] = []
+		let releaseBoot!: () => void
+		const bootGate = new Promise<void>((resolve) => {
+			releaseBoot = resolve
+		})
+		manager.onLogin(async () => {
+			order.push("onLogin-start")
+			await bootGate
+			order.push("onLogin-end")
+		})
+		const bootDone = manager.boot()
+		await vi.waitFor(() => expect(order).toContain("onLogin-start"))
+		const loginDone = manager.login("a@b.com", "123")
+		releaseBoot()
+		await bootDone
+		await loginDone
+		expect(order).toEqual(["onLogin-start", "onLogin-end"])
+		expect(adapter.login).toHaveBeenCalled()
+	})
+
+	test("boot rejects when onLogin throws", async () => {
+		writeIsLoggedIn(true)
+		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		manager.onLogin(async () => {
+			throw new Error("boot failed")
+		})
+		await expect(manager.boot()).rejects.toThrow("boot failed")
+	})
+
+	test("bootstrapSession alias awaits boot", async () => {
+		writeIsLoggedIn(true)
+		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const onLogin = vi.fn()
+		manager.onLogin(onLogin)
+		await manager.bootstrapSession()
+		expect(onLogin).toHaveBeenCalledTimes(1)
+		await manager.bootstrapSession()
+		expect(onLogin).toHaveBeenCalledTimes(1)
 	})
 
 	test("canSync is false while pendingLogout", async () => {
@@ -228,8 +295,8 @@ describe("AuthManager", () => {
 		const boot = new AuthManager(adapter, storage, events, connectivity, () => {})
 		const bootLogin = vi.fn()
 		boot.onLogin(bootLogin)
-		boot.bootstrapSession()
-		await vi.waitFor(() => expect(bootLogin).toHaveBeenCalled())
+		await boot.boot()
+		expect(bootLogin).toHaveBeenCalled()
 
 		await storage.init()
 		await manager.logout()

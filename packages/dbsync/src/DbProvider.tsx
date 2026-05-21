@@ -8,20 +8,20 @@ export type DbProviderProps = {
 	db: DbSync
 	children: ReactNode
 	fallback?: ReactNode
-	onLogin: () => void | Promise<void>
+	/** Optional extra session work; `db.start()` runs automatically when `db.autoStart` is true. */
+	onLogin?: () => void | Promise<void>
 	onLogout: () => void | Promise<void>
 }
 
 /**
- * Optional convenience: registers session hooks, calls `bootstrapSession()`, provides `db` via context.
+ * Optional convenience: registers session hooks (auto-boot when `db.autoBoot`), provides `db` via context.
  */
 export function DbProvider({ db, children, fallback, onLogin, onLogout }: DbProviderProps) {
 	useEffect(() => {
-		const loginSub = db.onLogin(onLogin)
 		const logoutSub = db.onLogout(onLogout)
-		db.bootstrapSession()
+		const loginSub = onLogin ? db.onLogin(onLogin) : undefined
 		return () => {
-			loginSub.close()
+			loginSub?.close()
 			logoutSub.close()
 		}
 	}, [db, onLogin, onLogout])

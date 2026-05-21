@@ -33,7 +33,7 @@ describe("DbSync auth integration", () => {
 		vi.restoreAllMocks()
 	})
 
-	test("bootstrapSession runs onLogin when hydrated", async () => {
+	test("boot runs onLogin when hydrated", async () => {
 		writeIsLoggedIn(true)
 		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 
@@ -45,9 +45,9 @@ describe("DbSync auth integration", () => {
 			await db.init()
 		})
 		db.onLogin(onLogin)
-		db.bootstrapSession()
+		await db.boot()
 
-		await vi.waitFor(() => expect(onLogin).toHaveBeenCalled())
+		expect(onLogin).toHaveBeenCalled()
 		expect(db.initted).toBe(true)
 		db.dispose()
 	})
@@ -77,8 +77,8 @@ describe("DbSync auth integration", () => {
 			await db2.init()
 		})
 		db2.onLogin(bootLogin)
-		db2.bootstrapSession()
-		await vi.waitFor(() => expect(bootLogin).toHaveBeenCalled())
+		await db2.boot()
+		expect(bootLogin).toHaveBeenCalled()
 
 		db.dispose()
 		db2.dispose()

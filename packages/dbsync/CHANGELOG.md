@@ -6,6 +6,33 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.39
+
+### Added
+
+- `DbSyncConfig.autoStart` (default `true`) — internal `onLogin` handler calls `start()` after `login()` / `boot()`. Set `autoStart: false` for manual `init()` / `start()`.
+- `DbSyncConfig.autoBoot` (default `true`) — schedules `boot()` when the first `onLogin` / `onLogout` hook is registered.
+- `db.autoStart`, `db.autoBoot`, and `db.whenReady()` (alias `whenBooted()` deprecated).
+
+### Changed
+
+- `db.whenBooted()` renamed to `db.whenReady()` (deprecated alias kept).
+- Docs: typical apps register `onLogout` only — no explicit `db.boot()` required when `autoBoot` is true.
+- `DbProvider` `onLogin` prop is optional when `autoStart` handles startup; no longer calls `boot()` directly (`autoBoot` handles it).
+
+## 0.0.38
+
+### Added
+
+- `db.boot()` — replays a hydrated session (`onLogin` once on refresh); replaces `bootstrapSession()` in docs.
+
+### Changed
+
+- `db.boot()` is **awaitable** — resolves after all `onLogin` subscribers finish; concurrent `boot()` calls share one run; `login()` during boot waits for in-flight `onLogin`.
+- `boot()` awaits `flushPendingRemoteLogout()` before `onLogin`.
+- Docs: `onLogin` examples use `await db.start()` only — `start()` already calls `init()` when needed.
+- `db.bootstrapSession()` is deprecated; calls `db.boot()`.
+
 ## 0.0.37
 
 ### Added

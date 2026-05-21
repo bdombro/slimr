@@ -60,4 +60,3 @@ db.onLogout(() => {
 })
 
 log(`boot:${db.isLoggedIn}`)
-db.bootstrapSession()

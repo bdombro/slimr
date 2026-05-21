@@ -25,6 +25,8 @@ export class AuthManager {
 	private logoutCallbacks = new Set<SessionCallback>()
 	private sessionListeners = new Set<SessionChangeListener>()
 	private bootstrapped = false
+	private bootPromise: Promise<void> | null = null
+	private onLoginInFlight: Promise<void> | null = null
 	private isBootstrappingValue = false
 	private isInvalidating = false
 
@@ -86,14 +88,29 @@ export class AuthManager {
 		return { close: () => this.logoutCallbacks.delete(callback) }
 	}
 
-	/** Replays a hydrated session by firing `onLogin` once after hooks are registered. */
-	public bootstrapSession() {
+	/**
+	 * Replays a hydrated session: flushes pending remote logout, then runs all `onLogin` callbacks if logged in.
+	 * Resolves when that work finishes (concurrent calls share one run).
+	 */
+	public async boot(): Promise<void> {
+		if (!this.bootPromise) {
+			this.bootPromise = this.runBoot()
+		}
+		return this.bootPromise
+	}
+
+	/** @deprecated Use `boot()` instead. */
+	public async bootstrapSession(): Promise<void> {
+		return this.boot()
+	}
+
+	private async runBoot(): Promise<void> {
 		if (this.bootstrapped) return
 		this.bootstrapped = true
+		await this.flushPendingRemoteLogout()
 		if (this.isLoggedInValue && !this.pendingLogout) {
-			void this.fireOnLogin()
+			await this.fireOnLogin()
 		}
-		void this.flushPendingRemoteLogout()
 	}
 
 	/** Throws when guarded APIs need a logged-in session. */
@@ -219,8 +236,18 @@ export class AuthManager {
 		this.notifySessionChange()
 	}
 
-	private async fireOnLogin() {
-		if (this.isBootstrappingValue) return
+	private async fireOnLogin(): Promise<void> {
+		if (this.onLoginInFlight) return this.onLoginInFlight
+
+		this.onLoginInFlight = this.runOnLoginCallbacks()
+		try {
+			await this.onLoginInFlight
+		} finally {
+			this.onLoginInFlight = null
+		}
+	}
+
+	private async runOnLoginCallbacks(): Promise<void> {
 		this.isBootstrappingValue = true
 		this.notifySessionChange()
 		try {

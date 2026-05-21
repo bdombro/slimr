@@ -66,10 +66,12 @@ const db = new AppDb({
 })
 ```
 
-## `init()` and `start()`
+## `init()`, `start()`, and `autoStart`
 
 - **`init()`** — opens or upgrades IndexedDB, creates stores from registered tables, runs table migrations.
 - **`start()`** — calls `init()` if needed, then starts the pull/push loop and sync leadership (Web Locks).
+- **`autoStart`** (default `true`) — internal `onLogin` calls `start()` after `login()` / boot.
+- **`autoBoot`** (default `true`) — schedules `boot()` when you register the first `onLogout` / `onLogin` hook. Use `await db.whenReady()` to block until ready, or `autoBoot: false` and `await db.boot()` manually.
 
 ```typescript
 await db.start()
@@ -88,15 +90,11 @@ const recentPosts = await db.posts.find({
 
 ## REST apps with auth
 
-For session-backed APIs, do **not** call `start()` at module load without wiring auth first. Use `onLogin` / `onLogout` and `bootstrapSession()` — see [Offline.md](./Offline.md) and [Sync.md](./Sync.md).
+For session-backed APIs, do **not** call `start()` at module load without wiring auth first. Use `onLogin` / `onLogout` and `boot()` — see [Offline.md](./Offline.md) and [Sync.md](./Sync.md).
 
 ```typescript
 db.onLogout(() => navigate("/login"))
-db.onLogin(async () => {
-    await db.init()
-    await db.start()
-})
-db.bootstrapSession()
+// autoBoot + autoStart replay a hydrated session (no explicit boot() needed)
 ```
 
 ## Local-only

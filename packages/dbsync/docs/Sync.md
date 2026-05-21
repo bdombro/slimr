@@ -7,8 +7,7 @@ For offline-first **session boot**, refresh behavior, and React wiring, see [Off
 ## Sync controls
 
 ```typescript
-await db.init()           // open IDB, migrations
-await db.start()          // init + start pull/push loop
+await db.start()          // calls init() if needed, then starts pull/push loop
 
 db.onSyncStateChange((s) => {
   // "idle" | "syncing" | "offline" | "error"
@@ -27,13 +26,7 @@ await db.stop()
 const initialRoute = db.isLoggedIn ? "/app" : "/login"
 
 db.onLogout(() => navigate("/login"))
-
-db.onLogin(async () => {
-  await db.init()
-  await db.start()
-})
-
-db.bootstrapSession()
+// autoBoot + autoStart: refresh replays session without explicit boot()
 
 await db.sendCode("user@example.com")
 await db.login("user@example.com", "123456")
@@ -44,7 +37,9 @@ await db.logout()
 | --- | --- |
 | `db.isLoggedIn` | Persisted; use for **initial route** |
 | `db.offline` / `db.online` | Connectivity hint — not login routing on first paint |
-| `db.bootstrapSession()` | Replay hydrated session → `onLogin`; not `await`‑able |
+| `db.boot()` / `whenReady()` | Awaits hydrated session → all `onLogin` callbacks; optional when `autoBoot` is true |
+| `autoStart` | Default `true` — internal `onLogin` → `start()` |
+| `autoBoot` | Default `true` — `boot()` after first session hook |
 | `db.sendCode` | Network required when `requiresAuth` |
 | `db.login` | Network required |
 | `db.logout` | Local wipe now; remote logout may defer when offline |

@@ -47,7 +47,7 @@ const posts = await db.posts.find({ index: "updatedAt", order: "desc", limit: 20
 
 Full setup (typed tables, indexes, `prepareCreate`): **[Getting started](./docs/GettingStarted.md)**.
 
-REST apps with login: use `onLogin` / `onLogout` and `bootstrapSession()` — **[Sync & auth](./docs/Sync.md)** · **[Offline-first apps](./docs/Offline.md)**.
+REST apps with login: register `onLogout` — `autoBoot` + `autoStart` (defaults) handle refresh — **[Sync & auth](./docs/Sync.md)** · **[Offline-first apps](./docs/Offline.md)**.
 
 ## Documentation
 

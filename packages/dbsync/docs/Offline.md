@@ -26,11 +26,11 @@ dbsync supports this when you follow an **optimistic shell** pattern:
 | --- | --- |
 | `db.isLoggedIn` | `true` **immediately** after `new DbSync()` (hydrated from `localStorage`). |
 | `onLogout` | Does **not** run on refresh — only on `logout()`, `401`, failed revalidation, or cross-tab `AUTH_LOGOUT`. |
-| `onLogin` | Runs once via `db.bootstrapSession()` if hydrated — use for `init()` / `start()`, not for “am I allowed to see the app?”. |
+| `onLogin` | Runs on `login()` / auto-boot when hydrated — `start()` is automatic when `autoStart` is true (default). Use `onLogin` for extra work (routing, etc.). |
 | IndexedDB | Still has data — render from cache after `init()`. |
 | `db.offline` | May be `true` briefly; **do not** use it alone to pick login vs app route on first paint. |
 
-**Router rule:** initial route = **`db.isLoggedIn` at module load** (or `useDbSession` initial state from hydration), **not** “wait for network” and **not** “default to login until IndexedDB opens”. Call `db.bootstrapSession()` to replay a hydrated session in the background; only **`onLogout`** should navigate to login.
+**Router rule:** initial route = **`db.isLoggedIn` at module load** (or `useDbSession` initial state from hydration), **not** “wait for network” and **not** “default to login until IndexedDB opens”. Default **`autoBoot`** replays a hydrated session after you register `onLogout` / `onLogin`; only **`onLogout`** should navigate to login.
 
 **Loading rule:** when `isLoggedIn`, show the **app shell** immediately and **in-app loading** (skeletons / `useDbQuery` `loading`) until `db.initted` — not the login page, not a full-screen offline gate.
 
@@ -43,17 +43,27 @@ dbsync supports this when you follow an **optimistic shell** pattern:
 | State | Signal | Use for |
 | --- | --- | --- |
 | **Session / route** | `db.isLoggedIn` (hydrated on construct) | Login vs app **route** on first paint |
-| **Session wired** | after `db.bootstrapSession()` | Hydrated tab fired `onLogin` once; hooks active |
+| **Session wired** | after auto-boot (or `await db.boot()`) | Hydrated tab fired `onLogin` once; hooks active |
 | **Storage open** | `db.initted` | Data APIs and `useDbQuery` can read IndexedDB |
 | **Bootstrapping** | `onLogin` running (`init` / `start` not finished) | In-app spinner / skeleton (`isBootstrapping` in `DbProvider`) |
 | **Connectivity hint** | `db.offline` / `db.online` | Banners, disable `login()` — **not** login routing when already `isLoggedIn` |
 | **Sync activity** | `onSyncStateChange` | Background status — **not** logged-out redirect |
 
-`db.bootstrapSession()` is **not** “database ready.” It does not open IndexedDB and is not `await`‑able. For storage readiness, use **`db.initted`** or wait for `onLogin`’s `init()` to finish.
+With default **`autoStart`** and **`autoBoot`**, registering `onLogout` schedules `boot()` (microtask), which runs all `onLogin` handlers including internal `start()`. Route from **`db.isLoggedIn`** on first paint for an optimistic shell; use **`await db.whenReady()`** only when you must block until `db.initted`.
+
+### Why auto-boot?
+
+On refresh, `db.isLoggedIn` is restored immediately, but **`onLogin` does not run until `boot()`**. Default **`autoBoot: true`** calls `boot()` once after your first `onLogout` / `onLogin` registration. Call **`await db.boot()`** or **`await db.whenReady()`** yourself when `autoBoot: false`. `bootstrapSession()` remains a deprecated alias for `boot()`.
+
+| Trigger | Runs `onLogin`? |
+| --- | --- |
+| `db.login()` after the form | Yes |
+| Page refresh + session hooks registered | Yes (via **autoBoot**) |
+| Logged out on disk | `boot()` does nothing |
 
 ## Boot flow (REST / session-backed apps)
 
-Register session hooks **immediately** after constructing `DbSync`, then call `bootstrapSession()`:
+Register **`onLogout`** (and optional **`onLogin`**) after constructing `DbSync`:
 
 ```typescript
 import { DbSync } from "@slimr/dbsync"
@@ -68,14 +78,11 @@ db.onLogout(() => {
   navigate("/login") // only on real logout — never on refresh
 })
 
-db.onLogin(async () => {
-  await db.init()   // db.initted becomes true — useDbQuery can run
-  await db.start()
-  // Do not block shell on waitForLive() — show cached data, sync in background
-})
+// optional: extra session work; autoBoot + autoStart handle refresh replay
+// db.onLogin(async () => { navigate("/app") })
 
-// 2. Replay hydrated session (sync, not awaitable — does NOT mean db.initted)
-db.bootstrapSession()
+// optional: block module init until IndexedDB is open
+// await db.whenReady()
 
 // Login form only:
 await db.sendCode("user@example.com")
@@ -86,20 +93,22 @@ await db.login("user@example.com", "123456") // → onLogin
 
 | Step | Behavior |
 | --- | --- |
-| `new DbSync()` | Hydrates `db.isLoggedIn` from `localStorage` (`dbsync-isLoggedIn`). **Use this for first paint / router** so refresh does not flash login. |
-| `db.onLogout()` | Subscribes to logout, `401`, and cross-tab `AUTH_LOGOUT`. Callback runs **before** local DB wipe. **Never fired on refresh.** |
-| `db.onLogin()` | Subscribes to `login()`, restored session, and cross-tab `AUTH_LOGIN`. Use for `init()` + `start()` only. |
-| `db.bootstrapSession()` | After hooks are registered: if hydrated `isLoggedIn`, fires `onLogin` once (refresh / offline reopen). **Sync, not awaitable.** Does **not** call `onLogout` when logged out on disk. |
-| `db.initted` | `true` after `init()` completes inside `onLogin` — data layer ready. |
+| `new DbSync()` | Hydrates `db.isLoggedIn`. Default `autoStart` → internal `onLogin` → `start()`. **Use `isLoggedIn` for first paint / router.** |
+| `db.onLogout()` | Subscribes to logout / `401` / cross-tab logout. With default `autoBoot`, schedules `boot()` once (microtask). **Never fired on refresh.** |
+| `db.onLogin()` | Optional app hooks on `login()` / boot / cross-tab login — after internal `start()` when `autoStart` is true. Also schedules `autoBoot` if registered first. |
+| `autoStart` | Default `true` — internal `onLogin` calls `start()`. |
+| `autoBoot` | Default `true` — first `onLogin` / `onLogout` registration schedules `boot()`. |
+| `db.boot()` / `db.whenReady()` | Manual boot when `autoBoot: false`, or when you need to `await` readiness. |
+| `db.initted` | `true` after `start()` (or `init()`) completes inside `onLogin` — data layer ready. |
 | `db.sendCode()` | **Requires network** when `requiresAuth` is true. Sends a one-time code email; does not change session state. |
 | `db.login()` | **Requires network.** Sets `isLoggedIn`, fires `onLogin`. |
 | `db.logout()` | Clears local state immediately; see [Logout while offline](#logout-while-offline). |
 
-Use **`onLogout` / `onLogin`** for navigation and `init`/`start`. Use **`db.isLoggedIn`** (hydrated) for **initial** route. Show **loading inside the app** until `db.initted` (or `isBootstrapping` from `DbProvider`).
+Use **`onLogout`** for navigation to login. Use **`onLogin`** only for extra session work. Use **`db.isLoggedIn`** (hydrated) for **initial** route. Show **loading inside the app** until `db.initted` (or `isBootstrapping` from `DbProvider`).
 
 ### Local-only apps (`LocalAdapter`)
 
-`LocalAdapter` sets `requiresAuth: false` so **data APIs** never require login, but **session APIs** (`bootstrapSession`, `login`, `logout`, hooks) still run — the adapter stubs `checkAuth()` / `login()` / `logout()`. Use the same `onLogin` / `bootstrapSession` flow as REST when swapping adapters in one app, or call `init()` / `start()` directly if you skip session UI.
+`LocalAdapter` sets `requiresAuth: false` so **data APIs** never require login, but **session APIs** (`boot`, `login`, `logout`, hooks) still run — the adapter stubs `checkAuth()` / `login()` / `logout()`. Use the same `onLogin` / `boot` flow as REST when swapping adapters in one app, or call `init()` / `start()` directly if you skip session UI.
 
 See [LocalAdapter](./LocalAdapter.md).
 
@@ -131,7 +140,7 @@ db.onSyncStateChange((state) => {
 For adapters with `requiresAuth: true` (default):
 
 - **`init()`, `start()`, and all data APIs** (`get`, `put`, `find`, `getTransaction`, table repos, etc.) throw `DbSyncNotAuthenticatedError` when `!db.isLoggedIn` or while a **pending remote logout** is queued.
-- **`login`, `logout`, `revalidateSession`, `subscribe`, `onLogin`, `onLogout`, `bootstrapSession`** remain callable when logged out (subject to offline rules for `login` / `revalidateSession`).
+- **`login`, `logout`, `revalidateSession`, `subscribe`, `onLogin`, `onLogout`, `boot`** remain callable when logged out (subject to offline rules for `login` / `revalidateSession`).
 
 This prevents stray async work from reading stale data after `onLogout`.
 
@@ -170,7 +179,7 @@ Session checks run inside dbsync via **`AuthManager.revalidateSession()`** (call
 | Trigger | Action |
 | --- | --- |
 | Browser `online` + `isLoggedIn` | Internal revalidation; if server says no session → `onLogout` (then redirect to login) |
-| Page refresh + hydrated `isLoggedIn` | **No** `onLogout`; **no** login redirect; `bootstrapSession()` → `onLogin` only |
+| Page refresh + hydrated `isLoggedIn` | **No** `onLogout`; **no** login redirect; auto-boot → `onLogin` only |
 | `db.revalidateSession()` (optional) | Same as above; throws `DbSyncOfflineError` when offline |
 | Sync receives `401` | `onLogout`, sync stops |
 
@@ -215,8 +224,8 @@ For offline boot specifically:
 | `db.online` | `!db.offline`. |
 | `db.onLogin(cb)` | Returns `{ close }`. |
 | `db.onLogout(cb)` | Fires early; returns `{ close }`. |
-| `db.bootstrapSession()` | After hooks: replay hydrated `onLogin` once. **Not** `await`‑able; **not** `db.initted`. |
-| `db.initted` | `true` after `init()` — storage ready for reads/writes. |
+| `db.boot()` / `db.whenReady()` | Awaits hydrated `onLogin` replay (`db.initted` after `start()`). Auto-fired when `autoBoot` is true. |
+| `db.initted` | `true` after `init()` or `start()` — storage ready for reads/writes. |
 | `db.sendCode(email)` | Network required when `requiresAuth`. |
 | `db.login(email, code)` | Network required. |
 | `db.logout()` | Local wipe now; remote logout may defer. |
