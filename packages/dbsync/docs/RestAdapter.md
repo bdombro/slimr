@@ -1,5 +1,7 @@
 # RestAdapter
 
+[Documentation index](./README.md) · [Sync engine](./Sync.md) · [Session](./Session.md)
+
 The `RestAdapter` is the default backend adapter shipped with `@slimr/dbsync`.
 
 It maps the offline-first IndexedDB synchronizer to a very specific set of REST JSON endpoints. The easiest way to satisfy these expectations on your server is to use the officially supported backend, [swift-crud](https://github.com/bdombro/swift-crud) — a ready-made Go + SQLite API built specifically for this architecture.
@@ -69,7 +71,7 @@ The session endpoints expect basic HTTP Cookie-based authentication mechanisms.
 - **Login:** `POST /api/session/login` (Expects JSON body `{ "email": "...", "code": "..." }` and should set the auth cookie here). On failure, same `{ "message" }` error shape.
 - **Logout:** `POST /api/session/logout` (Destroys the session cookie)
 
-`RestAdapter` uses the default **`requiresAuth: true`**. Pass `auth.onLogout` in the constructor; automatic boot opens IndexedDB when logged in. See [Offline.md](./Offline.md).
+`RestAdapter` uses the default **`requiresAuth: true`**. Subscribe `db.auth.onLogout` after construction; automatic boot opens IndexedDB when logged in. See [Offline.md](./Offline.md).
 
 ### Session endpoints and offline behavior
 
@@ -79,6 +81,6 @@ The session endpoints expect basic HTTP Cookie-based authentication mechanisms.
 | `db.auth.login()` | Throws `DbSyncOfflineError` — login needs the network. |
 | `db.auth.revalidate()` (optional) | Throws `DbSyncOfflineError` when offline. Automatic revalidation on `online`. |
 | `db.auth.logout()` | Clears local IndexedDB immediately; **defers** `POST /api/session/logout` until online (`dbsync-pendingLogout`). |
-| Browser `online` + logged in | dbsync calls `GET /api/session`; if 4xx, runs `auth.onLogout`. Also flushes pending logout. |
+| Browser `online` + logged in | dbsync calls `GET /api/session`; if 4xx, runs `onLogout` listeners. Also flushes pending logout. |
 
-**Service workers:** Do not cache session routes. Use `network-only` for `/api/session`, login, and logout so offline PWAs do not read stale auth from the cache. See [Offline.md](./Offline.md).
+**Service workers:** See [Offline-first apps — Service workers](./Offline.md#service-workers-pwas).

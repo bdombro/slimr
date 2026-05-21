@@ -31,29 +31,29 @@ export interface BackendAdapter {
 
 | Value | Meaning |
 | --- | --- |
-| `true` (default) | Data APIs require `db.isLoggedIn`. Constructor `auth.onLogout` required. |
-| `false` | Data guards skipped (`LocalAdapter`); optional `auth` for session UI with stubbed adapter. |
+| `true` (default) | Data APIs require `db.isLoggedIn`. Subscribe `db.auth.onLogout` for session teardown. |
+| `false` | Data guards skipped (`LocalAdapter`); optional `db.auth.onLogout` / `onAuthenticated` for session UI. |
 
-Pre-backend development: env-swap `LocalAdapter` with the same `auth` config — [Getting started](./GettingStarted.md#developing-before-the-backend).
+Pre-backend development: env-swap `LocalAdapter` with the same listeners — [Getting started](./GettingStarted.md#developing-before-the-backend).
 
 ### Authentication Contract
 
-- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online`. Apps use `db.isLoggedIn` and `auth` config; optional `db.auth.revalidate()` for a manual probe.
+- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online`. Apps use `db.isLoggedIn` and `db.auth.onLogout`; optional `db.auth.revalidate()` for a manual probe.
 - **`sendCode(email)`**: Requests a one-time login code for the given email. Requires network on REST backends.
 - **`login(email, code)`**: Validates credentials and establishes a session. Requires network.
 - **`logout()`**: Destroys the remote session on the server.
 
 **How `DbSync` uses logout:**
 
-1. On `db.auth.logout()`, dbsync clears local IndexedDB and sets `isLoggedIn` false **immediately**, and runs **`auth.onLogout`** **before** slow work.
+1. On `db.auth.logout()`, dbsync sets `isLoggedIn` false, runs **`db.auth.onLogout` listeners** (parallel, awaited), then clears IndexedDB.
 2. Then it calls **`adapter.logout()`** if online.
 3. If **offline**, it sets `dbsync-pendingLogout` and calls `adapter.logout()` on the next `online` event (only from the originating tab / flush path — not from passive tabs).
 
-Passive tabs never invoke `adapter.logout()`; they receive `AUTH_LOGOUT` over `BroadcastChannel` and run `auth.onLogout` only.
+Passive tabs never invoke `adapter.logout()`; they receive `AUTH_LOGOUT` over `BroadcastChannel` and run `onLogout` listeners only.
 
 ### Synchronization Contract
 
-The sync engine handles pushing queued modifications and pulling new global data independently of your adapter. Your adapter's job is simply to broker the JSON.
+The sync engine handles pushing queued modifications and pulling new global data — see [Sync engine](./Sync.md). Your adapter brokers the JSON envelope.
 
 - **`pull(cursor: string)`**: Fetches records updated after the cursor (typically an ISO timestamp). Returns `items` and `hasMore` for pagination.
 - **`push(payload)`**: Applies queued local mutations on the backend.

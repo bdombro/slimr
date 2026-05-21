@@ -30,16 +30,16 @@ const log = (message: string) => {
 
 const db = new AuthFixtureDb({
 	adapter: new RestAdapter({ url: window.location.origin }),
-	auth: {
-		onAuthenticated: async () => {
-			window.onAuthenticatedCount += 1
-			log(`onAuthenticated:${window.onAuthenticatedCount}`)
-		},
-		onLogout: () => {
-			window.onLogoutCount += 1
-			log(`onLogout:${window.onLogoutCount}`)
-		},
-	},
+})
+
+db.auth.onAuthenticated(async () => {
+	window.onAuthenticatedCount += 1
+	log(`onAuthenticated:${window.onAuthenticatedCount}`)
+})
+
+db.auth.onLogout(() => {
+	window.onLogoutCount += 1
+	log(`onLogout:${window.onLogoutCount}`)
 })
 
 window.db = db as unknown as Window["db"]

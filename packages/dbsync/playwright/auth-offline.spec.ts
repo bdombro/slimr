@@ -5,7 +5,7 @@ import { getFixtureBaseUrl } from "./test-base-url.js"
 const authPath = "/auth.html"
 
 test.describe("DbSync offline auth", () => {
-	test("hydrates isLoggedIn on refresh and runs onAuthenticated without onLogout", async ({
+	test("hydrates isLoggedIn on refresh without onAuthenticated or onLogout", async ({
 		browser,
 	}) => {
 		const page = await browser.newPage({ baseURL: getFixtureBaseUrl() })
@@ -17,7 +17,7 @@ test.describe("DbSync offline auth", () => {
 		await page.reload()
 
 		await expect(page.locator("#content")).toContainText("boot:true")
-		await expect(page.locator("#content")).toContainText("onAuthenticated:1")
+		await expect(page.locator("#content")).not.toContainText("onAuthenticated")
 		await expect(page.locator("#content")).not.toContainText("onLogout")
 
 		const state = await page.evaluate(() => window.getState())
@@ -34,7 +34,7 @@ test.describe("DbSync offline auth", () => {
 		await page.goto(authPath)
 		await page.evaluate(() => window.seedLoggedIn())
 		await page.reload()
-		await expect(page.locator("#content")).toContainText("onAuthenticated:1")
+		await expect(page.locator("#content")).toContainText("boot:true")
 
 		await context.setOffline(true)
 

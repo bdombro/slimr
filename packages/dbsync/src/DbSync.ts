@@ -2,7 +2,7 @@ import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
 import type { DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
 
-export type { DbAuthConfig, DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
+export type { DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
 
 import { DbRepository } from "./DbRepository.js"
 import { DbSyncAuth } from "./DbSyncAuth.js"
@@ -71,10 +71,6 @@ export class DbSync {
 		const policy = resolveLifecyclePolicy(adapter, config)
 		this.lifecycleManual = policy.manual
 
-		if (policy.requiresAuth && !config.auth?.onLogout) {
-			throw new Error("dbsync: auth.onLogout required for session-backed adapters")
-		}
-
 		this.events = new EventBus()
 
 		const onSchemaChange = () => this.onSchemaChangeDetected()
@@ -111,24 +107,13 @@ export class DbSync {
 		)
 
 		if (policy.autoStart) {
-			this.authManager.onAuthenticated(async () => {
+			this.authManager.onSessionStart(async () => {
 				await this.start()
 			})
 		}
 
-		if (config.auth) {
-			this.authManager.onLogout(config.auth.onLogout)
-			if (config.auth.onAuthenticated) {
-				this.authManager.onAuthenticated(config.auth.onAuthenticated)
-			}
-		}
-
 		if (policy.autoBoot) {
 			this.scheduleAutoBoot()
-		} else if (policy.autoStart && !config.auth) {
-			queueMicrotask(() => {
-				void this.start()
-			})
 		}
 
 		for (const tableName of Object.keys(config.tables ?? {})) {
@@ -378,9 +363,9 @@ export class DbSync {
 	}
 
 	/**
-	 * Waits until the boot pipeline completes (session replay and `auth.onAuthenticated` when logged in).
+	 * Waits until the boot pipeline completes (session replay and internal `start()` when logged in).
 	 * Idempotent — shares the run scheduled on a microtask when lifecycle is automatic.
-	 * Does not wait for backend sync or session revalidation.
+	 * Does not run `auth.onAuthenticated` on refresh. Does not wait for backend sync.
 	 */
 	public async waitForBooted(): Promise<void> {
 		return this.authManager.boot()

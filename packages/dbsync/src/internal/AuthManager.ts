@@ -11,9 +11,13 @@ import {
 } from "./authStorage.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
 import type { EventBus } from "./EventBus.js"
+import {
+	runListenersSettled,
+	type SessionListener,
+	throwListenerRejections,
+} from "./listenerUtils.js"
 import type { StorageManager } from "./storage/index.js"
 
-type SessionCallback = () => void | Promise<void>
 type SessionChangeListener = () => void
 
 /**
@@ -21,13 +25,15 @@ type SessionChangeListener = () => void
  */
 export class AuthManager {
 	private isLoggedInValue = readIsLoggedIn()
-	private loginCallbacks = new Set<SessionCallback>()
-	private logoutCallbacks = new Set<SessionCallback>()
+	private sessionStartCallbacks = new Set<SessionListener>()
+	private authenticatedCallbacks = new Set<SessionListener>()
+	private logoutCallbacks = new Set<SessionListener>()
 	private sessionListeners = new Set<SessionChangeListener>()
 	private bootstrapped = false
 	private isBootedValue = false
 	private bootPromise: Promise<void> | null = null
-	private onLoginInFlight: Promise<void> | null = null
+	private sessionStartInFlight: Promise<void> | null = null
+	private authenticatedInFlight: Promise<void> | null = null
 	private isBootstrappingValue = false
 	private isInvalidating = false
 
@@ -66,12 +72,12 @@ export class AuthManager {
 		return readPendingLogout()
 	}
 
-	/** True while `onLogin` callbacks are running (bootstrap or login). */
+	/** True while session-start or `onAuthenticated` callbacks are running. */
 	public get isBootstrapping() {
 		return this.isBootstrappingValue
 	}
 
-	/** True after the boot pipeline has finished (session replay and authenticated hooks when logged in). */
+	/** True after the boot pipeline has finished. */
 	public get isBooted() {
 		return this.isBootedValue
 	}
@@ -82,20 +88,32 @@ export class AuthManager {
 		return { close: () => this.sessionListeners.delete(listener) }
 	}
 
-	/** Registers a callback invoked on login, boot, and cross-tab `AUTH_LOGIN`. */
-	public onAuthenticated(callback: SessionCallback) {
-		this.loginCallbacks.add(callback)
-		return { close: () => this.loginCallbacks.delete(callback) }
+	/** Internal: open storage / start sync when a hydrated session is restored (boot only). */
+	public onSessionStart(callback: SessionListener) {
+		this.sessionStartCallbacks.add(callback)
+		return () => {
+			this.sessionStartCallbacks.delete(callback)
+		}
 	}
 
-	/** Registers a callback invoked early on logout / 401 / cross-tab `AUTH_LOGOUT`. */
-	public onLogout(callback: SessionCallback) {
+	/** App hook: runs on `login()` and cross-tab `AUTH_LOGIN` — not on refresh boot. */
+	public onAuthenticated(callback: SessionListener) {
+		this.authenticatedCallbacks.add(callback)
+		return () => {
+			this.authenticatedCallbacks.delete(callback)
+		}
+	}
+
+	/** App hook: runs before IDB clear on logout / 401; awaited in parallel via `allSettled`. */
+	public onLogout(callback: SessionListener) {
 		this.logoutCallbacks.add(callback)
-		return { close: () => this.logoutCallbacks.delete(callback) }
+		return () => {
+			this.logoutCallbacks.delete(callback)
+		}
 	}
 
 	/**
-	 * Replays a hydrated session: flushes pending remote logout, then runs authenticated callbacks if logged in.
+	 * Replays a hydrated session: flushes pending remote logout, then runs session-start when logged in.
 	 * Resolves when that work finishes (concurrent calls share one run).
 	 */
 	public async boot(): Promise<void> {
@@ -111,7 +129,9 @@ export class AuthManager {
 		try {
 			await this.flushPendingRemoteLogout()
 			if (this.isLoggedInValue && !this.pendingLogout) {
-				await this.fireOnLogin()
+				await this.fireSessionStart()
+			} else if (!this.requiresAuth) {
+				await this.fireSessionStart()
 			}
 		} finally {
 			this.isBootedValue = true
@@ -147,7 +167,7 @@ export class AuthManager {
 		return this.adapter.sendCode(email)
 	}
 
-	/** Logs in through the adapter and fires `onLogin`. */
+	/** Logs in through the adapter, then runs session-start and `onAuthenticated`. */
 	public async login(email: string, code: string) {
 		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
 		if (this.pendingLogout) {
@@ -159,7 +179,8 @@ export class AuthManager {
 		await this.adapter.login(email, code)
 		this.setLoggedIn(true)
 		this.events.broadcastAuth("AUTH_LOGIN")
-		await this.fireOnLogin()
+		await this.fireSessionStart()
+		await this.fireAuthenticated()
 	}
 
 	/** Logs out: local wipe now; remote logout may defer when offline. */
@@ -182,14 +203,16 @@ export class AuthManager {
 	public async handlePassiveLogout() {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
-		await this.fireOnLogout()
+		const results = await runListenersSettled(this.logoutCallbacks)
 		this.notifySessionChange()
+		throwListenerRejections(results)
 	}
 
 	/** Passive tab: session started elsewhere. */
 	public async handlePassiveLogin() {
 		this.setLoggedIn(true, { persist: true })
-		await this.fireOnLogin()
+		await this.fireSessionStart()
+		await this.fireAuthenticated()
 	}
 
 	private async performLogout(options: {
@@ -200,14 +223,18 @@ export class AuthManager {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
 		if (options.broadcast) this.events.broadcastAuth("AUTH_LOGOUT")
-		await this.fireOnLogout()
+		const listenerResults = await runListenersSettled(this.logoutCallbacks)
 
 		if (options.clearLocal) {
 			await this.storage.clearAllStores()
 			clearSyncCursorKeys()
 		}
 
-		if (!options.remote) return
+		if (!options.remote) {
+			this.notifySessionChange()
+			throwListenerRejections(listenerResults)
+			return
+		}
 
 		if (this.connectivity.online) {
 			await this.adapter.logout()
@@ -216,6 +243,7 @@ export class AuthManager {
 			writePendingLogout(true)
 		}
 		this.notifySessionChange()
+		throwListenerRejections(listenerResults)
 	}
 
 	private async onBackOnline() {
@@ -245,33 +273,53 @@ export class AuthManager {
 		this.notifySessionChange()
 	}
 
-	private async fireOnLogin(): Promise<void> {
-		if (this.onLoginInFlight) return this.onLoginInFlight
+	private async fireSessionStart(): Promise<void> {
+		if (this.sessionStartInFlight) return this.sessionStartInFlight
 
-		this.onLoginInFlight = this.runOnLoginCallbacks()
+		this.sessionStartInFlight = this.runSessionStartCallbacks()
 		try {
-			await this.onLoginInFlight
+			await this.sessionStartInFlight
 		} finally {
-			this.onLoginInFlight = null
+			this.sessionStartInFlight = null
 		}
 	}
 
-	private async runOnLoginCallbacks(): Promise<void> {
+	private async runSessionStartCallbacks(): Promise<void> {
+		if (this.sessionStartCallbacks.size === 0) return
+
 		this.isBootstrappingValue = true
 		this.notifySessionChange()
 		try {
-			for (const callback of this.loginCallbacks) {
-				await callback()
-			}
+			const results = await runListenersSettled(this.sessionStartCallbacks)
+			throwListenerRejections(results)
 		} finally {
 			this.isBootstrappingValue = false
 			this.notifySessionChange()
 		}
 	}
 
-	private async fireOnLogout() {
-		for (const callback of this.logoutCallbacks) {
-			await callback()
+	private async fireAuthenticated(): Promise<void> {
+		if (this.authenticatedInFlight) return this.authenticatedInFlight
+
+		this.authenticatedInFlight = this.runAuthenticatedCallbacks()
+		try {
+			await this.authenticatedInFlight
+		} finally {
+			this.authenticatedInFlight = null
+		}
+	}
+
+	private async runAuthenticatedCallbacks(): Promise<void> {
+		if (this.authenticatedCallbacks.size === 0) return
+
+		this.isBootstrappingValue = true
+		this.notifySessionChange()
+		try {
+			const results = await runListenersSettled(this.authenticatedCallbacks)
+			throwListenerRejections(results)
+		} finally {
+			this.isBootstrappingValue = false
+			this.notifySessionChange()
 		}
 	}
 

@@ -1,8 +1,24 @@
 # Data access
 
-Reads and writes go through **typed table repositories** (`db.posts`, `db.users`, …). Lower-level `db.get` / `db.put` helpers exist for edge cases.
+[Documentation index](./README.md)
+
+Reads and writes go through **typed table repositories** (`db.posts`, `db.users`, …). Lower-level `db.get` / `db.put` helpers exist for edge cases. Writes enqueue for sync — see [Sync engine](./Sync.md).
+
+## Before data access
+
+**Scripts, tests, and imperative handlers** — await boot so IndexedDB is open (and `start()` has run when logged in):
+
+```typescript
+await db.waitForBooted()
+```
+
+With `RestAdapter` (default `requiresAuth`), also ensure `db.isLoggedIn` before reads/writes, or data APIs throw `DbSyncNotAuthenticatedError`.
+
+**React components** — usually omit `waitForBooted()`; `useDbQuery` waits for `db.isReady`. See [React](./React.md).
 
 ## CRUD on repositories
+
+Examples below assume boot has finished (see above).
 
 ```typescript
 await db.posts.add({ userId, content: "Hello" })
@@ -77,10 +93,11 @@ Use when several writes must land together, or when you want to stage work and `
 
 ## Auth guards
 
-With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.isLoggedIn`. Use constructor `auth` and `await db.waitForBooted()` before reads/writes in headless code — see [Offline.md](./Offline.md).
+With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.isLoggedIn`. See [Offline.md](./Offline.md) and [Errors](./Errors.md).
 
 ## See also
 
+- [Data modeling](./Modeling.md) — 1:N and M:N relationships
 - [Schema evolution](./Schema.md)
 - [React](./React.md) — reactive reads
 - [Documentation index](./README.md)

@@ -1,8 +1,10 @@
 # React
 
+[Documentation index](./README.md) · [Offline-first apps](./Offline.md)
+
 `dbsync` exposes change notifications for local writes, cross-tab updates, and sync. Use **`subscribe`** directly or the hooks in `@slimr/dbsync/react`.
 
-Session boot (`auth` config, `waitForBooted()`, `useDbSession`) is covered in [Offline.md](./Offline.md). React apps usually rely on automatic boot; call `await db.waitForBooted()` only when you need strict ordering.
+Session routing and the `!isReady` shell pattern: [Offline-first apps](./Offline.md). React apps usually rely on automatic boot; call `await db.waitForBooted()` only when you need strict ordering in scripts.
 
 ## `db.subscribe`
 
@@ -66,7 +68,7 @@ function PostList() {
 }
 ```
 
-When the adapter **`requiresAuth`** and `!db.isLoggedIn`, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After automatic boot (or `await db.waitForBooted()`), it refetches when `db.isReady` is true.
+When the adapter **`requiresAuth`** and `!db.isLoggedIn`, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After automatic boot, it refetches when `db.isReady` is true — this replaces `await db.waitForBooted()` in components.
 
 ## `useDbSession`
 
@@ -94,10 +96,10 @@ function AppShell() {
 
 Use a module-scoped `db` instance — pass it explicitly to hooks (no context provider required).
 
-See [Offline.md](./Offline.md) for the full `!isReady` pattern and refresh behavior.
-
 ## See also
 
-- [Offline-first apps](./Offline.md) — refresh boot and session routing
+- [Offline-first apps](./Offline.md) — routing and app shell
+- [SSR & Next.js](./SSR.md) — server-side rendering
+- [Session](./Session.md) — `db.auth` reference
+- [Sync engine](./Sync.md) — cross-tab data updates
 - [Data access](./DataAccess.md)
-- [Documentation index](./README.md)

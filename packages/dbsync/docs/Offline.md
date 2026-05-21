@@ -1,125 +1,56 @@
 # Offline-first apps
 
-[Documentation index](./README.md) · [Adapters](./Adapters.md) · [RestAdapter](./RestAdapter.md) · [Migrating](./Migrating.md)
+[Documentation index](./README.md) · [Session](./Session.md) · [Sync engine](./Sync.md) · [Migrating](./Migrating.md)
 
-Session-backed apps use constructor **`auth`** config — not `db.onLogin()` / `db.onLogout()` after construction.
+How to build SPAs and PWAs where IndexedDB is the runtime database and the network is asynchronous.
 
 ## Mental model
 
 - **`db.isLoggedIn`** — hydrated from `localStorage` at module load; use for **first-paint routing**.
-- **`auth.onLogout`** — runs on `db.auth.logout()`, `401`, failed revalidation, cross-tab `AUTH_LOGOUT`. **Never on refresh.**
-- **`auth.onAuthenticated`** — runs on `db.auth.login()`, automatic boot when hydrated, cross-tab `AUTH_LOGIN`. Internal `start()` runs first when lifecycle is automatic.
-- **`db.isBooted`** — client startup sequence has finished (pending logout flushed; `onAuthenticated` callbacks done when logged in). Does not mean the server validated the session or that sync pulled new data.
-- **`db.waitForBooted()`** — await for isBooted. Note: Use **`waitForLive()`** only when you must block on a fresh sync.
-- **`db.isReady`** — IndexedDB open; use for in-app loading gates.
+- **`db.auth.onLogout(fn)`** — subscribe before any `await`; runs in parallel, awaited before IDB clear on active-tab logout. **Never on refresh.**
+- **`db.auth.onAuthenticated(fn)`** — optional; runs on **`login()`** and cross-tab **`AUTH_LOGIN` only** — **not** refresh boot.
+- **Boot (automatic)** — internal `start()` when hydrated; does **not** call `onAuthenticated`.
+- **`db.isBooted`** / **`db.waitForBooted()`** — boot pipeline finished. Not server validation or a completed pull — see [Sync](./Sync.md).
 
-**Router rule:** initial route = **`db.isLoggedIn` at module load** — not “wait for network” and not “default to login until IndexedDB opens”.
+**Router rule:** initial route = **`db.isLoggedIn` at module load**.
 
-**Loading rule:** when `isLoggedIn`, show the **app shell** immediately; use skeletons / `useDbQuery` `loading` until `db.isReady`.
+**Loading rule:** when `isLoggedIn`, show the app shell immediately; use skeletons / `useDbQuery` `loading` until `db.isReady`.
 
-**Sync rule:** do not put `await db.waitForLive()` in default `onAuthenticated` if you want the shell visible immediately — use cached IDB data; sync in the background.
+**Data rule (imperative code):** `await db.waitForBooted()` before the first `db.posts.*` / `db.put` in scripts, tests, or event handlers. React components usually skip it — `useDbQuery` waits for `isReady`.
 
-## Setup
+**Sync rule:** do not put `await db.waitForLive()` in `onAuthenticated` if you want the shell visible immediately.
 
-```typescript
-import { RestAdapter } from "@slimr/dbsync/adapters"
-
-const db = new DbSync({
-    adapter: new RestAdapter({ url: "https://api.example.com" }),
-    tables: { posts: {} },
-    auth: {
-        onLogout: () => navigate("/login"),
-        onAuthenticated: () => navigate("/app"), // optional
-    },
-})
-
-const showApp = db.isLoggedIn
-
-// Wait for 
-// await db.waitForBooted()
-
-await db.auth.sendCode("user@example.com")
-await db.auth.login("user@example.com", "123456")
-```
-
-## When callbacks run
-
-
-| Trigger                          | `auth.onAuthenticated`? | `auth.onLogout`?                      |
-| -------------------------------- | ----------------------- | ------------------------------------- |
-| Page refresh + logged in on disk | Yes (automatic boot)    | No                                    |
-| `db.auth.login()`                | Yes                     | No                                    |
-| `db.auth.logout()`               | No                      | Yes                                   |
-| Sync `401` / failed revalidation | No                      | Yes                                   |
-| Cross-tab `AUTH_LOGOUT`          | No                      | Yes (passive tab; no second IDB wipe) |
-| Cross-tab `AUTH_LOGIN`           | Yes (passive tab)       | No                                    |
-
-
-Automatic lifecycle (default): `new DbSync({ auth })` schedules boot on a microtask. React apps usually skip `await db.waitForBooted()`; headless code should call it before data access.
+Canonical setup (typed tables, env swap): [Getting started](./GettingStarted.md). Auth API tables: [Session](./Session.md).
 
 ## State reference
 
+| State | Meaning |
+| --- | --- |
+| `isLoggedIn` | Client session flag (hydrated) |
+| `isBooted` | Boot pipeline finished |
+| `isReady` | IndexedDB open |
+| `isBootstrapping` | Session-start or `onAuthenticated` callbacks in flight |
+| `pendingLogout` | Remote logout queued until online |
+| `offline` / `online` | Browser connectivity |
+| `isStarted` / `isLive` | Sync timer / recent successful sync — [Sync](./Sync.md) |
 
-| State                | Meaning                               |
-| -------------------- | ------------------------------------- |
-| `isLoggedIn`         | Client session flag (hydrated)        |
-| `isBooted`           | Boot pipeline finished                |
-| `isReady`            | IndexedDB open (`start()` finished)   |
-| `isBootstrapping`    | `onAuthenticated` callbacks in flight |
-| `pendingLogout`      | Remote logout queued until online     |
-| `offline` / `online` | Browser connectivity                  |
+## Offline auth behavior
 
+- **`db.auth.sendCode()`** / **`login()`** throw `DbSyncOfflineError` when offline and `requiresAuth` — see [Errors](./Errors.md).
+- When back **online**, dbsync revalidates; invalid session → `onLogout` listeners.
+- **`db.auth.revalidate()`** — optional manual probe.
 
-`db.isReady` is not the same as `db.waitForLive()` (sync freshness).
+## Logout pipeline
 
-## `LocalAdapter`
+1. Sync stops; `isLoggedIn` set false.
+2. **`onLogout` listeners** run in parallel (`Promise.allSettled`).
+3. IndexedDB cleared (active tab); sync cursor keys cleared.
+4. Rejections propagate **after** step 3.
+5. Remote `adapter.logout()` when online, or **`pendingLogout`** when offline.
 
-`requiresAuth: false` — data APIs work without login; with `auth`, session flow matches REST (stubbed). See [LocalAdapter](./LocalAdapter.md) and [Getting started — Developing before the backend](./GettingStarted.md#developing-before-the-backend).
+Passive tabs: `AUTH_LOGOUT` over `BroadcastChannel` — listeners only, no IDB wipe, no `adapter.logout()`.
 
-## Offline behavior
-
-- `**db.auth.sendCode()**` / `**login()**` throw `DbSyncOfflineError` when offline and `requiresAuth`.
-- When the device comes **back online**, dbsync revalidates via `adapter.checkAuth()`. Invalid session → `auth.onLogout`.
-- `**db.auth.revalidate()`** — optional manual probe (e.g. Retry button); throws when offline.
-
-There is no public `db.checkAuth()` — use `db.isLoggedIn` for client state.
-
-## Logout
-
-1. `**auth.onLogout`** fires immediately (tear down UI before slow work).
-2. Local IndexedDB cleared; sync cursors cleared.
-3. Remote `adapter.logout()` when online, or `**pendingLogout**` when offline (flushed on next `online`).
-
-Only the tab that called `db.auth.logout()` (or the online flush) hits the network for `adapter.logout()`. Other tabs run `auth.onLogout` only.
-
-## Cross-tab auth
-
-`BroadcastChannel` (+ `storage` event fallback) propagates `AUTH_LOGIN` / `AUTH_LOGOUT`. Passive tabs update `isLoggedIn` and run the matching `auth` callback; they do not re-clear IndexedDB on passive logout.
-
-## Service workers
-
-Do **not** cache session routes. Use **network-only** (or equivalent) for:
-
-- `GET /api/session`
-- `POST /api/session/login`
-- `POST /api/session/logout`
-- `POST /api/session/send-code`
-
-Otherwise offline PWAs may serve stale auth responses from the cache and fight hydrated `db.isLoggedIn`. Data sync routes can use your normal caching strategy separately.
-
-## Errors
-
-
-| Error                         | When                                                                                         |
-| ----------------------------- | -------------------------------------------------------------------------------------------- |
-| `DbSyncNotAuthenticatedError` | Data APIs / `getTransaction()` when not logged in (`requiresAuth`)                           |
-| `DbSyncOfflineError`          | `db.auth.sendCode` / `login` / `revalidate` while offline (`requiresAuth`)                   |
-| `DbSyncAuthError`             | REST auth failure (`code: "server"`); login while `pendingLogout` (`code: "pending_logout"`) |
-
-
-`login`, `logout`, `subscribe`, and `waitForBooted()` remain callable when logged out (subject to offline rules for login).
-
-## React
+## React shell
 
 ```tsx
 const { isLoggedIn, isBooted, isReady, isBootstrapping, offline } = useDbSession(db)
@@ -129,16 +60,27 @@ if (!isReady) return <AppSkeleton active={isBootstrapping} />
 return <App />
 ```
 
-Pass the module-scoped `db` instance — no context provider. See [React.md](./React.md).
+Module-scoped `db`; pass it to hooks explicitly. Details: [React](./React.md).
+
+## Service workers (PWAs)
+
+Session routes must not be served from cache while offline — stale `GET /api/session` makes the client think it is still logged in.
+
+- Use **`network-only`** (or equivalent) for `/api/session`, send-code, login, and logout.
+- Do not precache auth responses in the app shell.
+- Data pull/push can use your normal API caching policy; session probes should always hit the network when online.
+
+Rest endpoint list: [RestAdapter](./RestAdapter.md).
 
 ## Advanced
 
-`lifecycle: { manual: true }` — skip automatic boot/start; call `await db.boot()` then `await db.start()` when logged in (tests, exotic shells).
+`lifecycle: { manual: true }` — `await db.boot()` then `await db.start()` when logged in.
 
 ## See also
 
-- [Migrating](./Migrating.md) — old API mapping
-- [React](./React.md) — `useDbQuery`, `useDbSession`
-- [Sync](./Sync.md) — sync loop summary
-- [RestAdapter](./RestAdapter.md) — endpoints
-
+- [Getting started](./GettingStarted.md)
+- [Session](./Session.md)
+- [Sync engine](./Sync.md)
+- [React](./React.md)
+- [SSR & Next.js](./SSR.md)
+- [RestAdapter](./RestAdapter.md)

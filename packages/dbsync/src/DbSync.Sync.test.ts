@@ -3,6 +3,7 @@ import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { writeIsLoggedIn } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
+import { wireAuth } from "./test-support/wireAuth.js"
 
 /** Creates a clean shared database for each sync test so queue and cursor state never leaks between cases. */
 const resetDatabase = async () => {
@@ -24,9 +25,9 @@ const createDb = async () => {
 			posts: {},
 			users: {},
 		},
-		auth: { onLogout: async () => {} },
 		lifecycle: { manual: true },
 	})
+	wireAuth(db)
 	await db.start()
 	await db.stop()
 	return db

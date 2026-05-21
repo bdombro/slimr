@@ -2,22 +2,9 @@
 
 [Documentation index](./README.md) · [CHANGELOG](../CHANGELOG.md)
 
-This guide maps removed public APIs to the current golden path. See **UNRELEASED** in [CHANGELOG](../CHANGELOG.md) for the full breaking list.
-
-## Constructor `auth` (replaces hook registration)
+## Session listeners (replaces constructor `auth`)
 
 **Before:**
-
-```typescript
-const db = new DbSync({ adapter, tables: { posts: {} } })
-
-db.onLogout(() => navigate("/login"))
-db.onLogin(async () => {
-  await db.start()
-})
-```
-
-**After:**
 
 ```typescript
 const db = new DbSync({
@@ -25,12 +12,25 @@ const db = new DbSync({
   tables: { posts: {} },
   auth: {
     onLogout: () => navigate("/login"),
-    onAuthenticated: () => navigate("/app"), // optional; start() is automatic
+    onAuthenticated: () => navigate("/app"),
   },
 })
 ```
 
-Session adapters (`RestAdapter`) **require** `auth.onLogout`. You no longer call `db.onLogin()` / `db.onLogout()`.
+**After:**
+
+```typescript
+const db = new DbSync({ adapter, tables: { posts: {} } })
+
+const offLogout = db.auth.onLogout(() => navigate("/login"))
+const offAuth = db.auth.onAuthenticated(() => navigate("/app")) // optional
+
+// later: offLogout(); offAuth();
+```
+
+Register listeners in the same module immediately after `new DbSync`, before any `await`.
+
+`onAuthenticated` runs on **login and cross-tab login only** — not refresh boot. Route refresh on `db.isLoggedIn`.
 
 ## Auth actions → `db.auth`
 
@@ -46,14 +46,14 @@ Session adapters (`RestAdapter`) **require** `auth.onLogout`. You no longer call
 | Removed | Replacement |
 | --- | --- |
 | `db.initted` | `db.isReady` |
-| `db.whenReady()` / `db.whenBooted()` / `db.ready()` / `db.boot()` (automatic) | `await db.waitForBooted()` — use `db.isLoggedIn` / `db.isBooted` |
-| `db.bootstrapSession()` | Automatic microtask boot, or `await db.waitForBooted()` |
+| `db.whenReady()` / `db.ready()` / `db.boot()` (automatic) | `await db.waitForBooted()` |
+| `db.bootstrapSession()` | Automatic microtask boot |
 
 ## Lifecycle flags
 
 | Removed | Replacement |
 | --- | --- |
-| `autoStart` / `autoBoot` config | Omitted — adapter + `auth` infer automatic boot and `start()` |
+| `autoStart` / `autoBoot` | Omitted — automatic when not `lifecycle.manual` |
 | Manual control | `lifecycle: { manual: true }` then `await db.boot()` / `await db.start()` |
 
 ## React
@@ -63,18 +63,8 @@ Session adapters (`RestAdapter`) **require** `auth.onLogout`. You no longer call
 | `DbProvider` / `useDb` | Module-scoped `db` + `useDbSession(db)` |
 | `useDbSession` → `isDbReady` | `isReady` |
 
-## Storage / init
-
-| Removed | Replacement |
-| --- | --- |
-| `db.init()` | `await db.start()` (opens IndexedDB; called automatically when logged in) |
-| `db.startSyncInterval()` / `stopSyncInterval()` | `db.start()` / `db.stop()` |
-
-## Errors
-
-`RestAdapter` auth failures now throw `DbSyncAuthError` (`code: "server"`) instead of a plain `Error` string. Pending logout during login throws `DbSyncAuthError` (`code: "pending_logout"`).
-
 ## See also
 
 - [Getting started](./GettingStarted.md)
+- [Session](./Session.md)
 - [Offline-first apps](./Offline.md)

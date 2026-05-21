@@ -4,8 +4,7 @@ import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { writeIsLoggedIn } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
-
-const noopAuth = { onLogout: async () => {} }
+import { wireAuth } from "./test-support/wireAuth.js"
 
 const resetDatabase = async () => {
 	await new Promise<void>((resolve, reject) => {
@@ -28,13 +27,13 @@ describe("DbSync lifecycle", () => {
 		await resetDatabase()
 	})
 
-	test("automatic lifecycle starts on boot when hydrated with auth", async () => {
+	test("automatic lifecycle starts on boot when hydrated with auth listeners", async () => {
 		writeIsLoggedIn(true)
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await db.waitForBooted()
 		expect(db.isBooted).toBe(true)
 		expect(db.isReady).toBe(true)
@@ -46,8 +45,8 @@ describe("DbSync lifecycle", () => {
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await expect(db.boot()).rejects.toThrow(/lifecycle\.manual/)
 		db.dispose()
 	})
@@ -57,9 +56,9 @@ describe("DbSync lifecycle", () => {
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: noopAuth,
 			lifecycle: { manual: true },
 		})
+		wireAuth(db)
 		await new Promise<void>((resolve) => setTimeout(resolve, 0))
 		expect(db.isReady).toBe(false)
 		await db.boot()
@@ -68,7 +67,7 @@ describe("DbSync lifecycle", () => {
 		db.dispose()
 	})
 
-	test("local adapter without auth auto-starts on microtask", async () => {
+	test("local adapter without auth listeners auto-starts on microtask", async () => {
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
@@ -82,8 +81,8 @@ describe("DbSync lifecycle", () => {
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await db.waitForBooted()
 		expect(db.isLoggedIn).toBe(true)
 		expect(db.isBooted).toBe(true)
@@ -92,10 +91,10 @@ describe("DbSync lifecycle", () => {
 
 	test("waitForBooted leaves isLoggedIn false when logged out", async () => {
 		const db = new DbSync({
-			adapter: new LocalAdapter(),
+			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await db.waitForBooted()
 		expect(db.isLoggedIn).toBe(false)
 		expect(db.isBooted).toBe(true)
@@ -103,31 +102,43 @@ describe("DbSync lifecycle", () => {
 		db.dispose()
 	})
 
-	test("onAuthenticated runs after internal start", async () => {
-		writeIsLoggedIn(true)
+	test("onAuthenticated runs after internal start on login", async () => {
 		const order: string[] = []
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: {
-				...noopAuth,
-				onAuthenticated: async () => {
-					order.push(`app:${db.isReady}`)
-				},
+		})
+		wireAuth(db, {
+			onAuthenticated: async () => {
+				order.push(`app:${db.isReady}`)
 			},
 		})
 		await db.waitForBooted()
+		expect(order).toEqual([])
+		await db.auth.login("dev@local", "000")
 		expect(order).toEqual(["app:true"])
 		db.dispose()
 	})
 
-	test("RestAdapter requires auth.onLogout", () => {
-		expect(
-			() =>
-				new DbSync({
-					adapter: new RestAdapter({ url: "http://localhost:3000" }),
-					tables: { posts: {} },
-				}),
-		).toThrow(/auth\.onLogout/)
+	test("boot does not call onAuthenticated when hydrated", async () => {
+		writeIsLoggedIn(true)
+		const onAuthenticated = vi.fn()
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		wireAuth(db, { onAuthenticated })
+		await db.waitForBooted()
+		expect(onAuthenticated).not.toHaveBeenCalled()
+		expect(db.isReady).toBe(true)
+		db.dispose()
+	})
+
+	test("RestAdapter constructs without auth listeners", () => {
+		const db = new DbSync({
+			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			tables: { posts: {} },
+		})
+		db.dispose()
 	})
 })

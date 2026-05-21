@@ -15,11 +15,10 @@ export function resolveLifecyclePolicy(
 ): LifecyclePolicy {
 	const requiresAuth = adapter.requiresAuth !== false
 	const manual = config.lifecycle?.manual === true
-	const hasAuth = !!config.auth
 	return {
 		requiresAuth,
 		manual,
 		autoStart: !manual,
-		autoBoot: !manual && (requiresAuth ? hasAuth : hasAuth),
+		autoBoot: !manual,
 	}
 }

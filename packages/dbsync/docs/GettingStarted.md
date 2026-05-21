@@ -2,7 +2,7 @@
 
 [Documentation index](./README.md) · [Package README](../README.md)
 
-This guide walks through the recommended way to set up `@slimr/dbsync`: a typed `DbSync` subclass, `DbTable` repositories, and a `RestAdapter` (or [LocalAdapter](./LocalAdapter.md) for local-only apps).
+Install, typed `DbSync` / `DbTable`, session listeners, and lifecycle. For offline routing and React shells, see [Offline-first apps](./Offline.md).
 
 ## Install
 
@@ -46,25 +46,34 @@ class AppDb extends DbSync {
     posts = new PostTable(this)
 }
 
-const db = new AppDb({
+export const db = new AppDb({
     adapter: new RestAdapter({ url: "https://api.myapp.com" }),
-    auth: {
-        onLogout: () => navigate("/login"),
-        onAuthenticated: () => navigate("/app"), // optional
-    },
 })
+
+db.auth.onLogout(() => navigate("/login"))
+db.auth.onAuthenticated(() => navigate("/app")) // optional; login + cross-tab only
 ```
+
+Register listeners in the same module immediately after `new DbSync`, before any `await`. Do not call `waitForBooted()` at module top level in SPAs — use the headless pattern below or React hooks.
+
+## State at a glance
+
+| API | Meaning |
+| --- | --- |
+| `isLoggedIn` | Hydrated session — route on this at module load |
+| `waitForBooted()` / `isBooted` | Boot finished (internal `start()` when logged in) |
+| `isReady` | IndexedDB open |
+| `isBootstrapping` | Session / `onAuthenticated` callbacks running |
+| `waitForLive()` | Optional — recent successful sync ([Sync](./Sync.md)) |
+
+Full callback matrix and logout flow: [Session](./Session.md) · [Offline](./Offline.md).
 
 ## Lifecycle (automatic by default)
 
-Adapter choice drives defaults — no `autoStart` / `autoBoot` flags:
-
-- **Session-backed** (`RestAdapter`): requires `auth.onLogout`; automatically schedules boot on a microtask (hydrated session replay + `start()` when logged in).
-- **Local-only** (`LocalAdapter`): `auth` optional; opens IndexedDB automatically when `auth` is omitted.
+- **Session-backed** (`RestAdapter`): microtask boot — hydrated session replay + internal `start()` when logged in.
+- **Local-only** (`LocalAdapter`): opens IndexedDB automatically when not manual.
 
 ### Headless / scripts
-
-Wait for local startup before touching data (does not wait for backend sync):
 
 ```typescript
 await db.waitForBooted()
@@ -77,25 +86,15 @@ if (db.isLoggedIn) {
 }
 ```
 
-| API | Meaning |
-| --- | --- |
-| `waitForBooted()` | Boot pipeline finished (`onAuthenticated` when logged in). |
-| `isBooted` | Same, sync check. |
-| `isReady` | IndexedDB open (usually after boot when logged in). |
-| `isLoggedIn` | Hydrated client session. |
-| `waitForLive()` | Optional — recent successful sync (advanced). |
-
 ### React SPAs
 
-Same `db` instance; route on **`db.isLoggedIn` at module load**. In the shell, use `useDbSession` (`isBooted`, `isReady`, `isBootstrapping`) and `useDbQuery` for data — you usually **do not** call `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
+Route on **`db.isLoggedIn` at module load**. Use `useDbSession` and `useDbQuery` — usually no `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
 
 ### Advanced
 
-`lifecycle: { manual: true }` — no automatic boot/start; call `await db.boot()` then `await db.start()` when logged in (tests, exotic shells). `boot()` throws when lifecycle is automatic — use `waitForBooted()` instead.
+`lifecycle: { manual: true }` — call `await db.boot()` then `await db.start()` when logged in. `boot()` throws when lifecycle is automatic.
 
 ## Developing before the backend
-
-Swap adapters with one env var; **keep the same `auth` config**:
 
 ```typescript
 const adapter =
@@ -103,38 +102,37 @@ const adapter =
         ? new LocalAdapter()
         : new RestAdapter({ url: import.meta.env.VITE_API_URL })
 
-const db = new AppDb({
-    adapter,
-    auth: {
-        onLogout: () => navigate("/login"),
-        onAuthenticated: () => navigate("/app"),
-    },
-})
+export const db = new AppDb({ adapter })
+db.auth.onLogout(() => navigate("/login"))
 
 await db.waitForBooted()
 ```
-
-`LocalAdapter` stubs `sendCode` / `login` / `logout` and skips data API login guards — fine for UI work; re-test auth-gated flows after switching to `RestAdapter`. See [Adapters](./Adapters.md).
 
 ## Local-only
 
 ```typescript
 import { LocalAdapter } from "@slimr/dbsync/adapters"
 
-const db = new AppDb({ adapter: new LocalAdapter() })
-// No auth → IndexedDB opens automatically on a microtask
+export const db = new AppDb({ adapter: new LocalAdapter() })
+// Optional: db.auth.onLogout(...) for session UI with stubbed login
+
+// Scripts / first imperative write:
+await db.waitForBooted()
 ```
-
-With `auth`, session hooks behave like REST (stubbed network). See [LocalAdapter](./LocalAdapter.md).
-
-## Upgrading?
-
-If you used `onLogin` / `onLogout`, `autoStart`, `DbProvider`, or `db.initted`, see [Migrating](./Migrating.md).
 
 ## Next steps
 
-- [Data access](./DataAccess.md) — CRUD, queries, streams, transactions
-- [Schema evolution](./Schema.md) — migrations and versioning
-- [React](./React.md) — `useDbQuery`, `useDbSession`
-- [Sync & auth](./Sync.md) — sync loop and `db.auth`
-- [Offline-first apps](./Offline.md) — refresh boot, offline logout, service workers
+| Goal | Doc |
+| --- | --- |
+| Offline routing, logout, PWAs | [Offline-first apps](./Offline.md) |
+| Sync loop, dirty queue, multi-tab | [Sync engine](./Sync.md) |
+| CRUD, queries, transactions | [Data access](./DataAccess.md) |
+| 1:N relations, join tables, denormalization | [Data modeling](./Modeling.md) |
+| Migrations and versioning | [Schema evolution](./Schema.md) |
+| React hooks | [React](./React.md) |
+| SSR and hydration | [SSR & Next.js](./SSR.md) |
+| Mocking IndexedDB, component tests | [Testing](./Testing.md) |
+| Auth API reference | [Session](./Session.md) |
+| All public methods | [API reference](./API.md) |
+| Typed errors | [Errors](./Errors.md) |
+| Upgrade from pre-0.0.40 | [Migrating](./Migrating.md) |

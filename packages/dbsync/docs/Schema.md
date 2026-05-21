@@ -1,5 +1,7 @@
 # Schema evolution
 
+[Documentation index](./README.md) · [Sync engine](./Sync.md)
+
 `dbsync` upgrades local data in place instead of wiping IndexedDB when your model changes.
 
 ## `defaultSetter`

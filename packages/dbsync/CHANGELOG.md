@@ -6,11 +6,17 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.41
+
+### Changed
+
+- Docs: `waitForBooted()` in imperative snippets (README quick start, Data access, Modeling, LocalAdapter); omitted from module-setup and React examples.
+
 ## 0.0.40
 
 ### Breaking
 
-- **Session config:** `DbSyncConfig.auth` with `onLogout` (required for session adapters) and optional `onAuthenticated` — replaces `db.onLogin()` / `db.onLogout()` hook registration.
+- **Session listeners:** `db.auth.onLogout(fn)` and `db.auth.onAuthenticated(fn)` return unsubscribe `() => void` — removed `DbSyncConfig.auth` / `DbAuthConfig`. Listeners run via `Promise.allSettled`; rejections propagate after teardown (logout) or after the pipeline step completes. **`onAuthenticated` runs on login and cross-tab login only — not on refresh boot.**
 - **Auth namespace:** `db.auth.sendCode`, `login`, `logout`, `revalidate` — removed top-level `db.sendCode`, `login`, `logout`, `revalidateSession`.
 - **Readiness:** `db.isReady` (IndexedDB open), `db.isBooted`, `db.waitForBooted()` — removed `db.initted`, `db.ready()`, `DbReadyResult`, `db.whenReady()`, `db.whenBooted()`, `db.bootstrapSession()`. Public `db.boot()` only when `lifecycle.manual`.
 - **Lifecycle:** adapter-inferred automatic boot + `start()`; optional `lifecycle: { manual: true }` only — removed `autoStart`, `autoBoot`, `db.autoStart`, `db.autoBoot`.
@@ -20,13 +26,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 ### Added
 
 - `DbSyncAuthError` (`code`: `offline` | `pending_logout` | `server`) for REST auth failures and blocked login during pending logout.
-- `DbAuthConfig` exported from `@slimr/dbsync`.
 
 ### Changed
 
 - `RestAdapter` `sendCode` / `login` throw `DbSyncAuthError` with `serverMessage` from swift-crud `{ message }`.
 - `storage` is private on `DbSync`; `SyncEngine` reads `syncInterval` live via getter.
-- Docs: headless-first golden path (`await db.waitForBooted()` before data); constructor `auth`; env-swap `LocalAdapter`; [Migrating.md](./docs/Migrating.md); consistency sweep across guides.
+- Docs: restructured guides — [Sync.md](./docs/Sync.md) (engine), [Session.md](./docs/Session.md), [Errors.md](./docs/Errors.md), [API.md](./docs/API.md), learning paths in [docs/README.md](./docs/README.md); `db.auth` subscribers; [Migrating.md](./docs/Migrating.md).
 - `useDbSession` exposes `isBooted`.
 
 ## 0.0.39

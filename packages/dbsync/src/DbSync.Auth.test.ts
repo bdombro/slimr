@@ -5,8 +5,7 @@ import { DbSync } from "./DbSync.js"
 import { DbSyncAuthError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "./errors.js"
 import { writeIsLoggedIn, writePendingLogout } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
-
-const noopAuth = { onLogout: async () => {} }
+import { wireAuth } from "./test-support/wireAuth.js"
 
 const resetDatabase = async () => {
 	await new Promise<void>((resolve, reject) => {
@@ -35,7 +34,7 @@ describe("DbSync auth integration", () => {
 		vi.restoreAllMocks()
 	})
 
-	test("boot runs onAuthenticated when hydrated", async () => {
+	test("boot does not run onAuthenticated when hydrated", async () => {
 		writeIsLoggedIn(true)
 		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 
@@ -43,11 +42,11 @@ describe("DbSync auth integration", () => {
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
-			auth: { ...noopAuth, onAuthenticated },
 		})
+		wireAuth(db, { onAuthenticated })
 		await db.waitForBooted()
 
-		expect(onAuthenticated).toHaveBeenCalled()
+		expect(onAuthenticated).not.toHaveBeenCalled()
 		expect(db.isReady).toBe(true)
 		db.dispose()
 	})
@@ -57,8 +56,8 @@ describe("DbSync auth integration", () => {
 		const db = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: { ...noopAuth, onAuthenticated },
 		})
+		wireAuth(db, { onAuthenticated })
 		await db.start()
 		await db.put("posts", { id: "1", title: "before-login" })
 		await db.auth.login("dev@local", "000")
@@ -67,14 +66,15 @@ describe("DbSync auth integration", () => {
 		expect(db.isReady).toBe(true)
 
 		writeIsLoggedIn(true)
-		const bootAuthenticated = vi.fn()
+		const onRefresh = vi.fn()
 		const db2 = new DbSync({
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
-			auth: { ...noopAuth, onAuthenticated: bootAuthenticated },
 		})
+		wireAuth(db2, { onAuthenticated: onRefresh })
 		await db2.waitForBooted()
-		expect(bootAuthenticated).toHaveBeenCalled()
+		expect(onRefresh).not.toHaveBeenCalled()
+		expect(db2.isReady).toBe(true)
 
 		db.dispose()
 		db2.dispose()
@@ -84,8 +84,8 @@ describe("DbSync auth integration", () => {
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await expect(db.put("posts", { id: "1", title: "x" })).rejects.toBeInstanceOf(
 			DbSyncNotAuthenticatedError,
 		)
@@ -97,21 +97,22 @@ describe("DbSync auth integration", () => {
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await expect(db.auth.sendCode("a@b.com")).rejects.toBeInstanceOf(DbSyncOfflineError)
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		db.dispose()
 	})
 
-	test("sendCode works offline with LocalAdapter", async () => {
-		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
+	test("sendCode delegates to adapter when online", async () => {
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 		const db = new DbSync({
-			adapter: new LocalAdapter(),
+			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
+		wireAuth(db)
 		await expect(db.auth.sendCode("a@b.com")).resolves.toBe(true)
-		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		db.dispose()
 	})
 
@@ -120,47 +121,21 @@ describe("DbSync auth integration", () => {
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await expect(db.auth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncOfflineError)
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		db.dispose()
 	})
 
-	test("triggerSync reports offline sync state when browser is offline", async () => {
-		writeIsLoggedIn(true)
-		fetchMock.mockResolvedValue(
-			new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
-		)
-
-		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
-		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
-			tables: { posts: {} },
-			auth: noopAuth,
-		})
-		await db.start()
-
-		const states: string[] = []
-		db.onSyncStateChange((state) => states.push(state))
-		await db.triggerSync()
-
-		expect(states).toContain("offline")
-		expect(fetchMock).not.toHaveBeenCalled()
-		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
-		db.dispose()
-	})
-
-	test("login blocked while pendingLogout", async () => {
+	test("login throws when pendingLogout", async () => {
 		writeIsLoggedIn(true)
 		writePendingLogout(true)
-		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
-
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
-			auth: noopAuth,
 		})
+		wireAuth(db)
 		await expect(db.auth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncAuthError)
 		db.dispose()
 	})
