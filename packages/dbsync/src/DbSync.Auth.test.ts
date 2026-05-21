@@ -62,7 +62,7 @@ describe("DbSync auth integration", () => {
 		await db.put("posts", { id: "1", title: "before-login" })
 		await db.auth.login("dev@local", "000")
 		await vi.waitFor(() => expect(onAuthenticated).toHaveBeenCalled())
-		expect(db.isLoggedIn).toBe(true)
+		expect(db.auth.isLoggedIn).toBe(true)
 		expect(db.isReady).toBe(true)
 
 		writeIsLoggedIn(true)

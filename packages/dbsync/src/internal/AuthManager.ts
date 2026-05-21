@@ -1,4 +1,5 @@
 import type { BackendAdapter } from "../adapters/types.js"
+import type { DbSyncDebugListener } from "../debugEvents.js"
 import { DbSyncAuthError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "../errors.js"
 import {
 	AUTH_IS_LOGGED_IN_KEY,
@@ -10,6 +11,7 @@ import {
 	writePendingLogout,
 } from "./authStorage.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
+import { emitDebug } from "./debug.js"
 import type { EventBus } from "./EventBus.js"
 import {
 	runListenersSettled,
@@ -50,6 +52,8 @@ export class AuthManager {
 		private events: EventBus,
 		private connectivity: ConnectivityTracker,
 		private stopSync: () => void | Promise<void>,
+		private onDebug: DbSyncDebugListener | undefined,
+		private getIsReady: () => boolean,
 	) {
 		this.setupCrossTab()
 		this.connectivity.subscribe((offline) => {
@@ -126,6 +130,7 @@ export class AuthManager {
 	private async runBoot(): Promise<void> {
 		if (this.bootstrapped) return
 		this.bootstrapped = true
+		emitDebug(this.onDebug, { type: "boot:start" })
 		try {
 			await this.flushPendingRemoteLogout()
 			if (this.isLoggedInValue && !this.pendingLogout) {
@@ -136,6 +141,11 @@ export class AuthManager {
 		} finally {
 			this.isBootedValue = true
 			this.notifySessionChange()
+			emitDebug(this.onDebug, {
+				type: "boot:done",
+				isLoggedIn: this.isLoggedInValue,
+				isReady: this.getIsReady(),
+			})
 		}
 	}
 
@@ -157,7 +167,7 @@ export class AuthManager {
 	public async revalidateSession() {
 		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
 		const valid = await this.adapter.checkAuth()
-		if (!valid) await this.invalidateSession()
+		if (!valid) await this.invalidateSession("revalidate")
 		return valid
 	}
 
@@ -189,9 +199,10 @@ export class AuthManager {
 	}
 
 	/** Called when sync receives 401 or revalidation fails. */
-	public async invalidateSession() {
+	public async invalidateSession(reason: "401" | "revalidate" = "401") {
 		if (this.isInvalidating) return
 		this.isInvalidating = true
+		emitDebug(this.onDebug, { type: "auth:invalidate", reason })
 		try {
 			await this.performLogout({ remote: false, clearLocal: true, broadcast: true })
 		} finally {
@@ -223,11 +234,13 @@ export class AuthManager {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
 		if (options.broadcast) this.events.broadcastAuth("AUTH_LOGOUT")
+		emitDebug(this.onDebug, { type: "session:logout", phase: "listeners" })
 		const listenerResults = await runListenersSettled(this.logoutCallbacks)
 
 		if (options.clearLocal) {
 			await this.storage.clearAllStores()
 			clearSyncCursorKeys()
+			emitDebug(this.onDebug, { type: "session:logout", phase: "cleared" })
 		}
 
 		if (!options.remote) {
@@ -242,6 +255,7 @@ export class AuthManager {
 		} else {
 			writePendingLogout(true)
 		}
+		emitDebug(this.onDebug, { type: "session:logout", phase: "remote" })
 		this.notifySessionChange()
 		throwListenerRejections(listenerResults)
 	}
@@ -287,6 +301,7 @@ export class AuthManager {
 	private async runSessionStartCallbacks(): Promise<void> {
 		if (this.sessionStartCallbacks.size === 0) return
 
+		emitDebug(this.onDebug, { type: "session:start" })
 		this.isBootstrappingValue = true
 		this.notifySessionChange()
 		try {
@@ -312,6 +327,7 @@ export class AuthManager {
 	private async runAuthenticatedCallbacks(): Promise<void> {
 		if (this.authenticatedCallbacks.size === 0) return
 
+		emitDebug(this.onDebug, { type: "session:authenticated" })
 		this.isBootstrappingValue = true
 		this.notifySessionChange()
 		try {

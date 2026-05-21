@@ -46,9 +46,9 @@ window.db = db as unknown as Window["db"]
 window.postsRepo = db.posts
 
 window.getState = () => ({
-	isLoggedIn: db.isLoggedIn,
+	isLoggedIn: db.auth.isLoggedIn,
 	isReady: db.isReady,
-	pendingLogout: db.pendingLogout,
+	pendingLogout: db.auth.pendingLogout,
 	offline: db.offline,
 	onAuthenticatedCount: window.onAuthenticatedCount,
 	onLogoutCount: window.onLogoutCount,
@@ -58,4 +58,4 @@ window.seedLoggedIn = () => {
 	writeIsLoggedIn(true)
 }
 
-log(`boot:${db.isLoggedIn}`)
+log(`boot:${db.auth.isLoggedIn}`)

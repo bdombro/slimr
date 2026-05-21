@@ -1,9 +1,10 @@
 import type { BackendAdapter } from "../adapters/types.js"
-import type { DbSyncConfig } from "../DbSync.js"
+import type { DbSyncConfig } from "../dbSyncConfig.js"
 import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
-import type { EventBus } from "./EventBus.js"
+import { emitDebug } from "./debug.js"
+import type { EventBus, SyncState } from "./EventBus.js"
 import type { StorageManager } from "./storage/index.js"
 import { getSchemaSignature } from "./storage/index.js"
 
@@ -96,26 +97,42 @@ export class SyncEngine {
 	/** Performs pull, push, and sync-state bookkeeping for one cycle. */
 	private async performSync() {
 		if (this.connectivity.offline) {
-			this.events.setState("offline")
+			this.setSyncState("offline")
+			emitDebug(this.config.onDebug, {
+				type: "sync:cycle",
+				phase: "skipped",
+				reason: "offline",
+			})
 			return
 		}
 		if (!this.auth.canSync()) {
+			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "skipped", reason: "auth" })
 			return
 		}
 
-		this.events.setState("syncing")
+		emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "start" })
+		this.setSyncState("syncing")
 		try {
-			await this.syncPull()
-			await this.syncPush()
-			this.events.setState("idle")
+			const pullCount = await this.syncPull()
+			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "pull", pullCount })
+			const pushCount = await this.syncPush()
+			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "push", pushCount })
+			this.setSyncState("idle")
 			localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
+			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "done" })
 		} catch (err: any) {
+			emitDebug(this.config.onDebug, { type: "sync:error", error: err })
 			if (err.status === 401) {
-				await this.auth.invalidateSession()
+				await this.auth.invalidateSession("401")
 				this.stop()
 			}
-			this.events.setState(this.connectivity.offline ? "offline" : "error")
+			this.setSyncState(this.connectivity.offline ? "offline" : "error")
 		}
+	}
+
+	private setSyncState(state: SyncState) {
+		this.events.setState(state)
+		emitDebug(this.config.onDebug, { type: "sync:state", state })
 	}
 
 	/** Computes the local schema signature used for version handshakes. */
@@ -123,14 +140,16 @@ export class SyncEngine {
 		return getSchemaSignature(this.getSchemaTables(), "tableName")
 	}
 
-	/** Pulls remote changes and applies them to IndexedDB. */
+	/** Pulls remote changes and applies them to IndexedDB. Returns total items applied. */
 	private async syncPull() {
+		let totalPulled = 0
 		let hasMore = true
 		while (hasMore) {
 			const cursor = localStorage.getItem("dbsync-pullSyncedUpTo") || ""
 			const data = await this.adapter.pull(cursor)
 
 			if (data.items && data.items.length > 0) {
+				totalPulled += data.items.length
 				const tx = this.storage.getTransaction()
 				data.items.forEach((post: any) => {
 					if (post.variant === "__dbsync_system" && post.id === "version") {
@@ -156,9 +175,10 @@ export class SyncEngine {
 			}
 			hasMore = data.hasMore
 		}
+		return totalPulled
 	}
 
-	/** Pushes queued local mutations to the backend and clears the queues. */
+	/** Pushes queued local mutations to the backend and clears the queues. Returns payload size. */
 	private async syncPush() {
 		const dirty = await this.storage.find<any>("dirtyQueue")
 		const deleted = await this.storage.find<any>("deletedQueue")
@@ -217,5 +237,6 @@ export class SyncEngine {
 			deleted.forEach((d) => tx.delete("deletedQueue", d.id))
 			await tx.commit()
 		}
+		return payload.length
 	}
 }

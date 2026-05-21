@@ -6,7 +6,7 @@ Use it when your app is local-only, when you disable sync in certain environment
 
 ## `requiresAuth: false`
 
-- **Data guards off** — data APIs work without `db.isLoggedIn`.
+- **Data guards off** — data APIs work without `db.auth.isLoggedIn`.
 - **Session APIs on** — with `db.auth.onLogout` / `onAuthenticated`, behavior matches REST (stubbed network).
 - **`useDbQuery`** does not block on `!isLoggedIn`.
 

@@ -29,14 +29,22 @@ Listeners return `() => void` to unsubscribe. Logout listeners run in parallel (
 | `db.auth.logout()` | Clear local data; remote logout when online |
 | `db.auth.revalidate()` | Manual `checkAuth` probe |
 
-## Boot and lifecycle
+## Session state (`db.auth`)
+
+| API | Role |
+| --- | --- |
+| `db.auth.isLoggedIn` | Hydrated client session (use for first paint) |
+| `db.auth.pendingLogout` | Remote logout queued until online |
+| `db.auth.isBootstrapping` | Session-start or `onAuthenticated` callbacks in flight |
+| `db.auth.onSessionChange(cb)` | Fires on session flag changes |
+
+## Boot and lifecycle (`db`)
 
 | API | Role |
 | --- | --- |
 | `db.waitForBooted()` | Boot pipeline finished (internal `start()` when logged in) |
 | `db.isBooted` | Same, sync check |
 | `db.isReady` | IndexedDB open |
-| `db.isLoggedIn` | Hydrated client session (use for first paint) |
 | `db.boot()` | Only when `lifecycle: { manual: true }` |
 | `lifecycle.manual` | Opt out of automatic boot / `start()` |
 

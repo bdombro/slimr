@@ -68,7 +68,7 @@ function PostList() {
 }
 ```
 
-When the adapter **`requiresAuth`** and `!db.isLoggedIn`, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After automatic boot, it refetches when `db.isReady` is true — this replaces `await db.waitForBooted()` in components.
+When the adapter **`requiresAuth`** and `!db.auth.isLoggedIn`, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After automatic boot, it refetches when `db.isReady` is true — this replaces `await db.waitForBooted()` in components.
 
 ## `useDbSession`
 

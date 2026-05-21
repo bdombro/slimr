@@ -51,7 +51,7 @@ export function useDbQuery<T>(
 		const requiresAuth = adapter != null && adapter.requiresAuth !== false
 
 		const fetchData = async () => {
-			if (requiresAuth && !db.isLoggedIn) {
+			if (requiresAuth && !db.auth.isLoggedIn) {
 				if (isMounted) setState({ value: null, loading: true })
 				return
 			}
@@ -70,7 +70,7 @@ export function useDbQuery<T>(
 					})
 				}
 			} catch (err) {
-				console.error("[dbsync useDbQuery]: Query failed", err)
+				db.emitDebug({ type: "query:error", tables: tableArray, error: err })
 				if (isMounted) {
 					setState((current) => ({ ...current, loading: false }))
 				}
@@ -101,7 +101,7 @@ export function useDbQuery<T>(
 			sub.close()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [JSON.stringify(tableArray), shouldRefetchFilter, db.isLoggedIn, ...deps])
+	}, [JSON.stringify(tableArray), shouldRefetchFilter, db.auth.isLoggedIn, ...deps])
 
 	return state
 }

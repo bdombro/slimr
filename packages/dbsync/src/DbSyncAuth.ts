@@ -2,11 +2,31 @@ import type { AuthManager } from "./internal/AuthManager.js"
 import type { SessionListener } from "./internal/listenerUtils.js"
 
 /**
- * Authentication actions for a `DbSync` instance.
- * Session state (`isLoggedIn`, etc.) lives on the root `db` object.
+ * Authentication actions and session state for a `DbSync` instance.
+ * Boot lifecycle (`isBooted`, `waitForBooted`) lives on the root `db` object.
  */
 export class DbSyncAuth {
 	constructor(private authManager: AuthManager) {}
+
+	/** Whether the app considers the user signed in (hydrated from localStorage). */
+	get isLoggedIn() {
+		return this.authManager.isLoggedIn
+	}
+
+	/** Whether a remote logout is deferred until online. */
+	get pendingLogout() {
+		return this.authManager.pendingLogout
+	}
+
+	/** True while session-start or `onAuthenticated` callbacks are running. */
+	get isBootstrapping() {
+		return this.authManager.isBootstrapping
+	}
+
+	/** Subscribes to session state changes (for React hooks). */
+	onSessionChange(listener: () => void) {
+		return this.authManager.onSessionChange(listener)
+	}
 
 	/**
 	 * Subscribes to logout (`db.auth.logout()`, 401, cross-tab). Listeners run in parallel

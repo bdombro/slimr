@@ -1,8 +1,14 @@
 import { createUid } from "@slimr/util"
 import type { BackendAdapter } from "./adapters/types.js"
-import type { DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
+import type { DbSyncConfig, DbSyncDebugEvent, DbSyncTableConfig } from "./dbSyncConfig.js"
+import { emitDebug } from "./internal/debug.js"
 
-export type { DbSyncConfig, DbSyncTableConfig } from "./dbSyncConfig.js"
+export type {
+	DbSyncConfig,
+	DbSyncDebugEvent,
+	DbSyncDebugListener,
+	DbSyncTableConfig,
+} from "./dbSyncConfig.js"
 
 import { DbRepository } from "./DbRepository.js"
 import { DbSyncAuth } from "./DbSyncAuth.js"
@@ -91,6 +97,8 @@ export class DbSync {
 			() => {
 				void this.stop()
 			},
+			config.onDebug,
+			() => this.isReady,
 		)
 		this.auth = new DbSyncAuth(this.authManager)
 
@@ -332,10 +340,6 @@ export class DbSync {
 		return this.events.onSyncStateChange(callback)
 	}
 
-	/** Whether the app considers the user signed in (hydrated from localStorage). */
-	public get isLoggedIn() {
-		return this.authManager.isLoggedIn
-	}
 	/** Whether the browser reports offline connectivity. */
 	public get offline() {
 		return this.connectivity.offline
@@ -343,18 +347,6 @@ export class DbSync {
 	/** Whether the browser reports online connectivity. */
 	public get online() {
 		return this.connectivity.online
-	}
-	/** Whether a remote logout is queued until online. */
-	public get pendingLogout() {
-		return this.authManager.pendingLogout
-	}
-	/** Whether authenticated callbacks are running (boot or login). */
-	public get isBootstrapping() {
-		return this.authManager.isBootstrapping
-	}
-	/** Subscribes to session/boot state changes. */
-	public onSessionChange(callback: () => void) {
-		return this.authManager.onSessionChange(callback)
 	}
 
 	/** Whether local startup has finished (not backend sync — see `waitForLive()`). */
@@ -419,8 +411,14 @@ export class DbSync {
 		return this.syncEngine.triggerSync()
 	}
 
+	/** Emits a debug event when `config.onDebug` is set. */
+	public emitDebug(event: DbSyncDebugEvent) {
+		emitDebug(this.config.onDebug, event)
+	}
+
 	/** Responds to schema changes by disposing state and reloading the page. */
 	protected onSchemaChangeDetected() {
+		emitDebug(this.config.onDebug, { type: "schema:reload" })
 		this.storage.dispose()
 		this.stop()
 		if (typeof window !== "undefined") {

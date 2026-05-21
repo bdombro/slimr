@@ -185,9 +185,9 @@ describe("DbSync sync engine", () => {
 
 		expect(await db.auth.revalidate()).toBe(true)
 		await db.auth.login("user@example.com", "123456")
-		expect(db.isLoggedIn).toBe(true)
+		expect(db.auth.isLoggedIn).toBe(true)
 		await db.auth.logout()
-		expect(db.isLoggedIn).toBe(false)
+		expect(db.auth.isLoggedIn).toBe(false)
 		const urls = fetchMock.mock.calls.map((call) => String(call[0]))
 		expect(urls.some((url) => url.includes("/api/session/login"))).toBe(true)
 		expect(urls.some((url) => url.includes("/api/session/logout"))).toBe(true)

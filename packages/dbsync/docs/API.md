@@ -12,6 +12,7 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | `tables` | `Record<string, DbSyncTableConfig>` | Optional inline schema |
 | `lifecycle` | `{ manual?: boolean }` | Default automatic boot + `start()` |
 | `version` | `number` | Optional explicit schema version (overrides signature) |
+| `onDebug` | `(event: DbSyncDebugEvent) => void` | Optional structured tracing — [Debugging](./Debugging.md) |
 
 `DbSyncTableConfig`: `indexes?`, `defaultSetter?`, `migrations?`.
 
@@ -44,21 +45,17 @@ String `tableName` APIs. Prefer typed `db.posts.*` when using `DbTable`. Require
 | `upgradeRecord(table, record)` | `T` | Run migration chain, no persist — [Schema](./Schema.md) |
 | `genUuid()` | `string` | New id helper |
 
-Throws `DbSyncNotAuthenticatedError` when `requiresAuth` and `!isLoggedIn` — [Errors](./Errors.md).
+Throws `DbSyncNotAuthenticatedError` when `requiresAuth` and `!db.auth.isLoggedIn` — [Errors](./Errors.md).
 
-## `DbSync` — lifecycle & session state
+## `DbSync` — lifecycle & connectivity
 
 | Member | Type | Meaning |
 | --- | --- | --- |
-| `isLoggedIn` | `boolean` | Hydrated client session — route on this at module load |
 | `isBooted` | `boolean` | Boot pipeline finished |
 | `isReady` | `boolean` | IndexedDB open |
-| `isBootstrapping` | `boolean` | Session-start or `onAuthenticated` callbacks running |
-| `pendingLogout` | `boolean` | Remote logout deferred until online |
 | `offline` / `online` | `boolean` | Browser connectivity |
 | `waitForBooted()` | `Promise<void>` | Await boot (not server sync) — [Offline](./Offline.md) |
 | `boot()` | `Promise<void>` | Only when `lifecycle.manual`; else throws |
-| `onSessionChange(cb)` | `{ close() }` | Fires on session/boot flag changes |
 
 ## `DbSync` — sync engine
 
@@ -82,6 +79,12 @@ Details: [Sync engine](./Sync.md).
 
 `changes` entries: `{ table, change: "insert"|"update"|"delete", id }` or `{ table, change: "clear" }`. Large cross-tab updates may omit `changes` (refetch).
 
+## `DbSync` — debug
+
+| Method | Notes |
+| --- | --- |
+| `emitDebug(event)` | Forwards to `config.onDebug` when set |
+
 ## `DbSync` — cleanup
 
 | Method | Notes |
@@ -90,8 +93,12 @@ Details: [Sync engine](./Sync.md).
 
 ## `db.auth` (`DbSyncAuth`)
 
-| Method | Returns | Notes |
+| Member | Type | Notes |
 | --- | --- | --- |
+| `isLoggedIn` | `boolean` | Hydrated client session — route on this at module load |
+| `pendingLogout` | `boolean` | Remote logout deferred until online |
+| `isBootstrapping` | `boolean` | Session-start or `onAuthenticated` callbacks running |
+| `onSessionChange(cb)` | `{ close() }` | Fires on session flag changes |
 | `onLogout(listener)` | `() => void` | Unsubscribe; runs before IDB clear on active logout |
 | `onAuthenticated(listener)` | `() => void` | Login + cross-tab login only — not refresh boot |
 | `sendCode(email)` | `Promise<boolean>` | Network required when `requiresAuth` |
@@ -157,7 +164,7 @@ See [React](./React.md), [SSR](./SSR.md).
 | Export | Kind |
 | --- | --- |
 | `DbSync`, `DbTable` | Classes |
-| `DbSyncConfig`, `Migration` | Types |
+| `DbSyncConfig`, `DbSyncDebugEvent`, `DbSyncDebugListener`, `Migration` | Types |
 | `DbSyncOfflineError`, `DbSyncNotAuthenticatedError`, `DbSyncAuthError` | Errors — [Errors](./Errors.md) |
 | `@slimr/dbsync/adapters` | `RestAdapter`, `LocalAdapter`, `BackendAdapter` |
 

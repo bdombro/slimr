@@ -78,7 +78,7 @@ Full callback matrix and logout flow: [Session](./Session.md) · [Offline](./Off
 ```typescript
 await db.waitForBooted()
 
-if (db.isLoggedIn) {
+if (db.auth.isLoggedIn) {
     await db.posts.add({
         userId: "u_1",
         content: "Hello world",
@@ -88,7 +88,7 @@ if (db.isLoggedIn) {
 
 ### React SPAs
 
-Route on **`db.isLoggedIn` at module load**. Use `useDbSession` and `useDbQuery` — usually no `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
+Route on **`db.auth.isLoggedIn` at module load**. Use `useDbSession` and `useDbQuery` — usually no `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
 
 ### Advanced
 

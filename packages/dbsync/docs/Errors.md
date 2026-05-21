@@ -30,7 +30,7 @@ Thrown when guarded data APIs run without a session:
 - `db.getTransaction()`
 - Table repositories on adapters with `requiresAuth: true`
 
-Call `await db.waitForBooted()` before the first data access in scripts/tests, then ensure `db.isLoggedIn` when `requiresAuth` is true.
+Call `await db.waitForBooted()` before the first data access in scripts/tests, then ensure `db.auth.isLoggedIn` when `requiresAuth` is true.
 
 ## `DbSyncAuthError`
 

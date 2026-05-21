@@ -10,6 +10,7 @@ Package overview: [README.md](../README.md).
 | Build login, refresh, offline logout | [Offline-first apps](./Offline.md) → [Session](./Session.md) → [RestAdapter](./RestAdapter.md) |
 | Understand sync and multi-tab | [Sync engine](./Sync.md) → [Adapters](./Adapters.md) |
 | Look up a method or getter | [API reference](./API.md) |
+| Trace boot, sync, and auth in dev | [Debugging](./Debugging.md) |
 | Upgrade from pre-0.0.40 APIs | [Migrating](./Migrating.md) → [CHANGELOG](../CHANGELOG.md) |
 | Develop without a backend | [Getting started — env swap](./GettingStarted.md#developing-before-the-backend) → [LocalAdapter](./LocalAdapter.md) |
 
@@ -40,6 +41,7 @@ Package overview: [README.md](../README.md).
 | [SSR & Next.js](./SSR.md) | Server-side rendering caveats and hydration |
 | [Testing](./Testing.md) | Mocking IndexedDB, component tests |
 | [Errors](./Errors.md) | `DbSyncOfflineError`, `DbSyncNotAuthenticatedError`, `DbSyncAuthError` |
+| [Debugging](./Debugging.md) | `onDebug` events and dev wiring |
 
 ## Adapters
 

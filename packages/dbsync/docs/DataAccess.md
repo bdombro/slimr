@@ -12,7 +12,7 @@ Reads and writes go through **typed table repositories** (`db.posts`, `db.users`
 await db.waitForBooted()
 ```
 
-With `RestAdapter` (default `requiresAuth`), also ensure `db.isLoggedIn` before reads/writes, or data APIs throw `DbSyncNotAuthenticatedError`.
+With `RestAdapter` (default `requiresAuth`), also ensure `db.auth.isLoggedIn` before reads/writes, or data APIs throw `DbSyncNotAuthenticatedError`.
 
 **React components** — usually omit `waitForBooted()`; `useDbQuery` waits for `db.isReady`. See [React](./React.md).
 
@@ -93,7 +93,7 @@ Use when several writes must land together, or when you want to stage work and `
 
 ## Auth guards
 
-With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.isLoggedIn`. See [Offline.md](./Offline.md) and [Errors](./Errors.md).
+With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.auth.isLoggedIn`. See [Offline.md](./Offline.md) and [Errors](./Errors.md).
 
 ## See also
 

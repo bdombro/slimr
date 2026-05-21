@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "../adapters/LocalAdapter.js"
 import type { BackendAdapter } from "../adapters/types.js"
+import type { DbSyncDebugEvent, DbSyncDebugListener } from "../debugEvents.js"
 import { DbSyncOfflineError } from "../errors.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
 import { AuthManager } from "./AuthManager.js"
@@ -29,6 +30,15 @@ const createAdapter = (overrides?: Partial<BackendAdapter>): BackendAdapter => (
 	...overrides,
 })
 
+const createAuthManager = (
+	adapter: BackendAdapter,
+	store: StorageManager,
+	bus: EventBus,
+	conn: ConnectivityTracker,
+	stopSync: () => void | Promise<void> = () => {},
+	onDebug?: DbSyncDebugListener,
+) => new AuthManager(adapter, store, bus, conn, stopSync, onDebug, () => store.initted)
+
 describe("AuthManager", () => {
 	let storage: StorageManager
 	let events: EventBus
@@ -47,7 +57,7 @@ describe("AuthManager", () => {
 			() => {},
 			() => [{ storeName: "posts", indexes: undefined }],
 		)
-		auth = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		auth = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 	})
 
 	afterEach(async () => {
@@ -57,9 +67,24 @@ describe("AuthManager", () => {
 		vi.restoreAllMocks()
 	})
 
+	test("onDebug receives boot events", async () => {
+		const debugEvents: DbSyncDebugEvent[] = []
+		const manager = createAuthManager(
+			createAdapter(),
+			storage,
+			events,
+			connectivity,
+			() => {},
+			(e) => debugEvents.push(e),
+		)
+		await manager.boot()
+		expect(debugEvents.map((e) => e.type)).toEqual(["boot:start", "boot:done"])
+		expect(debugEvents[1]).toMatchObject({ type: "boot:done", isLoggedIn: false })
+	})
+
 	test("hydrates isLoggedIn from localStorage", () => {
 		writeIsLoggedIn(true)
-		const hydrated = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const hydrated = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		expect(hydrated.isLoggedIn).toBe(true)
 	})
 
@@ -67,7 +92,7 @@ describe("AuthManager", () => {
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		const offlineConnectivity = new ConnectivityTracker()
 		const adapter = createAdapter()
-		const offlineAuth = new AuthManager(adapter, storage, events, offlineConnectivity, () => {})
+		const offlineAuth = createAuthManager(adapter, storage, events, offlineConnectivity, () => {})
 		await expect(offlineAuth.sendCode("a@b.com")).rejects.toBeInstanceOf(DbSyncOfflineError)
 		expect(adapter.sendCode).not.toHaveBeenCalled()
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
@@ -75,7 +100,7 @@ describe("AuthManager", () => {
 
 	test("sendCode delegates to adapter when online", async () => {
 		const adapter = createAdapter()
-		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const manager = createAuthManager(adapter, storage, events, connectivity, () => {})
 		await expect(manager.sendCode("a@b.com")).resolves.toBe(true)
 		expect(adapter.sendCode).toHaveBeenCalledWith("a@b.com")
 	})
@@ -83,7 +108,7 @@ describe("AuthManager", () => {
 	test("login throws when offline", async () => {
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		const offlineConnectivity = new ConnectivityTracker() // reads navigator.onLine at construct
-		const offlineAuth = new AuthManager(
+		const offlineAuth = createAuthManager(
 			createAdapter(),
 			storage,
 			events,
@@ -96,7 +121,7 @@ describe("AuthManager", () => {
 
 	test("boot runs session start when hydrated", async () => {
 		writeIsLoggedIn(true)
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		let finished = false
 		manager.onSessionStart(async () => {
 			finished = true
@@ -109,7 +134,7 @@ describe("AuthManager", () => {
 	})
 
 	test("boot does not fire session start or onAuthenticated when logged out", async () => {
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		const onSessionStart = vi.fn()
 		const onAuthenticated = vi.fn()
 		manager.onSessionStart(onSessionStart)
@@ -121,7 +146,7 @@ describe("AuthManager", () => {
 
 	test("concurrent boot shares one session start run", async () => {
 		writeIsLoggedIn(true)
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		let release!: () => void
 		const gate = new Promise<void>((resolve) => {
 			release = resolve
@@ -141,7 +166,7 @@ describe("AuthManager", () => {
 	test("login during boot awaits in-flight session start then runs onAuthenticated", async () => {
 		writeIsLoggedIn(true)
 		const adapter = createAdapter()
-		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const manager = createAuthManager(adapter, storage, events, connectivity, () => {})
 		const order: string[] = []
 		let releaseBoot!: () => void
 		const bootGate = new Promise<void>((resolve) => {
@@ -166,7 +191,7 @@ describe("AuthManager", () => {
 
 	test("boot rejects when session start throws", async () => {
 		writeIsLoggedIn(true)
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		manager.onSessionStart(async () => {
 			throw new Error("boot failed")
 		})
@@ -176,7 +201,7 @@ describe("AuthManager", () => {
 	test("canSync is false while pendingLogout", async () => {
 		writeIsLoggedIn(true)
 		writePendingLogout(true)
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		expect(manager.canSync()).toBe(false)
 	})
 
@@ -197,8 +222,8 @@ describe("AuthManager", () => {
 
 		const eventsA = new EventBus()
 		const eventsB = new EventBus()
-		const authA = new AuthManager(adapter, storage, eventsA, connectivity, () => {})
-		const authB = new AuthManager(adapter, storage, eventsB, connectivity, () => {})
+		const authA = createAuthManager(adapter, storage, eventsA, connectivity, () => {})
+		const authB = createAuthManager(adapter, storage, eventsB, connectivity, () => {})
 
 		writeIsLoggedIn(true)
 		await storage.init()
@@ -227,7 +252,7 @@ describe("AuthManager", () => {
 
 		const eventsA = new EventBus()
 		const eventsB = new EventBus()
-		const authB = new AuthManager(createAdapter(), storage, eventsB, connectivity, () => {})
+		const authB = createAuthManager(createAdapter(), storage, eventsB, connectivity, () => {})
 		const onAuthenticated = vi.fn()
 		authB.onAuthenticated(onAuthenticated)
 
@@ -246,7 +271,7 @@ describe("AuthManager", () => {
 		const offlineConnectivity = new ConnectivityTracker()
 		writeIsLoggedIn(true)
 		writePendingLogout(true)
-		new AuthManager(adapter, storage, events, offlineConnectivity, () => {})
+		createAuthManager(adapter, storage, events, offlineConnectivity, () => {})
 
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		window.dispatchEvent(new Event("online"))
@@ -259,7 +284,7 @@ describe("AuthManager", () => {
 		const adapter = createAdapter({ checkAuth: vi.fn(async () => false) })
 		writeIsLoggedIn(true)
 		await storage.init()
-		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const manager = createAuthManager(adapter, storage, events, connectivity, () => {})
 		const onLogout = vi.fn()
 		manager.onLogout(onLogout)
 		await manager.revalidateSession()
@@ -269,7 +294,7 @@ describe("AuthManager", () => {
 
 	test("LocalAdapter runs session APIs while skipping assertAuthenticated", async () => {
 		const adapter = new LocalAdapter()
-		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const manager = createAuthManager(adapter, storage, events, connectivity, () => {})
 		const onAuthenticated = vi.fn()
 		const onLogout = vi.fn()
 		manager.onAuthenticated(onAuthenticated)
@@ -279,7 +304,7 @@ describe("AuthManager", () => {
 
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		const offlineConnectivity = new ConnectivityTracker()
-		const offlineAuth = new AuthManager(adapter, storage, events, offlineConnectivity, () => {})
+		const offlineAuth = createAuthManager(adapter, storage, events, offlineConnectivity, () => {})
 		offlineAuth.onAuthenticated(onAuthenticated)
 		await offlineAuth.login("dev@local", "000")
 		expect(offlineAuth.isLoggedIn).toBe(true)
@@ -287,7 +312,7 @@ describe("AuthManager", () => {
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 
 		writeIsLoggedIn(true)
-		const boot = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const boot = createAuthManager(adapter, storage, events, connectivity, () => {})
 		const onRefresh = vi.fn()
 		boot.onAuthenticated(onRefresh)
 		await boot.boot()
@@ -305,7 +330,7 @@ describe("AuthManager", () => {
 		await storage.executeTransaction([
 			{ type: "put", storeName: "posts", value: { id: "1", content: "x" } },
 		])
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		manager.onLogout(async () => {
 			throw new Error("listener failed")
 		})
@@ -317,7 +342,7 @@ describe("AuthManager", () => {
 	test("logout listeners run in parallel", async () => {
 		writeIsLoggedIn(true)
 		await storage.init()
-		const manager = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {})
 		const order: string[] = []
 		let releaseSlow!: () => void
 		const slowGate = new Promise<void>((resolve) => {
@@ -343,7 +368,7 @@ describe("AuthManager", () => {
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		const offlineConnectivity = new ConnectivityTracker()
 		writeIsLoggedIn(true)
-		const manager = new AuthManager(adapter, storage, events, offlineConnectivity, () => {})
+		const manager = createAuthManager(adapter, storage, events, offlineConnectivity, () => {})
 		await storage.init()
 		await storage.executeTransaction([
 			{ type: "put", storeName: "posts", value: { id: "1", content: "x" } },

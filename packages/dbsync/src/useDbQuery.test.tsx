@@ -2,6 +2,15 @@ import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, test, vi } from "vitest"
 import { createUseDbQuery, useDbQuery } from "./useDbQuery.js"
 
+const mockDb = (overrides: Record<string, unknown> = {}) => ({
+	config: { adapter: { requiresAuth: false } },
+	auth: { isLoggedIn: true },
+	isReady: true,
+	emitDebug: vi.fn(),
+	subscribe: () => ({ close: vi.fn() }),
+	...overrides,
+})
+
 /** Renders a component that consumes useDbQuery so the suite can verify subscription-driven re-fetches without depending on browser storage timing. */
 describe("useDbQuery", () => {
 	/** Clears the DOM between cases so each render assertion starts fresh. */
@@ -26,13 +35,12 @@ describe("useDbQuery", () => {
 	/** Confirms the hook renders the initial query result after mount and reports loading while pending. */
 	test("loads initial data", async () => {
 		let subscriber: ((stores: string[]) => void) | undefined
-		const db = {
-			isReady: true,
+		const db = mockDb({
 			subscribe: (callback: (stores: string[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
 			},
-		}
+		})
 		const currentPosts = [{ id: "1", content: "hello world" }]
 		const queryFn = vi.fn(async () => currentPosts)
 
@@ -47,10 +55,7 @@ describe("useDbQuery", () => {
 
 	/** Confirms the hook reports null data once a query resolves to undefined. */
 	test("normalizes undefined results to null", async () => {
-		const db = {
-			isReady: true,
-			subscribe: () => ({ close: vi.fn() }),
-		}
+		const db = mockDb()
 		const queryFn = vi.fn(async () => undefined)
 
 		function EmptyQuery({ currentDb }: { currentDb: any }) {
@@ -68,13 +73,12 @@ describe("useDbQuery", () => {
 	/** Confirms the hook re-runs the query whenever the subscribed store changes. */
 	test("reacts to subscription updates", async () => {
 		let subscriber: ((stores: string[]) => void) | undefined
-		const db = {
-			isReady: true,
+		const db = mockDb({
 			subscribe: (callback: (stores: string[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
 			},
-		}
+		})
 		let currentPosts = [{ id: "1", content: "initial value" }]
 		const queryFn = vi.fn(async () => currentPosts)
 
@@ -96,13 +100,12 @@ describe("useDbQuery", () => {
 	/** Confirms a DbSync-bound hook preserves inference and delegates to the shared implementation. */
 	test("creates a DbSync-bound query hook", async () => {
 		let subscriber: ((stores: string[]) => void) | undefined
-		const db = {
-			isReady: true,
+		const db = mockDb({
 			subscribe: (callback: (stores: string[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
 			},
-		}
+		})
 		const useBoundQuery = createUseDbQuery(db as any)
 		const queryFn = vi.fn(async () => [{ id: "1", title: "hello" }])
 
@@ -127,13 +130,12 @@ describe("useDbQuery", () => {
 	/** Confirms shouldRefetchFilter can skip refetches when changes are irrelevant. */
 	test("skips refetch when shouldRefetchFilter returns false", async () => {
 		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
-		const db = {
-			isReady: true,
+		const db = mockDb({
 			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
 			},
-		}
+		})
 		const queryFn = vi.fn(async () => [{ id: "1", content: "stable" }])
 		const shouldRefetchFilter = (changes: any[]) =>
 			changes.some((c) => c.change === "clear" || (c.id !== undefined && c.id === "1"))
@@ -159,13 +161,12 @@ describe("useDbQuery", () => {
 	/** Confirms shouldRefetchFilter allows refetches when changes match. */
 	test("refetches when shouldRefetchFilter returns true", async () => {
 		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
-		const db = {
-			isReady: true,
+		const db = mockDb({
 			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
 			},
-		}
+		})
 		let currentPosts = [{ id: "1", content: "stable" }]
 		const queryFn = vi.fn(async () => currentPosts)
 		const shouldRefetchFilter = (changes: any[]) =>
@@ -194,13 +195,12 @@ describe("useDbQuery", () => {
 	/** Confirms missing changes still refetch on table hit when filter is provided. */
 	test("refetches on table hit when changes are omitted", async () => {
 		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
-		const db = {
-			isReady: true,
+		const db = mockDb({
 			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
 				subscriber = callback
 				return { close: vi.fn() }
 			},
-		}
+		})
 		let currentPosts = [{ id: "1", content: "stable" }]
 		const queryFn = vi.fn(async () => currentPosts)
 		const shouldRefetchFilter = () => false

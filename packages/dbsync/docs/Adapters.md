@@ -31,14 +31,14 @@ export interface BackendAdapter {
 
 | Value | Meaning |
 | --- | --- |
-| `true` (default) | Data APIs require `db.isLoggedIn`. Subscribe `db.auth.onLogout` for session teardown. |
+| `true` (default) | Data APIs require `db.auth.isLoggedIn`. Subscribe `db.auth.onLogout` for session teardown. |
 | `false` | Data guards skipped (`LocalAdapter`); optional `db.auth.onLogout` / `onAuthenticated` for session UI. |
 
 Pre-backend development: env-swap `LocalAdapter` with the same listeners — [Getting started](./GettingStarted.md#developing-before-the-backend).
 
 ### Authentication Contract
 
-- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online`. Apps use `db.isLoggedIn` and `db.auth.onLogout`; optional `db.auth.revalidate()` for a manual probe.
+- **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online`. Apps use `db.auth.isLoggedIn` and `db.auth.onLogout`; optional `db.auth.revalidate()` for a manual probe.
 - **`sendCode(email)`**: Requests a one-time login code for the given email. Requires network on REST backends.
 - **`login(email, code)`**: Validates credentials and establishes a session. Requires network.
 - **`logout()`**: Destroys the remote session on the server.

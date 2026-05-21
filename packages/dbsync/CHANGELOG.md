@@ -6,11 +6,22 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.42
+
+### Breaking
+
+- Session state on `db.auth`: `isLoggedIn`, `pendingLogout`, `isBootstrapping`, `onSessionChange` — removed from root `db`. `isBooted`, `waitForBooted()`, and `boot()` remain on `db`.
+
 ## 0.0.41
+
+### Added
+
+- `DbSyncConfig.onDebug` and `db.emitDebug()` — structured boot, session, sync, schema, and `query:error` events (no default logging).
 
 ### Changed
 
-- Docs: `waitForBooted()` in imperative snippets (README quick start, Data access, Modeling, LocalAdapter); omitted from module-setup and React examples.
+- `useDbQuery` query failures emit `query:error` via `onDebug` instead of `console.error`.
+- Docs: [Debugging.md](./docs/Debugging.md); `waitForBooted()` in imperative snippets (README quick start, Data access, Modeling, LocalAdapter); omitted from module-setup and React examples.
 
 ## 0.0.40
 

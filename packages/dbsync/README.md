@@ -56,7 +56,7 @@ const db = new AppDb({ adapter: new RestAdapter({ url: "https://api.myapp.com" }
 db.auth.onLogout(() => {/* route to login */})
 
 await db.waitForBooted()
-if (db.isLoggedIn) {
+if (db.auth.isLoggedIn) {
     await db.posts.add({ userId: "u_1", content: "Hello" })
     const posts = await db.posts.find({ index: "updatedAt", order: "desc", limit: 20 })
 }
@@ -86,6 +86,7 @@ REST apps with login: `db.auth.onLogout(...)` after construction — **[Offline-
 | [SSR & Next.js](./docs/SSR.md)              | Server-side rendering caveats                              |
 | [Testing](./docs/Testing.md)                | Mocking IndexedDB, component tests                         |
 | [Errors](./docs/Errors.md)                  | Typed auth and guard errors                                |
+| [Debugging](./docs/Debugging.md)            | Opt-in `onDebug` tracing                                   |
 | [Adapters](./docs/Adapters.md)              | `BackendAdapter` contract                                  |
 | [RestAdapter](./docs/RestAdapter.md)        | REST / [swift-crud](https://github.com/bdombro/swift-crud) |
 | [LocalAdapter](./docs/LocalAdapter.md)      | Local-only                                                 |

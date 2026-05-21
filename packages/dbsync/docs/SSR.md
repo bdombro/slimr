@@ -64,7 +64,7 @@ function AppShell() {
 
 ## 3. Hydration Mismatches
 
-Because `db.isLoggedIn` reads from `localStorage` synchronously on the client, it might evaluate to `true` on the client's first render, while the server evaluated it as `false`.
+Because `db.auth.isLoggedIn` reads from `localStorage` synchronously on the client, it might evaluate to `true` on the client's first render, while the server evaluated it as `false`.
 
 To avoid React hydration errors (e.g. "Text content did not match. Server: 'Login', Client: 'App'"), you should wait until the component has mounted before branching based on `isLoggedIn` if your app uses SSR.
 

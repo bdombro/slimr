@@ -6,13 +6,13 @@ How to build SPAs and PWAs where IndexedDB is the runtime database and the netwo
 
 ## Mental model
 
-- **`db.isLoggedIn`** — hydrated from `localStorage` at module load; use for **first-paint routing**.
+- **`db.auth.isLoggedIn`** — hydrated from `localStorage` at module load; use for **first-paint routing**.
 - **`db.auth.onLogout(fn)`** — subscribe before any `await`; runs in parallel, awaited before IDB clear on active-tab logout. **Never on refresh.**
 - **`db.auth.onAuthenticated(fn)`** — optional; runs on **`login()`** and cross-tab **`AUTH_LOGIN` only** — **not** refresh boot.
 - **Boot (automatic)** — internal `start()` when hydrated; does **not** call `onAuthenticated`.
 - **`db.isBooted`** / **`db.waitForBooted()`** — boot pipeline finished. Not server validation or a completed pull — see [Sync](./Sync.md).
 
-**Router rule:** initial route = **`db.isLoggedIn` at module load**.
+**Router rule:** initial route = **`db.auth.isLoggedIn` at module load**.
 
 **Loading rule:** when `isLoggedIn`, show the app shell immediately; use skeletons / `useDbQuery` `loading` until `db.isReady`.
 

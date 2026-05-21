@@ -30,7 +30,18 @@ const offAuth = db.auth.onAuthenticated(() => navigate("/app")) // optional
 
 Register listeners in the same module immediately after `new DbSync`, before any `await`.
 
-`onAuthenticated` runs on **login and cross-tab login only** — not refresh boot. Route refresh on `db.isLoggedIn`.
+`onAuthenticated` runs on **login and cross-tab login only** — not refresh boot. Route refresh on `db.auth.isLoggedIn`.
+
+## Session state → `db.auth`
+
+| Removed (root `db`) | Replacement |
+| --- | --- |
+| `db.isLoggedIn` | `db.auth.isLoggedIn` |
+| `db.pendingLogout` | `db.auth.pendingLogout` |
+| `db.isBootstrapping` | `db.auth.isBootstrapping` |
+| `db.onSessionChange` | `db.auth.onSessionChange` |
+
+`db.isBooted`, `db.waitForBooted()`, and `db.boot()` stay on the root `db` instance.
 
 ## Auth actions → `db.auth`
 

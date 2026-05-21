@@ -10,17 +10,20 @@ afterEach(() => {
 describe("useDbSession", () => {
 	test("reflects session and boot state from db", async () => {
 		const listeners = new Set<() => void>()
-		const db = {
+		const auth = {
 			isLoggedIn: true,
-			isBooted: true,
 			isBootstrapping: false,
-			isReady: true,
-			offline: false,
-			online: true,
 			onSessionChange: (listener: () => void) => {
 				listeners.add(listener)
 				return { close: () => listeners.delete(listener) }
 			},
+		}
+		const db = {
+			auth,
+			isBooted: true,
+			isReady: true,
+			offline: false,
+			online: true,
 		}
 
 		function SessionView() {
@@ -39,7 +42,7 @@ describe("useDbSession", () => {
 		expect(screen.getByTestId("db-ready").textContent).toBe("true")
 		expect(screen.getByTestId("offline").textContent).toBe("false")
 
-		db.isBootstrapping = true
+		auth.isBootstrapping = true
 		db.isReady = false
 		await act(async () => {
 			listeners.forEach((listener) => listener())
