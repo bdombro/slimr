@@ -48,7 +48,7 @@ export class AuthManager {
 		})
 	}
 
-	/** When false, auth guards and session boot are skipped. */
+	/** When false, data API guards are skipped; session APIs still run (adapter stubs network). */
 	public get requiresAuth() {
 		return this.adapter.requiresAuth !== false
 	}
@@ -88,7 +88,7 @@ export class AuthManager {
 
 	/** Replays a hydrated session by firing `onLogin` once after hooks are registered. */
 	public bootstrapSession() {
-		if (!this.requiresAuth || this.bootstrapped) return
+		if (this.bootstrapped) return
 		this.bootstrapped = true
 		if (this.isLoggedInValue && !this.pendingLogout) {
 			void this.fireOnLogin()
@@ -112,17 +112,21 @@ export class AuthManager {
 
 	/** Probes the server session; invalid session triggers logout flow. */
 	public async revalidateSession() {
-		if (!this.requiresAuth) return true
-		if (this.connectivity.offline) throw new DbSyncOfflineError()
+		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
 		const valid = await this.adapter.checkAuth()
 		if (!valid) await this.invalidateSession()
 		return valid
 	}
 
+	/** Requests a one-time login code for the given email. */
+	public async sendCode(email: string) {
+		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
+		return this.adapter.sendCode(email)
+	}
+
 	/** Logs in through the adapter and fires `onLogin`. */
 	public async login(email: string, code: string) {
-		if (!this.requiresAuth) return
-		if (this.connectivity.offline) throw new DbSyncOfflineError()
+		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
 		if (this.pendingLogout) {
 			throw new Error("dbsync: cannot login while remote logout is pending")
 		}
@@ -134,13 +138,12 @@ export class AuthManager {
 
 	/** Logs out: local wipe now; remote logout may defer when offline. */
 	public async logout() {
-		if (!this.requiresAuth) return
 		await this.performLogout({ remote: true, clearLocal: true, broadcast: true })
 	}
 
 	/** Called when sync receives 401 or revalidation fails. */
 	public async invalidateSession() {
-		if (!this.requiresAuth || this.isInvalidating) return
+		if (this.isInvalidating) return
 		this.isInvalidating = true
 		try {
 			await this.performLogout({ remote: false, clearLocal: true, broadcast: true })
@@ -151,7 +154,6 @@ export class AuthManager {
 
 	/** Passive tab: session ended elsewhere — UI teardown only. */
 	public async handlePassiveLogout() {
-		if (!this.requiresAuth) return
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
 		await this.fireOnLogout()
@@ -160,7 +162,6 @@ export class AuthManager {
 
 	/** Passive tab: session started elsewhere. */
 	public async handlePassiveLogin() {
-		if (!this.requiresAuth) return
 		this.setLoggedIn(true, { persist: true })
 		await this.fireOnLogin()
 	}
@@ -193,7 +194,7 @@ export class AuthManager {
 
 	private async onBackOnline() {
 		await this.flushPendingRemoteLogout()
-		if (this.requiresAuth && this.isLoggedInValue && !this.pendingLogout) {
+		if (this.isLoggedInValue && !this.pendingLogout) {
 			try {
 				await this.revalidateSession()
 			} catch {

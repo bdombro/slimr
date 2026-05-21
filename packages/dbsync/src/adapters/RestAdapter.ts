@@ -1,6 +1,27 @@
 import type { BackendAdapter, SyncPullResult } from "./types.js"
 
 /**
+ * Throws an `Error` using the swift-crud `{ message }` body when present.
+ */
+async function throwIfNotOk(res: Response, fallback: string): Promise<void> {
+	if (res.ok) return
+	let message = fallback
+	let code = 0
+	try {
+		const body = await res.json()
+		if (typeof body?.message === "string" && body.message.length > 0) {
+			message = body.message
+		}
+		if (typeof body?.code === "number" && body.code > 0) {
+			code = body.code
+		}
+	} catch {
+		// Non-JSON or empty body — use fallback.
+	}
+	throw Object.assign(new Error(message), { code })
+}
+
+/**
  * Configuration for the built-in REST adapter.
  */
 export interface RestAdapterConfig {
@@ -28,6 +49,18 @@ export class RestAdapter implements BackendAdapter {
 		return res.ok
 	}
 
+	/** Sends a one-time login code to the given email address. */
+	public async sendCode(email: string) {
+		const res = await fetch(`${this.config.url}/api/session/send-code`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ email }),
+		})
+		await throwIfNotOk(res, "Send code failed")
+		return true
+	}
+
 	/** Logs the user in using an email/code pair. */
 	public async login(email: string, code: string) {
 		const res = await fetch(`${this.config.url}/api/session/login`, {
@@ -36,7 +69,7 @@ export class RestAdapter implements BackendAdapter {
 			credentials: "include",
 			body: JSON.stringify({ email, code }),
 		})
-		if (!res.ok) throw new Error("Login failed")
+		await throwIfNotOk(res, "Login failed")
 		return true
 	}
 

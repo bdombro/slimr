@@ -78,6 +78,7 @@ db.onLogin(async () => {
 db.bootstrapSession()
 
 // Login form only:
+await db.sendCode("user@example.com")
 await db.login("user@example.com", "123456") // → onLogin
 ```
 
@@ -90,6 +91,7 @@ await db.login("user@example.com", "123456") // → onLogin
 | `db.onLogin()` | Subscribes to `login()`, restored session, and cross-tab `AUTH_LOGIN`. Use for `init()` + `start()` only. |
 | `db.bootstrapSession()` | After hooks are registered: if hydrated `isLoggedIn`, fires `onLogin` once (refresh / offline reopen). **Sync, not awaitable.** Does **not** call `onLogout` when logged out on disk. |
 | `db.initted` | `true` after `init()` completes inside `onLogin` — data layer ready. |
+| `db.sendCode()` | **Requires network** when `requiresAuth` is true. Sends a one-time code email; does not change session state. |
 | `db.login()` | **Requires network.** Sets `isLoggedIn`, fires `onLogin`. |
 | `db.logout()` | Clears local state immediately; see [Logout while offline](#logout-while-offline). |
 
@@ -97,12 +99,7 @@ Use **`onLogout` / `onLogin`** for navigation and `init`/`start`. Use **`db.isLo
 
 ### Local-only apps (`LocalAdapter`)
 
-`LocalAdapter` sets `requiresAuth: false`. No login flow; the adapter's `checkAuth()` always returns `true` (used internally only). You may call `init()` / `start()` directly without hooks:
-
-```typescript
-const db = new DbSync({ adapter: new LocalAdapter() })
-await db.start()
-```
+`LocalAdapter` sets `requiresAuth: false` so **data APIs** never require login, but **session APIs** (`bootstrapSession`, `login`, `logout`, hooks) still run — the adapter stubs `checkAuth()` / `login()` / `logout()`. Use the same `onLogin` / `bootstrapSession` flow as REST when swapping adapters in one app, or call `init()` / `start()` directly if you skip session UI.
 
 See [LocalAdapter](./LocalAdapter.md).
 
@@ -124,7 +121,7 @@ db.onSyncStateChange((state) => {
 
 `db.online` is sugar for `!db.offline`. Neither should choose **login vs app** on first paint when `db.isLoggedIn` is already `true`.
 
-- **`login()`** throws `DbSyncOfflineError` when offline.
+- **`sendCode()`** and **`login()`** throw `DbSyncOfflineError` when offline and `requiresAuth` is true.
 - When the device comes **back online**, dbsync automatically **revalidates** the session (internal `adapter.checkAuth()`). If the server rejects the cookie, `onLogout` fires (stale hydrated session).
 - You do **not** need your own `window.addEventListener("online", …)` for session checks.
 - There is **no public `db.checkAuth()`** — use `db.isLoggedIn` for client state; revalidation is automatic. Optional **`db.revalidateSession()`** when you need a manual server probe (e.g. "Retry" button); throws `DbSyncOfflineError` when offline.
@@ -206,7 +203,7 @@ For offline boot specifically:
 
 | Error | When |
 | --- | --- |
-| `DbSyncOfflineError` | `login()` or `revalidateSession()` while `db.offline` |
+| `DbSyncOfflineError` | `sendCode()`, `login()`, or `revalidateSession()` while `db.offline` (when `requiresAuth`) |
 | `DbSyncNotAuthenticatedError` | `init`, `start`, or data APIs while `!isLoggedIn` or `pendingLogout` |
 
 ## API quick reference
@@ -220,6 +217,7 @@ For offline boot specifically:
 | `db.onLogout(cb)` | Fires early; returns `{ close }`. |
 | `db.bootstrapSession()` | After hooks: replay hydrated `onLogin` once. **Not** `await`‑able; **not** `db.initted`. |
 | `db.initted` | `true` after `init()` — storage ready for reads/writes. |
+| `db.sendCode(email)` | Network required when `requiresAuth`. |
 | `db.login(email, code)` | Network required. |
 | `db.logout()` | Local wipe now; remote logout may defer. |
 | `db.revalidateSession()` | Optional manual server probe; network required; invalid session → `onLogout`. |

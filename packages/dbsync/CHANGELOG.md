@@ -6,6 +6,20 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.37
+
+### Added
+
+- `BackendAdapter.sendCode(email)` — `RestAdapter` posts to `/api/session/send-code`; `LocalAdapter` resolves `true`.
+- `db.sendCode(email)` — delegates to the adapter; throws `DbSyncOfflineError` when offline and `requiresAuth` is true.
+- `RestAdapter` `sendCode` / `login` — on error, throws the swift-crud `{ message }` from the response body when present.
+
+## 0.0.36
+
+### Changed
+
+- `requiresAuth: false` (`LocalAdapter`) now only skips **data API** guards; `bootstrapSession`, `login`, `logout`, and cross-tab session handlers still run using the adapter's stubbed `checkAuth` / `login` / `logout`. `login` / `revalidateSession` do not require network when `requiresAuth` is false.
+
 ## 0.0.35
 
 ## 0.0.34

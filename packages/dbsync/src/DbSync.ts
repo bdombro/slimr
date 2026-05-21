@@ -363,6 +363,10 @@ export class DbSync {
 	public bootstrapSession() {
 		this.authManager.bootstrapSession()
 	}
+	/** Sends a one-time login code to the given email (network required for REST). */
+	public async sendCode(email: string) {
+		return this.authManager.sendCode(email)
+	}
 	/** Logs in with the given credentials (network required). */
 	public async login(email: string, code: string) {
 		return this.authManager.login(email, code)

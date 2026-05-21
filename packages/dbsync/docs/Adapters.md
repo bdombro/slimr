@@ -21,6 +21,7 @@ export interface BackendAdapter {
     checkAuth(): Promise<boolean>
     login(email: string, code: string): Promise<boolean>
     logout(): Promise<void>
+    sendCode(email: string): Promise<boolean>
     pull(cursor: string): Promise<SyncPullResult>
     push(payload: any[]): Promise<void>
 }
@@ -31,13 +32,14 @@ export interface BackendAdapter {
 | Value | Meaning |
 | --- | --- |
 | `true` (default) | `init`, `start`, and data APIs require `db.isLoggedIn`. `login` / session flow expected. |
-| `false` | Local-only semantics (`LocalAdapter`). No login required; guards skipped. |
+| `false` | Data guards skipped (`LocalAdapter`); session APIs still run with stubbed adapter auth/sync. |
 
-Set `requiresAuth: false` on adapters that always satisfy `checkAuth()` without a real session (tests, local-only tools).
+Set `requiresAuth: false` when data APIs should work without `isLoggedIn` (e.g. `LocalAdapter` for local-only or adapter-swapping demos). Session hooks still run; stub `checkAuth` / `login` / `logout` on the adapter.
 
 ### Authentication Contract
 
 - **`checkAuth()`**: Resolves to `true` if the user has an active session, otherwise `false`. **Adapter contract only** — `DbSync` calls this internally on `online` (via `revalidateSession()`). Apps use `db.isLoggedIn` and `onLogin` / `onLogout`; optional `db.revalidateSession()` for a manual probe (not `db.checkAuth()`).
+- **`sendCode(email)`**: Requests a one-time login code for the given email. Requires network on REST backends.
 - **`login(email, code)`**: Validates credentials and establishes a session. Requires network.
 - **`logout()`**: Destroys the remote session on the server.
 

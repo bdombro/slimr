@@ -108,7 +108,7 @@ const db = new AppDb({ adapter: new LocalAdapter() })
 await db.start()
 ```
 
-No login flow; see [LocalAdapter](./LocalAdapter.md).
+Data APIs need no login; session APIs still work with stubbed auth — see [LocalAdapter](./LocalAdapter.md).
 
 ## Next steps
 

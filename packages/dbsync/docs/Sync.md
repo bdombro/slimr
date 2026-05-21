@@ -35,6 +35,7 @@ db.onLogin(async () => {
 
 db.bootstrapSession()
 
+await db.sendCode("user@example.com")
 await db.login("user@example.com", "123456")
 await db.logout()
 ```
@@ -44,6 +45,7 @@ await db.logout()
 | `db.isLoggedIn` | Persisted; use for **initial route** |
 | `db.offline` / `db.online` | Connectivity hint — not login routing on first paint |
 | `db.bootstrapSession()` | Replay hydrated session → `onLogin`; not `await`‑able |
+| `db.sendCode` | Network required when `requiresAuth` |
 | `db.login` | Network required |
 | `db.logout` | Local wipe now; remote logout may defer when offline |
 | `db.revalidateSession()` | Optional manual server check |

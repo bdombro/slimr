@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+import { LocalAdapter } from "../adapters/LocalAdapter.js"
 import type { BackendAdapter } from "../adapters/types.js"
 import { DbSyncOfflineError } from "../errors.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
@@ -22,6 +23,7 @@ const createAdapter = (overrides?: Partial<BackendAdapter>): BackendAdapter => (
 	checkAuth: vi.fn(async () => true),
 	login: vi.fn(async () => true),
 	logout: vi.fn(async () => {}),
+	sendCode: vi.fn(async () => true),
 	pull: vi.fn(async () => ({ items: [], hasMore: false })),
 	push: vi.fn(async () => {}),
 	...overrides,
@@ -59,6 +61,23 @@ describe("AuthManager", () => {
 		writeIsLoggedIn(true)
 		const hydrated = new AuthManager(createAdapter(), storage, events, connectivity, () => {})
 		expect(hydrated.isLoggedIn).toBe(true)
+	})
+
+	test("sendCode throws when offline", async () => {
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
+		const offlineConnectivity = new ConnectivityTracker()
+		const adapter = createAdapter()
+		const offlineAuth = new AuthManager(adapter, storage, events, offlineConnectivity, () => {})
+		await expect(offlineAuth.sendCode("a@b.com")).rejects.toBeInstanceOf(DbSyncOfflineError)
+		expect(adapter.sendCode).not.toHaveBeenCalled()
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+	})
+
+	test("sendCode delegates to adapter when online", async () => {
+		const adapter = createAdapter()
+		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		await expect(manager.sendCode("a@b.com")).resolves.toBe(true)
+		expect(adapter.sendCode).toHaveBeenCalledWith("a@b.com")
 	})
 
 	test("login throws when offline", async () => {
@@ -182,6 +201,38 @@ describe("AuthManager", () => {
 		const onLogout = vi.fn()
 		manager.onLogout(onLogout)
 		await manager.revalidateSession()
+		expect(manager.isLoggedIn).toBe(false)
+		expect(onLogout).toHaveBeenCalled()
+	})
+
+	test("LocalAdapter runs session APIs while skipping assertAuthenticated", async () => {
+		const adapter = new LocalAdapter()
+		const manager = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const onLogin = vi.fn()
+		const onLogout = vi.fn()
+		manager.onLogin(onLogin)
+		manager.onLogout(onLogout)
+
+		manager.assertAuthenticated()
+
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
+		const offlineConnectivity = new ConnectivityTracker()
+		const offlineAuth = new AuthManager(adapter, storage, events, offlineConnectivity, () => {})
+		offlineAuth.onLogin(onLogin)
+		await offlineAuth.login("dev@local", "000")
+		expect(offlineAuth.isLoggedIn).toBe(true)
+		expect(onLogin).toHaveBeenCalled()
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+
+		writeIsLoggedIn(true)
+		const boot = new AuthManager(adapter, storage, events, connectivity, () => {})
+		const bootLogin = vi.fn()
+		boot.onLogin(bootLogin)
+		boot.bootstrapSession()
+		await vi.waitFor(() => expect(bootLogin).toHaveBeenCalled())
+
+		await storage.init()
+		await manager.logout()
 		expect(manager.isLoggedIn).toBe(false)
 		expect(onLogout).toHaveBeenCalled()
 	})

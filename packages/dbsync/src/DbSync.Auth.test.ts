@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { DbSyncNotAuthenticatedError, DbSyncOfflineError } from "./errors.js"
@@ -51,6 +52,38 @@ describe("DbSync auth integration", () => {
 		db.dispose()
 	})
 
+	test("LocalAdapter runs session flow and allows data APIs without login", async () => {
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		const onLogin = vi.fn(async () => {
+			await db.init()
+		})
+		db.onLogin(onLogin)
+		await db.init()
+		await db.put("posts", { id: "1", title: "before-login" })
+		await db.login("dev@local", "000")
+		await vi.waitFor(() => expect(onLogin).toHaveBeenCalled())
+		expect(db.isLoggedIn).toBe(true)
+		expect(db.initted).toBe(true)
+
+		writeIsLoggedIn(true)
+		const db2 = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		const bootLogin = vi.fn(async () => {
+			await db2.init()
+		})
+		db2.onLogin(bootLogin)
+		db2.bootstrapSession()
+		await vi.waitFor(() => expect(bootLogin).toHaveBeenCalled())
+
+		db.dispose()
+		db2.dispose()
+	})
+
 	test("data APIs throw when not logged in", async () => {
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
@@ -59,6 +92,28 @@ describe("DbSync auth integration", () => {
 		await expect(db.put("posts", { id: "1", title: "x" })).rejects.toBeInstanceOf(
 			DbSyncNotAuthenticatedError,
 		)
+		db.dispose()
+	})
+
+	test("sendCode throws when offline", async () => {
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
+		const db = new DbSync({
+			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			tables: { posts: {} },
+		})
+		await expect(db.sendCode("a@b.com")).rejects.toBeInstanceOf(DbSyncOfflineError)
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+		db.dispose()
+	})
+
+	test("sendCode works offline with LocalAdapter", async () => {
+		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		await expect(db.sendCode("a@b.com")).resolves.toBe(true)
+		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		db.dispose()
 	})
 
