@@ -2,6 +2,16 @@
 
 ## UNRELEASED
 
+## 2.0.1
+
+### Changed
+
+- Package `exports` include explicit `types` for `.`.
+
+### Removed
+
+- **Breaking:** `Observable` and `useObservable` moved to [`@slimr/observable`](../observable/README.md) (`@slimr/observable` and `@slimr/observable/react`).
+
 ## 1.0.5
 
 ### Changed

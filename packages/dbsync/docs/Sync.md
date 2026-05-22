@@ -40,14 +40,13 @@ await db.sync.trigger()
 | `db.auth.isReady` | IndexedDB open. |
 | `db.sync.isStarted` | Sync timer running. |
 | `db.sync.isLive` | Last successful sync within ~4× `syncInterval`. |
-| `db.sync.isInitialSyncPending` | Logged in, no successful sync since login. |
-| `db.auth.phase === "initial-sync"` | Same as `isInitialSyncPending` for shell routing — prefer for UI. |
+| `db.auth.phase` / `phase$` | Shell phases: `logged-out` → `booting` → `initial-sync` → `ready` — primary React routing signal. |
+| `db.auth.isInitialSyncPending` / `initialSyncPending$` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional one loader for both. |
 | `db.sync.waitForInitial()` | Promise until first successful sync since login. |
 | `db.sync.waitForLive()` | Polls until `isLive` (rejects if sync never started). |
-| `db.sync.onStateChange` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"`. |
-| `db.sync.state` | Current sync state (synchronous). |
+| `db.sync.state$` / `state` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"`. |
 
-**App rule:** use `db.auth.phase` for the shell; use `useDbQuery` `loading` for per-table data. See [Offline-first apps](./Offline.md#anti-patterns).
+**App rule:** use `db.auth.phase` for the shell; use `useDbQuery` `loading` for per-table data. See [Integration guide](./Offline.md#anti-patterns).
 
 ## Pull / push shape
 
@@ -60,7 +59,7 @@ Your adapter receives and returns records in the REST envelope (see [RestAdapter
 
 ## Cross-tab data coherence
 
-Local writes notify subscribers via `db.subscribe` / `db.posts.subscribe`. The same channel mirrors updates to other tabs via `BroadcastChannel` `dbsync_events`.
+Local writes notify subscribers via `db.updates$` / `db.posts.subscribe`. The same channel mirrors updates to other tabs via `BroadcastChannel` `dbsync_events`.
 
 Auth uses the same channel (`AUTH_LOGIN` / `AUTH_LOGOUT`) — see [Auth listeners](./Auth.md).
 
@@ -74,6 +73,6 @@ Sync is **last-write-wins** at the record level using `updatedAt` ordering on pu
 
 ## See also
 
-- [Offline-first apps](./Offline.md)
+- [Integration guide](./Offline.md)
 - [API reference](./API.md)
 - [Debugging](./Debugging.md)

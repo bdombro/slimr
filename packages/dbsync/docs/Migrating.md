@@ -6,4 +6,4 @@ Upgrade notes for pre-0.0.43 APIs are archived.
 
 Current breaking changes: **[CHANGELOG UNRELEASED](../CHANGELOG.md)**.
 
-New apps: **[Getting started](./GettingStarted.md)** · **[Offline-first apps](./Offline.md)**.
+New apps: **[Getting started](./GettingStarted.md)** · **[Integration guide](./Offline.md)**.

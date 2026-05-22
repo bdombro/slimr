@@ -1,6 +1,6 @@
 # Errors
 
-[Documentation index](./README.md) · [Auth listeners](./Auth.md) · [Offline-first apps](./Offline.md)
+[Documentation index](./README.md) · [Auth listeners](./Auth.md) · [Integration guide](./Offline.md)
 
 Typed errors exported from `@slimr/dbsync`:
 

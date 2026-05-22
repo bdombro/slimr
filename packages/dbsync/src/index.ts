@@ -1,11 +1,11 @@
+export type { DbAuthPhase } from "./authTypes.js"
 export type {
-	DbAuthPhase,
-	DbAuthState,
-	DbSessionPhase,
-	DbSessionSnapshot,
-	SyncState,
-} from "./authTypes.js"
-export type { DbSyncConfig, DbSyncDebugEvent, DbSyncDebugListener } from "./DbSync.js"
+	DbSyncConfig,
+	DbSyncDebugEvent,
+	DbSyncDebugListener,
+	DbUpdatesPayload,
+	RowChange,
+} from "./DbSync.js"
 export { DbSync } from "./DbSync.js"
 export { DbSyncAuth } from "./DbSyncAuth.js"
 export { DbSyncSync } from "./DbSyncSync.js"

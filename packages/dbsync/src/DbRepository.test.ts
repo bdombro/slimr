@@ -1,5 +1,7 @@
+import { Observable } from "@slimr/observable"
 import { describe, expect, test, vi } from "vitest"
 import { DbRepository } from "./DbRepository.js"
+import type { DbUpdatesPayload } from "./internal/EventBus.js"
 
 /** Verifies the repository wrapper is just a thin typed layer over DbSync so consumers get convenience without new semantics. */
 describe("DbRepository", () => {
@@ -43,20 +45,28 @@ describe("DbRepository", () => {
 		expect(db.clear).toHaveBeenCalledWith("posts")
 	})
 
+	const mockUpdatesDb = () => {
+		const updates$ = new Observable<DbUpdatesPayload>("test-updates", { tables: [], txId: 0 })
+		const emit = (tables: string[], changes?: DbUpdatesPayload["changes"]) => {
+			const prev = updates$.val
+			void updates$.set({
+				tables,
+				changes,
+				txId: prev.txId + 1,
+			})
+		}
+		return { updates$, emit }
+	}
+
 	/** Confirms table-scoped subscribe filters global notifications to this table. */
 	test("subscribe forwards only this table's row changes", () => {
-		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
-		const db = {
-			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		}
+		const { updates$, emit } = mockUpdatesDb()
+		const db = { updates$ }
 		const repo = new DbRepository<any>(db as any, "posts")
 		const callback = vi.fn()
 		repo.subscribe(callback)
 
-		subscriber?.(
+		emit(
 			["posts", "dirtyQueue"],
 			[
 				{ table: "posts", change: "update", id: "post-1" },
@@ -69,57 +79,58 @@ describe("DbRepository", () => {
 
 	/** Confirms subscribe ignores notifications for other tables. */
 	test("subscribe ignores unrelated tables", () => {
-		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
-		const db = {
-			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		}
+		const { updates$, emit } = mockUpdatesDb()
+		const db = { updates$ }
 		const repo = new DbRepository<any>(db as any, "posts")
 		const callback = vi.fn()
 		repo.subscribe(callback)
 
-		subscriber?.(["users"], [{ table: "users", change: "update", id: "user-1" }])
+		emit(["users"], [{ table: "users", change: "update", id: "user-1" }])
 
 		expect(callback).not.toHaveBeenCalled()
 	})
 
 	/** Confirms subscribe invokes callback with undefined when row detail is omitted. */
 	test("subscribe passes undefined when changes are omitted", () => {
-		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
-		const db = {
-			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		}
+		const { updates$, emit } = mockUpdatesDb()
+		const db = { updates$ }
 		const repo = new DbRepository<any>(db as any, "posts")
 		const callback = vi.fn()
 		repo.subscribe(callback)
 
-		subscriber?.(["posts"])
+		emit(["posts"])
 
 		expect(callback).toHaveBeenCalledWith(undefined)
 	})
 
 	/** Confirms optional id filtering skips irrelevant row updates. */
 	test("subscribe can filter to specific record ids", () => {
-		let subscriber: ((tables: string[], changes?: any[]) => void) | undefined
-		const db = {
-			subscribe: (callback: (tables: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		}
+		const { updates$, emit } = mockUpdatesDb()
+		const db = { updates$ }
 		const repo = new DbRepository<any>(db as any, "posts")
 		const callback = vi.fn()
 		repo.subscribe(callback, { ids: ["post-1"] })
 
-		subscriber?.(["posts"], [{ table: "posts", change: "update", id: "post-2" }])
+		emit(["posts"], [{ table: "posts", change: "update", id: "post-2" }])
 		expect(callback).not.toHaveBeenCalled()
 
-		subscriber?.(["posts"], [{ table: "posts", change: "update", id: "post-1" }])
+		emit(["posts"], [{ table: "posts", change: "update", id: "post-1" }])
 		expect(callback).toHaveBeenCalledWith([{ change: "update", id: "post-1" }])
+	})
+
+	/** `select` skips duplicate publishes when only `txId` advances. */
+	test("subscribe ignores txId-only republish of the same table slice", async () => {
+		const { updates$, emit } = mockUpdatesDb()
+		const db = { updates$ }
+		const repo = new DbRepository<any>(db as any, "posts")
+		const callback = vi.fn()
+		repo.subscribe(callback)
+
+		const changes = [{ table: "posts", change: "update" as const, id: "post-1" }]
+		emit(["posts"], changes)
+		expect(callback).toHaveBeenCalledTimes(1)
+
+		emit(["posts"], changes)
+		expect(callback).toHaveBeenCalledTimes(1)
 	})
 })

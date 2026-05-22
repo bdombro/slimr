@@ -30,19 +30,19 @@ export const db = new AppDb({
 | `sync:error` | Pull/push failure (non-401) |
 | `auth:invalidate` | `reason`: `401` \| `revalidate` |
 | `schema:reload` | Local schema upgrade triggered page reload |
-| `query:error` | `useDbQuery` / `createUseDbQuery` query failure |
+| `query:error` | `useDbQuery` query failure |
 
 ## Without `onDebug`
 
 Subscribe to existing hooks:
 
 ```typescript
-db.sync.onStateChange((state) => console.debug("[dbsync sync]", state))
-db.auth.onChange(() =>
+db.sync.state$.subscribe((state) => console.debug("[dbsync sync]", state))
+db.auth.phase$.subscribe((phase) =>
   console.debug("[dbsync auth]", {
-    phase: db.auth.phase,
+    phase,
     isLoggedIn: db.auth.isLoggedIn,
-    syncState: db.auth.syncState,
+    syncState: db.sync.state,
   }),
 )
 ```

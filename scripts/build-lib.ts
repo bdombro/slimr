@@ -19,7 +19,8 @@ export async function buildLib(packageDir = ".") {
 	fs.rmSync(path.join(packageRoot, "esm"), { force: true, recursive: true })
 	fs.rmSync(path.join(packageRoot, "cjs"), { force: true, recursive: true })
 	await $`tsc -d --outDir esm --noEmit false`.cwd(packageRoot)
-	await $`tsc -d -m commonjs --moduleResolution node --outDir cjs --noEmit false`.cwd(packageRoot)
+	// Node16 resolution honors package.json "exports" (e.g. @slimr/observable/react types).
+	await $`tsc -d -m node16 --moduleResolution node16 --outDir cjs --noEmit false`.cwd(packageRoot)
 	await normalizeCommonJsExtensions(path.join(packageRoot, "cjs"))
 }
 

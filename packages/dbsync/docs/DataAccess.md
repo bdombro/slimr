@@ -95,6 +95,64 @@ Use when several writes must land together, or when you want to stage work and `
 
 With `requiresAuth` adapters (default for `RestAdapter`), data APIs and `getTransaction()` throw `DbSyncNotAuthenticatedError` when `!db.auth.isLoggedIn`. See [Offline.md](./Offline.md) and [Errors](./Errors.md).
 
+## Reacting to changes
+
+`db.updates$` emits after local writes and cross-tab sync (`DbUpdatesPayload`: `tables`, optional `changes`, `txId`). Use imperative **`subscribe`** in non-React code; in React prefer **`db.updates$.use()`** on a `DbSyncR` instance ([React](./React.md)).
+
+### `db.updates$.subscribe`
+
+```typescript
+const unsub = db.updates$.subscribe(({ tables, changes }) => {
+  if (!tables.includes("posts")) return
+  if (changes?.some((c) => c.table === "posts" && c.change === "clear")) {
+    refreshAllPosts()
+    return
+  }
+  const touchedIds = changes?.filter((c) => "id" in c).map((c) => c.id)
+  refreshPosts(touchedIds)
+})
+unsub()
+```
+
+With `@slimr/observable`, pass a **`select`** projector so the callback runs only when the slice changes (deep equality):
+
+```typescript
+db.updates$.subscribe(
+  (tables) => {
+    if (tables.includes("posts")) refreshPosts()
+  },
+  (p) => p.tables,
+)
+```
+
+Change types on `changes`: `"insert"` | `"update"` | `"delete"` | `"clear"`. Payload shape: [API — `DbUpdatesPayload`](./API.md#dbupdatespayload).
+
+### Table-scoped `subscribe`
+
+Repositories filter `updates$` to one table (and optional row ids):
+
+```typescript
+const unsub = db.posts.subscribe((changes) => {
+  if (!changes) {
+    refreshAllPosts()
+    return
+  }
+  if (changes.some((c) => c.change === "clear")) {
+    refreshAllPosts()
+    return
+  }
+  refreshPosts(changes.filter((c) => "id" in c).map((c) => c.id))
+})
+
+db.posts.subscribe(handler, { ids: [postId] })
+
+unsub()
+```
+
+`undefined` `changes` means the table changed but row detail was omitted (e.g. large cross-tab broadcast).
+
+Table `subscribe` uses `select` internally so republishes that only bump `txId` (same `tables` / `changes`) do not invoke your callback.
+
 ## See also
 
 - [Data modeling](./Modeling.md) — 1:N and M:N relationships

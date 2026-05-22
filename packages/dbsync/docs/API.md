@@ -22,39 +22,43 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | --- | --- |
 | `constructor(config)` | Creates instance; schedules automatic boot when not `lifecycle.manual` |
 | `config` | Active config object |
-| `auth` | Session getters, login/logout, listeners — [Auth](./Auth.md) · [Offline](./Offline.md) |
+| `auth` | Session getters, observables, login/logout, listeners — [Auth](./Auth.md) · [Offline](./Offline.md) |
 | `sync` | Background sync engine — [Sync](./Sync.md) |
+| `updates$` | `Observable<DbUpdatesPayload>` — table change stream; [subscribe / table helpers](./DataAccess.md#reacting-to-changes) |
 | `syncInterval` | Sync timer interval in ms (default `5000`) |
 
 ## `db.sync`
 
-| Member | Type | Meaning |
+| Observable | Getter | Meaning |
 | --- | --- | --- |
-| `state` | `SyncState` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"` |
-| `isStarted` | `boolean` | Background sync timer active |
-| `isLive` | `boolean` | Recent successful sync (~4× `syncInterval`) |
-| `isInitialSyncPending` | `boolean` | Logged in, no successful sync since login |
+| `state$` | `state` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"` |
+| `isStarted$` | `isStarted` | Background sync timer active |
+| `isLive$` | `isLive` | Recent successful sync (~4× `syncInterval`) |
+
+| Method | Returns | Notes |
+| --- | --- | --- |
 | `start()` | `Promise<void>` | Open IDB (if needed) + start timer + immediate cycle |
 | `stop()` | `void` | Stop timer |
 | `trigger()` | `Promise<void>` | One immediate pull/push cycle |
 | `waitForLive()` | `Promise<void>` | Poll until `isLive` (rejects if sync never started) |
 | `waitForInitial()` | `Promise<void>` | Until first successful sync since login |
-| `onStateChange(cb)` | `{ close() }` | Sync state transitions |
 
 ## `db.auth` (`DbSyncAuth`)
 
-| Member | Type | Notes |
+| Observable | Getter | Notes |
 | --- | --- | --- |
-| `phase` | `DbAuthPhase` | `"logged-out"` \| `"booting"` \| `"initial-sync"` \| `"ready"` — app shell |
-| `isLoggedIn` | `boolean` | Hydrated client session — first-paint routing |
-| `isBooted` | `boolean` | Boot pipeline finished |
-| `isReady` | `boolean` | IndexedDB open |
-| `isBootstrapping` | `boolean` | Session-start / `onAuthenticated` callbacks in flight |
-| `pendingLogout` | `boolean` | Remote logout queued until online |
-| `offline` / `online` | `boolean` | Browser connectivity |
-| `syncState` | `SyncState` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"` |
-| `isInitialSyncPending` | `boolean` | Logged in, no successful sync since login |
-| `onChange(listener)` | `{ close() }` | Phase, flags, or sync state changed |
+| `phase$` | `phase` | `"logged-out"` \| `"booting"` \| `"initial-sync"` \| `"ready"` |
+| `initialSyncPending$` | `isInitialSyncPending` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional: one loader for both; primary shell uses `phase$` ([Integration guide](./Offline.md)) |
+| `canQuery$` | `canQuery` | `isReady` && auth gate — used by `useDbQuery` |
+| `isLoggedIn$` | `isLoggedIn` | Hydrated client session |
+| `isReady$` | `isReady` | IndexedDB open |
+| `isBooted$` | `isBooted` | Boot pipeline finished |
+| `isBootstrapping$` | `isBootstrapping` | Session-start callbacks in flight |
+| `pendingLogout$` | `pendingLogout` | Remote logout queued until online |
+| `offline$` / `online$` | `offline` / `online` | Browser connectivity |
+
+| Method | Returns | Notes |
+| --- | --- | --- |
 | `onLogout(listener)` | `{ close() }` | Before IDB clear on active logout — [Auth](./Auth.md) |
 | `onAuthenticated(listener)` | `{ close() }` | Login + cross-tab login only — not refresh boot |
 | `sendCode(email)` | `Promise<boolean>` | Network required when `requiresAuth` |
@@ -62,7 +66,17 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | `logout()` | `Promise<void>` | Local wipe + deferred remote when offline |
 | `revalidate()` | `Promise<boolean>` | `checkAuth`; false → logout flow |
 
-**App shell:** `switch (db.auth.phase)` — see [React](./React.md) and [Offline](./Offline.md).
+**React:** `db.auth.<field>$.use()` on a **`DbSyncR`** from `@slimr/dbsync/react`. **Sync state:** `db.sync.state$` (not on `db.auth`).
+
+## `DbUpdatesPayload`
+
+```typescript
+type DbUpdatesPayload = {
+  tables: string[]
+  changes?: RowChange[]
+  txId: number // monotonic; ensures every publish fires
+}
+```
 
 ## `DbSync` — data (low-level)
 
@@ -93,14 +107,6 @@ Throws `DbSyncNotAuthenticatedError` when `requiresAuth` and `!db.auth.isLoggedI
 | `waitForBooted()` | `Promise<void>` | Boot pipeline finished (not server sync) |
 | `boot()` | `Promise<void>` | Only when `lifecycle.manual`; else throws |
 
-## `DbSync` — events
-
-| Method | Returns | Notes |
-| --- | --- | --- |
-| `subscribe(cb)` | `{ close() }` | `(tables, changes?)` — local + cross-tab — [React](./React.md) |
-
-`changes` entries: `{ table, change: "insert"|"update"|"delete", id }` or `{ table, change: "clear" }`. Large cross-tab updates may omit `changes` (refetch).
-
 ## `DbSync` — debug & cleanup
 
 | Method | Notes |
@@ -130,7 +136,7 @@ Subclass `DbTable<Row, CreateInput>` and attach on `DbSync` (e.g. `posts = new P
 
 ### Inherited repository API
 
-Same as low-level data methods, scoped to the table: `get`, `find`, `getBy`, `stream`, `add`, `put`, `patch`, `delete`, `clear`, `applyDefaults`, `subscribe(cb, { ids? })`.
+Same as low-level data methods, scoped to the table: `get`, `find`, `getBy`, `stream`, `add`, `put`, `patch`, `delete`, `clear`, `applyDefaults`, `subscribe(cb, { ids? })` — `subscribe` filters `db.updates$`.
 
 ## `FindOptions`
 
@@ -151,14 +157,17 @@ Used by `find` / `stream` (on `db` or repository).
 
 | Export | Role |
 | --- | --- |
-| `createUseDbQuery(db)` | Factory for app-bound `useDbQuery` |
-| `useDbQuery` | Generic hook (prefer factory) |
-| `useDbAuth(db)` | Flat `DbAuthState` from `db.auth` getters |
-| `useDbSession(db)` | Deprecated alias of `useDbAuth` |
+| `DbSyncR` | Base class for React apps; overrides `auth` / `sync` / `updates$` so observables expose `.use()` |
+| `useDbQuery(db, tables, queryFn, deps?, options?)` | Reactive IDB queries (`db` is `DbSyncR` / subclass instance) |
+| `UseDbQueryOptions` | `shouldRefetchFilter` typing |
+| `DbSyncRInstance`, `DbSyncAuthR`, `DbSyncSyncR`, `ObservableReact` | Types |
+| `UseObservableOptions` | SSR options for `.use()` |
 
-Types: `DbAuthPhase`, `DbAuthState`, `SyncState` (`DbSessionPhase` / `DbSessionSnapshot` deprecated).
+Session UI: **`db.auth.<field>$.use()`** — see [React](./React.md).
 
-See [React](./React.md), [SSR](./SSR.md).
+Types exported from `@slimr/dbsync`: `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange`.
+
+API migrations and breaking changes: [CHANGELOG UNRELEASED](../CHANGELOG.md) · [Migrating (archived)](./archive/Migrating-pre-0.0.43.md).
 
 ## Package exports
 
@@ -166,7 +175,7 @@ See [React](./React.md), [SSR](./SSR.md).
 | --- | --- |
 | `DbSync`, `DbTable`, `DbSyncAuth`, `DbSyncSync` | Classes |
 | `DbSyncConfig`, `DbSyncDebugEvent`, `DbSyncDebugListener`, `Migration` | Types |
-| `DbAuthPhase`, `DbAuthState`, `SyncState` | Types |
+| `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange` | Types |
 | `DbSyncOfflineError`, `DbSyncNotAuthenticatedError`, `DbSyncAuthError` | Errors — [Errors](./Errors.md) |
 | `@slimr/dbsync/adapters` | `RestAdapter`, `LocalAdapter`, `BackendAdapter` |
 
@@ -174,5 +183,5 @@ See [React](./React.md), [SSR](./SSR.md).
 
 - [Getting started](./GettingStarted.md) — setup
 - [Data access](./DataAccess.md) — queries and transactions
-- [Offline-first apps](./Offline.md) — routing and shell
+- [Integration guide](./Offline.md) — routing and shell
 - [Sync engine](./Sync.md) — dirty queue and multi-tab sync

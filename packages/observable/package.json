@@ -1,0 +1,68 @@
+{
+  "name": "@slimr/observable",
+  "version": "0.0.2",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
+  "sideEffects": false,
+  "keywords": [
+    "observable",
+    "pub-sub",
+    "state",
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bdombro/slimr.git"
+  },
+  "type": "module",
+  "types": "esm/index.d.ts",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
+    },
+    "./react": {
+      "types": "./esm/react.d.ts",
+      "import": "./esm/react.js",
+      "require": "./cjs/react.cjs"
+    }
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build-lib.ts --pkg .",
+    "clean": "rm -rf esm cjs",
+    "typecheck": "tsc -b",
+    "test": "vitest run"
+  },
+  "files": [
+    "cjs",
+    "esm",
+    "README.md"
+  ],
+  "dependencies": {
+    "@slimr/util": "^3.2.80"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "*",
+    "react-dom": "*"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}

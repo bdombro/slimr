@@ -16,12 +16,14 @@ import { DbSyncSync } from "./DbSyncSync.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
+import { AuthObservables } from "./internal/AuthObservables.js"
 import { ConnectivityTracker } from "./internal/ConnectivityTracker.js"
-import { EventBus, type RowChange, type SubscribeCallback } from "./internal/EventBus.js"
+import { type DbUpdatesPayload, EventBus, type RowChange } from "./internal/EventBus.js"
 import { type Migration, MigrationManager } from "./internal/MigrationManager.js"
 import type { FindOptions } from "./internal/queryTypes.js"
 import { SessionManager } from "./internal/SessionManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
+import { SyncObservables } from "./internal/SyncObservables.js"
 import { applyDefaults, StorageManager } from "./internal/storage/index.js"
 import { resolveLifecyclePolicy } from "./lifecycle.js"
 import type { TransactionOf } from "./transactionTypes.js"
@@ -43,10 +45,18 @@ export class DbSync {
 	public syncInterval = 5000
 	/** The active configuration passed by the consumer. */
 	public config: DbSyncConfig
-	/** Authentication actions and session read accessors (`phase`, `isLoggedIn`, `onChange`, …). */
-	public readonly auth: DbSyncAuth
+	private _auth!: DbSyncAuth
+	private _sync!: DbSyncSync
+
+	/** Authentication actions and session read accessors (`phase`, `isLoggedIn`, `phase$`, …). */
+	get auth(): DbSyncAuth {
+		return this._auth
+	}
+
 	/** Background sync controls and status. */
-	public readonly sync: DbSyncSync
+	get sync(): DbSyncSync {
+		return this._sync
+	}
 	/** Runtime-registered table instances for class-based schemas. */
 	private tableRegistry = new Map<string, DbTable<any, any>>()
 
@@ -64,6 +74,8 @@ export class DbSync {
 	private autoBootScheduled = false
 	/** Whether the consumer opted into manual lifecycle (`boot()` allowed). */
 	private lifecycleManual: boolean
+	/** Short id for observable debug names (multiple instances per page). */
+	private readonly instanceId: string
 
 	/**
 	 * Creates a new `DbSync` instance using the supplied configuration.
@@ -76,7 +88,10 @@ export class DbSync {
 		const policy = resolveLifecyclePolicy(adapter, config)
 		this.lifecycleManual = policy.manual
 
-		this.events = new EventBus()
+		this.instanceId = createUid().slice(0, 8)
+		this.events = new EventBus(this.instanceId)
+		const authObservables = new AuthObservables(this.instanceId)
+		const syncObservables = new SyncObservables(this.instanceId)
 
 		const onSchemaChange = () => this.onSchemaChangeDetected()
 
@@ -111,7 +126,18 @@ export class DbSync {
 			() => this.getSchemaTables(),
 		)
 
-		this.sync = new DbSyncSync(
+		const sessionManager = new SessionManager(
+			this.authManager,
+			() => this.storage.initted,
+			this.connectivity,
+			this.syncEngine,
+			this.events,
+			authObservables,
+			syncObservables,
+			adapter.requiresAuth !== false,
+		)
+
+		this._sync = new DbSyncSync(
 			{
 				assertAuthenticated: () => this.authManager.assertAuthenticated(),
 				ensureReady: () => this.ensureStorageReady(),
@@ -119,16 +145,12 @@ export class DbSync {
 			this.syncEngine,
 			this.events,
 			this.authManager,
+			authObservables,
+			sessionManager,
+			syncObservables,
 		)
-
-		const sessionManager = new SessionManager(
-			this.authManager,
-			() => this.storage.initted,
-			this.connectivity,
-			this.syncEngine,
-			this.events,
-		)
-		this.auth = new DbSyncAuth(this.authManager, sessionManager)
+		this._auth = new DbSyncAuth(this.authManager, sessionManager, authObservables)
+		void sessionManager.publish()
 
 		if (policy.autoStart) {
 			this.authManager.onSessionStart(async () => {
@@ -343,9 +365,9 @@ export class DbSync {
 		await this.storage.executeTransaction([{ type: "clear", storeName: tableName }])
 	}
 
-	/** Subscribes to table update notifications. */
-	public subscribe(callback: SubscribeCallback) {
-		return this.events.subscribe(callback)
+	/** Observable stream of table updates (local and cross-tab). */
+	get updates$() {
+		return this.events.updates$
 	}
 
 	/**
@@ -400,4 +422,4 @@ export class DbSync {
 	}
 }
 
-export type { RowChange, SubscribeCallback }
+export type { DbUpdatesPayload, RowChange }

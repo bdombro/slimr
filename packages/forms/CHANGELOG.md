@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+## 5.0.53
+
+### Changed
+
+- Package `exports` include explicit `types` for `.`.
+
 ## 5.0.52
 
 ### Changed

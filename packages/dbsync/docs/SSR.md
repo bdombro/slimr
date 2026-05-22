@@ -14,87 +14,72 @@ Ensure that your instance is only created on the client:
 
 ```typescript
 // db.ts
-import { DbSync } from "@slimr/dbsync"
+import { DbSyncR } from "@slimr/dbsync/react"
 import { RestAdapter } from "@slimr/dbsync/adapters"
+
+class AppDb extends DbSyncR {
+  posts = new PostTable(this)
+}
 
 export let db: AppDb | null = null
 
 if (typeof window !== "undefined") {
-    db = new AppDb({
-        adapter: new RestAdapter({ url: "/api" }),
-    })
-    db.auth.onLogout(() => window.location.href = "/login")
+    db = new AppDb({ adapter: new RestAdapter({ url: "/api" }) })
+    db.auth.onLogout(() => (window.location.href = "/login"))
 }
 ```
 
-## 2. React Hooks in SSR
+## 2. React hooks in SSR
 
-The hooks provided by `@slimr/dbsync/react` (`useDbQuery`, `useDbAuth`) are safe to render on the server, provided you handle the `null` db instance gracefully.
+`useDbQuery` and **`.use()`** on observables are safe to render on the server when `db` is null or gates pass **`getServerSnapshot`**.
 
 During the initial server render (and the first hydration pass on the client), IndexedDB is not yet open. Your components must return a fallback (like a skeleton).
 
 ```tsx
-import { createUseDbQuery, useDbAuth as useDbAuthRaw } from "@slimr/dbsync/react"
-import type { DbAuthState } from "@slimr/dbsync/react"
+import { useDbQuery } from "@slimr/dbsync/react"
 import { db } from "./db"
 
-const ssrAuthFallback: DbAuthState = {
-    phase: "booting",
-    isLoggedIn: false,
-    isBooted: false,
-    isReady: false,
-    isBootstrapping: false,
-    pendingLogout: false,
-    offline: false,
-    online: true,
-    syncState: "idle",
+export function AppShell() {
+  if (!db) return <AppSkeleton />
+  const phase = db.auth.phase$.use({
+    getServerSnapshot: () => "logged-out" as const,
+  })
+  switch (phase) {
+    case "logged-out": return <Login />
+    case "booting":
+    case "initial-sync":
+      return <AppSkeleton />
+    case "ready": return <Outlet />
+  }
 }
 
-// Create safe wrappers that handle the null db during SSR
-export function useDbAuth() {
-    if (!db) return ssrAuthFallback
-    return useDbAuthRaw(db)
-}
-
-export const useDbQuery = createUseDbQuery(db as any) // Type cast for SSR
-```
-
-In your React tree:
-
-```tsx
-function AppShell() {
-    const { isReady, isLoggedIn } = useDbAuth()
-
-    // During SSR, isReady is ALWAYS false. The server renders this skeleton.
-    // On the client, it hydrates as the skeleton, then updates once IDB opens.
-    if (!isReady) {
-        return <AppSkeleton />
-    }
-
-    return <MainContent />
+export function PostList() {
+  if (!db) return <PostListSkeleton />
+  const { value: posts, loading } = useDbQuery(db, "posts", () => db.posts.find())
+  if (loading) return <PostListSkeleton />
+  return <ul>{posts?.map((p) => <li key={p.id}>{p.content}</li>)}</ul>
 }
 ```
 
-## 3. Hydration Mismatches
+## 3. Hydration mismatches
 
 Because `db.auth.isLoggedIn` reads from `localStorage` synchronously on the client, it might evaluate to `true` on the client's first render, while the server evaluated it as `false`.
 
-To avoid React hydration errors (e.g. "Text content did not match. Server: 'Login', Client: 'App'"), you should wait until the component has mounted before branching based on `isLoggedIn` if your app uses SSR.
+To avoid React hydration errors (e.g. "Text content did not match. Server: 'Login', Client: 'App'"), wait until the component has mounted before branching on `isLoggedIn` if your app uses SSR.
 
 ```tsx
 function Root() {
     const [mounted, setMounted] = useState(false)
-    const { isLoggedIn } = useDbAuth()
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
-    if (!mounted) {
+    if (!mounted || !db) {
         return null // or a generic spinner that matches the server
     }
 
-    if (!isLoggedIn) {
+    if (!db.auth.isLoggedIn) {
         return <LoginScreen />
     }
 
@@ -102,6 +87,6 @@ function Root() {
 }
 ```
 
-## Alternatives for SSR Apps
+## Alternatives for SSR apps
 
 If your app requires fast SEO or server-rendering of actual data, `dbsync` might not be the best fit for those specific pages. `dbsync` is designed for offline-first, highly-interactive SPA shells where the UI loads instantly from local storage rather than waiting for the server.

@@ -1,5 +1,5 @@
 import type { DbSync } from "./DbSync.js"
-import type { RowChange } from "./internal/EventBus.js"
+import type { DbUpdatesPayload, RowChange } from "./internal/EventBus.js"
 import type { FindOptions } from "./internal/queryTypes.js"
 
 /** Row-level change for a single table (table name omitted). */
@@ -145,30 +145,35 @@ export class DbRepository<T> {
 	 *
 	 * @param callback Invoked with changes for this table. `undefined` means the table changed but row detail is unavailable (e.g. large cross-tab broadcast).
 	 * @param options Optional filters such as limiting to specific record ids.
-	 * @returns A handle with `close()` to unsubscribe.
+	 * @returns An unsubscribe function.
 	 */
 	subscribe(callback: TableSubscribeCallback, options?: TableSubscribeOptions) {
-		return this.db.subscribe((tables, changes) => {
-			if (!tables.includes(this.tableName)) return
+		type Slice = { changes?: RowChange[] } | null
+		return this.db.updates$.subscribe(
+			(slice: Slice) => {
+				if (slice === null) return
 
-			if (!changes) {
-				callback(undefined)
-				return
-			}
+				if (!slice.changes) {
+					callback(undefined)
+					return
+				}
 
-			const relevant = toTableRowChanges(changes, this.tableName)
-			if (relevant.length === 0) return
+				const relevant = toTableRowChanges(slice.changes, this.tableName)
+				if (relevant.length === 0) return
 
-			if (options?.ids) {
-				const watchedIds = options.ids
-				const hit = relevant.some(
-					(change) =>
-						change.change === "clear" || ("id" in change && watchedIds.includes(change.id)),
-				)
-				if (!hit) return
-			}
+				if (options?.ids) {
+					const watchedIds = options.ids
+					const hit = relevant.some(
+						(change) =>
+							change.change === "clear" || ("id" in change && watchedIds.includes(change.id)),
+					)
+					if (!hit) return
+				}
 
-			callback(relevant)
-		})
+				callback(relevant)
+			},
+			(p: DbUpdatesPayload): Slice =>
+				p.tables.includes(this.tableName) ? { changes: p.changes } : null,
+		)
 	}
 }

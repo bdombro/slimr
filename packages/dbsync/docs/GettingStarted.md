@@ -2,7 +2,9 @@
 
 [Documentation index](./README.md) · [Package README](../README.md)
 
-Install, typed `DbSync` / `DbTable`, session listeners, and lifecycle. For offline routing and React shells, see [Offline-first apps](./Offline.md).
+Install, typed `DbSync` / `DbTable`, session listeners, and lifecycle.
+
+**After setup:** [Integration guide (offline-first SPAs)](./Offline.md) → [React](./React.md) for `AppShell` and `useDbQuery`.
 
 ## Install
 
@@ -10,12 +12,15 @@ Install, typed `DbSync` / `DbTable`, session listeners, and lifecycle. For offli
 npm install @slimr/dbsync
 ```
 
-## Typed tables and `DbSync`
+React apps also need `react` and `react-dom` (peers of `@slimr/dbsync/react`).
+
+## Typed tables and `db.ts`
 
 Bring your own TypeScript interfaces (hand-written or generated from your backend). Declare one `DbSync` subclass with `DbTable` instances up front; keep table-specific normalization on the table class via `prepareCreate`, `preparePut`, and `preparePatch`.
 
 ```typescript
-import { DbSync, DbTable } from "@slimr/dbsync"
+import { DbTable } from "@slimr/dbsync"
+import { DbSyncR } from "@slimr/dbsync/react"
 import { RestAdapter } from "@slimr/dbsync/adapters"
 
 interface Post {
@@ -42,7 +47,7 @@ class PostTable extends DbTable<Post, PostCreateInput> {
     }
 }
 
-class AppDb extends DbSync {
+class AppDb extends DbSyncR {
     posts = new PostTable(this)
 }
 
@@ -54,50 +59,28 @@ db.auth.onLogout(() => navigate("/login"))
 db.auth.onAuthenticated(() => navigate("/app")) // optional; login + cross-tab only
 ```
 
-Register listeners in the same module immediately after `new DbSync`, before any `await`. Do not call `waitForBooted()` at module top level in SPAs — use the headless pattern below or React hooks.
+Register listeners in the same module immediately after `new`, before any `await`. Do not call `waitForBooted()` at module top level in SPAs — see [Integration guide](./Offline.md) and [React](./React.md).
 
-## Recommended module layout
+## Build the UI
 
-```text
-src/
-  db.ts          # AppDb subclass, adapter, listeners — export `db`
-  dbHooks.ts     # createUseDbQuery(db), thin useDbAuth wrapper if needed
-  AppShell.tsx   # switch (useDbAuth(db).phase)
-```
+Typical files: `db.ts`, `AppShell.tsx`, feature components (`PostList.tsx`, …).
 
-```typescript
-// db.ts
-export const db = new AppDb({ adapter: new RestAdapter({ url: import.meta.env.VITE_API_URL }) })
-db.auth.onLogout(() => navigate("/login"))
-
-// dbHooks.ts
-import { createUseDbQuery, useDbAuth as useDbAuthRaw } from "@slimr/dbsync/react"
-import { db } from "./db"
-
-export const useDbQuery = createUseDbQuery(db)
-export const useDbAuth = () => useDbAuthRaw(db)
-```
-
-## State at a glance
-
-| API | Meaning |
+| Step | Doc |
 | --- | --- |
-| `db.auth.isLoggedIn` | Hydrated session — route on this at module load |
-| `db.auth.phase` | App shell: `logged-out` \| `booting` \| `initial-sync` \| `ready` |
-| `waitForBooted()` | Boot finished (internal `sync.start()` when logged in) |
-| `db.auth.isReady` | IndexedDB open |
-| `db.sync.waitForLive()` | Optional — recent successful sync ([Sync](./Sync.md)) |
-
-Full callback matrix and logout flow: [Auth](./Auth.md) · [Offline](./Offline.md).
+| Routing, phases, loaders, anti-patterns | [Integration guide](./Offline.md) |
+| `AppShell`, `.use()`, `useDbQuery` | [React](./React.md) |
 
 ## Lifecycle (automatic by default)
 
-- **Session-backed** (`RestAdapter`): microtask boot — hydrated session replay + internal `start()` when logged in.
+- **Session-backed** (`RestAdapter`): microtask boot — hydrated session replay + internal `sync.start()` when logged in.
 - **Local-only** (`LocalAdapter`): opens IndexedDB automatically when not manual.
 
 ### Headless / scripts
 
+Use plain `class AppDb extends DbSync` when you are not using React hooks:
+
 ```typescript
+const db = new AppDb({ adapter })
 await db.waitForBooted()
 
 if (db.auth.isLoggedIn) {
@@ -107,10 +90,6 @@ if (db.auth.isLoggedIn) {
     })
 }
 ```
-
-### React SPAs
-
-Route on **`db.auth.isLoggedIn` at module load**. Use `useDbAuth` (`phase`) and `useDbQuery` — usually no `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
 
 ### Advanced
 
@@ -138,9 +117,7 @@ See [Adapters — LocalAdapter](./Adapters.md#localadapter).
 import { LocalAdapter } from "@slimr/dbsync/adapters"
 
 export const db = new AppDb({ adapter: new LocalAdapter() })
-// Optional: db.auth.onLogout(...) for session UI with stubbed login
 
-// Scripts / first imperative write:
 await db.waitForBooted()
 ```
 
@@ -148,15 +125,10 @@ await db.waitForBooted()
 
 | Goal | Doc |
 | --- | --- |
-| Offline routing, logout, PWAs | [Offline-first apps](./Offline.md) |
+| Integrate an offline SPA | [Integration guide](./Offline.md) |
+| React hooks and shell | [React](./React.md) |
 | Sync loop, dirty queue, multi-tab | [Sync engine](./Sync.md) |
 | CRUD, queries, transactions | [Data access](./DataAccess.md) |
-| 1:N relations, join tables, denormalization | [Data modeling](./Modeling.md) |
-| Migrations and versioning | [Schema evolution](./Schema.md) |
-| React hooks | [React](./React.md) |
-| SSR and hydration | [SSR & Next.js](./SSR.md) |
-| Mocking IndexedDB, component tests | [Testing](./Testing.md) |
-| Auth listeners | [Auth](./Auth.md) |
+| Auth listener matrix | [Auth](./Auth.md) |
 | All public methods | [API reference](./API.md) |
-| Typed errors | [Errors](./Errors.md) |
 | Upgrade from older APIs | [CHANGELOG](../CHANGELOG.md) · [Migrating (archived)](./archive/Migrating-pre-0.0.43.md) |

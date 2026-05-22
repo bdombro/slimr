@@ -54,7 +54,7 @@ describe("AuthManager", () => {
 		installIndexedDbTestShim()
 		await resetDatabase()
 		localStorage.clear()
-		events = new EventBus()
+		events = new EventBus("test")
 		connectivity = new ConnectivityTracker()
 		storage = new StorageManager(
 			{ adapter: createAdapter(), tables: { posts: {} } },
@@ -225,8 +225,8 @@ describe("AuthManager", () => {
 		}
 		vi.stubGlobal("BroadcastChannel", MockBroadcastChannel)
 
-		const eventsA = new EventBus()
-		const eventsB = new EventBus()
+		const eventsA = new EventBus("a")
+		const eventsB = new EventBus("b")
 		const authA = createAuthManager(adapter, storage, eventsA, connectivity, () => {})
 		const authB = createAuthManager(adapter, storage, eventsB, connectivity, () => {})
 
@@ -255,8 +255,8 @@ describe("AuthManager", () => {
 		}
 		vi.stubGlobal("BroadcastChannel", MockBroadcastChannel)
 
-		const eventsA = new EventBus()
-		const eventsB = new EventBus()
+		const eventsA = new EventBus("a")
+		const eventsB = new EventBus("b")
 		const authB = createAuthManager(createAdapter(), storage, eventsB, connectivity, () => {})
 		const onAuthenticated = vi.fn()
 		authB.onAuthenticated(onAuthenticated)

@@ -104,7 +104,7 @@ await db.posts.add({ userId: "1", content: "Hello" })
 
 Without session listeners, IndexedDB still opens automatically on construction. React apps can skip `waitForBooted()` in components — [React](./React.md).
 
-For production session-backed sync, use [RestAdapter](./RestAdapter.md) and [Offline-first apps](./Offline.md).
+For production session-backed sync, use [RestAdapter](./RestAdapter.md) and [Integration guide](./Offline.md).
 
 ## RestAdapter
 

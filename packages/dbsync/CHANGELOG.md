@@ -6,6 +6,25 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.45
+
+### Added
+
+- **`@slimr/observable`** dependency; observable session/sync/update streams (`db.auth.*$`, `db.sync.state$` / `isStarted$` / `isLive$`, `db.updates$` with `txId`).
+- **`@slimr/dbsync/react`** — `DbSyncR` (`.use()` on observables), `useDbQuery`, React types. Main package exports `DbUpdatesPayload`, `RowChange`.
+
+### Breaking
+
+- **Removed:** `db.subscribe`, `db.auth.onChange`, `db.sync.onStateChange`, `db.sync.isInitialSyncPending`, `db.auth.syncState`, `useDbAuth`, `createUseDbQuery`, `DbAuthState`.
+- **React:** `class AppDb extends DbSyncR`; shell via `db.auth.phase$.use()` (four phases); data via `useDbQuery(db, …)`. Imperative code: `.subscribe` / `.val` on `$` observables.
+- **`isInitialSyncPending` / `initialSyncPending$`:** true while logged in until first successful sync (includes `booting`, not only `phase === "initial-sync"`).
+
+### Changed
+
+- `DbSync.auth` / `sync` are getters; `DbSyncR` wraps them for `.use()` without casting `export const db`.
+- `useDbQuery` and `db.<table>.subscribe` refetch only on `canQuery$` + relevant `updates$` slices (`select` ignores `txId`-only republishes).
+- Docs: [Getting started](./docs/GettingStarted.md) → [Integration guide](./docs/Offline.md) → [React](./docs/React.md) — see [docs/README.md](./docs/README.md).
+
 ## 0.0.44
 
 ### Breaking
@@ -13,9 +32,10 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 - **Removed `db.session`** — session state lives on **`db.auth`** shallow getters (`phase`, `isLoggedIn`, `isReady`, `offline`, `syncState`, `isInitialSyncPending`, …) and **`db.auth.onChange()`**.
 - **`db.sync`** — `start`, `stop`, `trigger`, `waitForLive`, `waitForInitial`, `onStateChange`, `state`, `isLive`, `isStarted`, `isInitialSyncPending` moved off root `db`.
 - **Removed from root `db`:** `isReady`, `isBooted`, `offline`, `online`, `isLive`, `isStarted`, `isInitialSyncPending`, `start`, `stop`, `triggerSync`, `waitForLive`, `onSyncStateChange`.
-- **`useDbAuth`** — flat `DbAuthState` from `db.auth` getters; **`useDbSession`** is a deprecated alias.
+- **`useDbAuth`** — flat `DbAuthState` from `db.auth` getters (replaces `useDbSession`).
 - **`db.auth.onLogout` / `onAuthenticated` / `onChange`** return `{ close() }` (not `() => void`).
-- **Exported types:** `DbAuthPhase`, `DbAuthState`, `SyncState` (`DbSessionPhase` / `DbSessionSnapshot` deprecated aliases).
+- **Removed exports:** `useDbSession`, `DbSessionPhase`, `DbSessionSnapshot`, `DbSessionState`.
+- **Exported types:** `DbAuthPhase`, `DbAuthState`, `SyncState`.
 
 ### Changed
 

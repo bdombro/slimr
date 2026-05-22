@@ -15,7 +15,8 @@ Guidance for AI agents working in this repo.
 - [packages/markdown/](packages/markdown/) — slim markdown-to-HTML parser + component
 - [packages/mdi-paths/](packages/mdi-paths/) — Material Design icon paths, code-split
 - [packages/react/](packages/react/) — convenience meta-package; re-exports `@slimr/react-util` and several other @slimr libs
-- [packages/react-util/](packages/react-util/) — React hooks and utilities (mergeRefs, Observable, useColorScheme, useObservable, useReRender, useSet, and more)
+- [packages/observable/](packages/observable/) — framework-agnostic pub/sub `Observable`; React entry at `@slimr/observable/react`
+- [packages/react-util/](packages/react-util/) — React hooks and utilities (mergeRefs, useColorScheme, useReRender, useSet, and more)
 - [packages/router/](packages/router/) — novel React-web router with stack routing
 - [packages/styled/](packages/styled/) — styled-components/Chakra-inspired css-in-js (depends on `@slimr/css`)
 - [packages/swr/](packages/swr/) — stale-while-refresh data-fetching hook

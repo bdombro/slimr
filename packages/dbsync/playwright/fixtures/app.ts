@@ -34,7 +34,7 @@ window.postsRepo = db.posts
 
 void db.waitForBooted().then(() => {
 	log("ready")
-	db.subscribe((stores) => {
+	db.updates$.subscribe(({ tables: stores }) => {
 		log(`updated:${stores.join(",")}`)
 		if (stores.includes("posts")) {
 			db.posts.find().then((posts) => {

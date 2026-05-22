@@ -2,6 +2,13 @@
 
 ## UNRELEASED
 
+## 2.1.96
+
+### Changed
+
+- Package `exports` include explicit `types` for `.`.
+- Library build emits `esm/index.js` at the package root (`rootDir: "src"` in `tsconfig.json`).
+
 ## 2.1.95
 
 ### Changed

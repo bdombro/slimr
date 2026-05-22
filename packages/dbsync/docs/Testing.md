@@ -56,44 +56,33 @@ test("can insert and query posts", async () => {
 
 ## 3. Mocking React Hooks for Component Tests
 
-When testing UI components, mounting a full `DbSync` instance with an IndexedDB polyfill can be slow. It is often easier to mock the `@slimr/dbsync/react` hooks directly.
+When testing UI components, mounting a full `DbSync` instance with an IndexedDB polyfill can be slow. It is often easier to mock hooks directly.
+
+**`.use()`** on `DbSyncR` observables delegates to `useObservable` internally, so mocking `@slimr/observable/react` still works. Alternatively mock `db.auth.phase$.use` on a test double.
 
 ```tsx
 import { vi } from "vitest"
-import { useDbQuery, useDbAuth } from "../src/dbHooks" // your bound hooks
+import { useObservable } from "@slimr/observable/react"
+import { useDbQuery } from "@slimr/dbsync/react"
+import { db } from "./db" // class AppDb extends DbSyncR
 
-vi.mock("../src/dbHooks", () => ({
-    useDbQuery: vi.fn(),
-    useDbAuth: vi.fn(),
-}))
+vi.mock("@slimr/observable/react", () => ({ useObservable: vi.fn() }))
+vi.mock("@slimr/dbsync/react", () => ({ useDbQuery: vi.fn() }))
 
 test("renders loading skeleton when not ready", () => {
-    vi.mocked(useDbAuth).mockReturnValue({
-        phase: "booting",
-        isReady: false,
-        isLoggedIn: true,
-        isBooted: false,
-        isBootstrapping: true,
-        pendingLogout: false,
-        offline: false,
-        online: true,
-        syncState: "idle",
+    vi.mocked(useObservable).mockImplementation((source) => {
+        if (source === db.auth.phase$.val || source.name?.endsWith("-phase")) return "booting"
+        return false
     })
     const { getByTestId } = render(<AppShell />)
     expect(getByTestId("skeleton")).toBeInTheDocument()
 })
 
 test("renders posts", () => {
-    vi.mocked(useDbAuth).mockReturnValue({
-        phase: "ready",
-        isReady: true,
-        isLoggedIn: true,
-        isBooted: true,
-        isBootstrapping: false,
-        pendingLogout: false,
-        offline: false,
-        online: true,
-        syncState: "idle",
+    vi.mocked(useObservable).mockImplementation((source) => {
+        if (source.name?.endsWith("-phase")) return "ready"
+        if (source.name?.endsWith("-initialSyncPending")) return false
+        return false
     })
     vi.mocked(useDbQuery).mockReturnValue({
         loading: false,

@@ -1,25 +1,46 @@
+import { Observable } from "@slimr/observable"
 import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, test, vi } from "vitest"
-import { createUseDbQuery, useDbQuery } from "./useDbQuery.js"
+import type { DbUpdatesPayload } from "../internal/EventBus.js"
+import { useDbQuery } from "./useDbQuery.js"
 
 const mockDb = (overrides: Record<string, unknown> = {}) => {
+	const canQueryListeners = new Set<() => void>()
+	const updates$ = new Observable<DbUpdatesPayload>("mock-updates", {
+		tables: [],
+		txId: 0,
+	})
 	const auth = {
-		phase: "ready" as const,
-		isLoggedIn: true,
-		isReady: true,
-		isBooted: true,
-		isBootstrapping: false,
-		pendingLogout: false,
-		offline: false,
-		online: true,
-		syncState: "idle" as const,
-		onChange: () => ({ close: vi.fn() }),
+		canQuery: true,
+		canQuery$: {
+			val: true,
+			subscribe: (cb: () => void) => {
+				canQueryListeners.add(cb)
+				return () => canQueryListeners.delete(cb)
+			},
+			set: async (v: boolean) => {
+				if (auth.canQuery === v) return
+				auth.canQuery = v
+				canQueryListeners.forEach((l) => l())
+			},
+		},
 		...(overrides.auth as object | undefined),
 	}
 	return {
 		config: { adapter: { requiresAuth: false } },
 		emitDebug: vi.fn(),
-		subscribe: () => ({ close: vi.fn() }),
+		updates$,
+		emitUpdate: (tables: string[], changes?: DbUpdatesPayload["changes"]) => {
+			const prev = updates$.val
+			void updates$.set({
+				tables,
+				changes,
+				txId: prev.txId + 1,
+			})
+		},
+		emitCanQueryChange: () => {
+			for (const l of canQueryListeners) l()
+		},
 		auth,
 		...overrides,
 	}
@@ -27,13 +48,11 @@ const mockDb = (overrides: Record<string, unknown> = {}) => {
 
 /** Renders a component that consumes useDbQuery so the suite can verify subscription-driven re-fetches without depending on browser storage timing. */
 describe("useDbQuery", () => {
-	/** Clears the DOM between cases so each render assertion starts fresh. */
 	afterEach(() => {
 		cleanup()
 		vi.restoreAllMocks()
 	})
 
-	/** Small component that turns hook results into visible text for assertions. */
 	function PostList({ currentDb, queryFn }: { currentDb: any; queryFn: () => Promise<any[]> }) {
 		const { value: posts, loading } = useDbQuery(currentDb, "posts", queryFn)
 		return (
@@ -46,15 +65,8 @@ describe("useDbQuery", () => {
 		)
 	}
 
-	/** Confirms the hook renders the initial query result after mount and reports loading while pending. */
 	test("loads initial data", async () => {
-		let subscriber: ((stores: string[]) => void) | undefined
-		const db = mockDb({
-			subscribe: (callback: (stores: string[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		})
+		const db = mockDb()
 		const currentPosts = [{ id: "1", content: "hello world" }]
 		const queryFn = vi.fn(async () => currentPosts)
 
@@ -64,10 +76,8 @@ describe("useDbQuery", () => {
 		expect(await screen.findByText("hello world")).not.toBeNull()
 		expect(screen.getByText("ready")).not.toBeNull()
 		expect(queryFn).toHaveBeenCalledTimes(1)
-		expect(subscriber).toBeDefined()
 	})
 
-	/** Confirms the hook reports null data once a query resolves to undefined. */
 	test("normalizes undefined results to null", async () => {
 		const db = mockDb()
 		const queryFn = vi.fn(async () => undefined)
@@ -84,15 +94,8 @@ describe("useDbQuery", () => {
 		expect(queryFn).toHaveBeenCalledTimes(1)
 	})
 
-	/** Confirms the hook re-runs the query whenever the subscribed store changes. */
-	test("reacts to subscription updates", async () => {
-		let subscriber: ((stores: string[]) => void) | undefined
-		const db = mockDb({
-			subscribe: (callback: (stores: string[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		})
+	test("reacts to updates$ subscription", async () => {
+		const db = mockDb()
 		let currentPosts = [{ id: "1", content: "initial value" }]
 		const queryFn = vi.fn(async () => currentPosts)
 
@@ -103,7 +106,7 @@ describe("useDbQuery", () => {
 
 		currentPosts = [{ id: "2", content: "reactive update" }]
 		await act(async () => {
-			subscriber?.(["posts"])
+			db.emitUpdate(["posts"])
 		})
 
 		expect(await screen.findByText("reactive update")).not.toBeNull()
@@ -111,45 +114,8 @@ describe("useDbQuery", () => {
 		expect(queryFn).toHaveBeenCalledTimes(2)
 	})
 
-	/** Confirms a DbSync-bound hook preserves inference and delegates to the shared implementation. */
-	test("creates a DbSync-bound query hook", async () => {
-		let subscriber: ((stores: string[]) => void) | undefined
-		const db = mockDb({
-			subscribe: (callback: (stores: string[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		})
-		const useBoundQuery = createUseDbQuery(db as any)
-		const queryFn = vi.fn(async () => [{ id: "1", title: "hello" }])
-
-		function BoundQuery() {
-			const { value, loading } = useBoundQuery("todos", queryFn)
-			return (
-				<div>
-					<span>{loading ? "loading" : "ready"}</span>
-					<span>{value?.[0]?.title}</span>
-				</div>
-			)
-		}
-
-		render(<BoundQuery />)
-
-		expect(screen.getByText("loading")).not.toBeNull()
-		expect(await screen.findByText("hello")).not.toBeNull()
-		expect(subscriber).toBeDefined()
-		expect(queryFn).toHaveBeenCalledTimes(1)
-	})
-
-	/** Confirms shouldRefetchFilter can skip refetches when changes are irrelevant. */
 	test("skips refetch when shouldRefetchFilter returns false", async () => {
-		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
-		const db = mockDb({
-			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		})
+		const db = mockDb()
 		const queryFn = vi.fn(async () => [{ id: "1", content: "stable" }])
 		const shouldRefetchFilter = (changes: any[]) =>
 			changes.some((c) => c.change === "clear" || (c.id !== undefined && c.id === "1"))
@@ -166,21 +132,14 @@ describe("useDbQuery", () => {
 		queryFn.mockClear()
 
 		await act(async () => {
-			subscriber?.(["posts"], [{ table: "posts", change: "update", id: "other-post" }])
+			db.emitUpdate(["posts"], [{ table: "posts", change: "update", id: "other-post" }])
 		})
 
 		expect(queryFn).not.toHaveBeenCalled()
 	})
 
-	/** Confirms shouldRefetchFilter allows refetches when changes match. */
 	test("refetches when shouldRefetchFilter returns true", async () => {
-		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
-		const db = mockDb({
-			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		})
+		const db = mockDb()
 		let currentPosts = [{ id: "1", content: "stable" }]
 		const queryFn = vi.fn(async () => currentPosts)
 		const shouldRefetchFilter = (changes: any[]) =>
@@ -199,22 +158,15 @@ describe("useDbQuery", () => {
 
 		currentPosts = [{ id: "1", content: "updated" }]
 		await act(async () => {
-			subscriber?.(["posts"], [{ table: "posts", change: "update", id: "1" }])
+			db.emitUpdate(["posts"], [{ table: "posts", change: "update", id: "1" }])
 		})
 
 		expect(await screen.findByText("updated")).not.toBeNull()
 		expect(queryFn).toHaveBeenCalledTimes(1)
 	})
 
-	/** Confirms missing changes still refetch on table hit when filter is provided. */
 	test("refetches on table hit when changes are omitted", async () => {
-		let subscriber: ((stores: string[], changes?: any[]) => void) | undefined
-		const db = mockDb({
-			subscribe: (callback: (stores: string[], changes?: any[]) => void) => {
-				subscriber = callback
-				return { close: vi.fn() }
-			},
-		})
+		const db = mockDb()
 		let currentPosts = [{ id: "1", content: "stable" }]
 		const queryFn = vi.fn(async () => currentPosts)
 		const shouldRefetchFilter = () => false
@@ -232,10 +184,51 @@ describe("useDbQuery", () => {
 
 		currentPosts = [{ id: "1", content: "cross-tab" }]
 		await act(async () => {
-			subscriber?.(["posts"])
+			db.emitUpdate(["posts"])
 		})
 
 		expect(await screen.findByText("cross-tab")).not.toBeNull()
+		expect(queryFn).toHaveBeenCalledTimes(1)
+	})
+
+	test("does not refetch when updates$ republishes with a new txId but the same tables/changes", async () => {
+		const db = mockDb()
+		const queryFn = vi.fn(async () => [{ id: "1", content: "done" }])
+
+		render(<PostList currentDb={db} queryFn={queryFn} />)
+		await screen.findByText("done")
+		expect(queryFn).toHaveBeenCalledTimes(1)
+
+		const changes = [{ table: "posts", change: "update" as const, id: "post-1" }]
+		await act(async () => {
+			db.emitUpdate(["posts"], changes)
+		})
+		expect(queryFn).toHaveBeenCalledTimes(2)
+		queryFn.mockClear()
+
+		await act(async () => {
+			db.emitUpdate(["posts"], changes)
+		})
+
+		expect(queryFn).not.toHaveBeenCalled()
+	})
+
+	test("does not refetch when only phase$ would change (canQuery$ stable)", async () => {
+		const db = mockDb()
+		const queryFn = vi.fn(async () => [{ id: "1", content: "done" }])
+
+		function Counter() {
+			useDbQuery(db as any, "posts", queryFn)
+			return <span>ok</span>
+		}
+
+		render(<Counter />)
+		await screen.findByText("ok")
+		expect(queryFn).toHaveBeenCalledTimes(1)
+
+		await act(async () => {
+			await db.auth.canQuery$.set(true)
+		})
 		expect(queryFn).toHaveBeenCalledTimes(1)
 	})
 })

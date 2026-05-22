@@ -1,6 +1,6 @@
 {
   "name": "@slimr/styled",
-  "version": "2.1.99",
+  "version": "2.1.100",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -23,8 +23,9 @@
   "module": "./esm/index.js",
   "exports": {
     ".": {
-      "require": "./cjs/index.cjs",
-      "import": "./esm/index.js"
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     }
   },
   "scripts": {
@@ -45,7 +46,7 @@
     "react-dom": "*"
   },
   "dependencies": {
-    "@slimr/css": "^2.1.95",
-    "@slimr/util": "^3.2.79"
+    "@slimr/css": "^2.1.96",
+    "@slimr/util": "^3.2.80"
   }
 }

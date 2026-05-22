@@ -98,7 +98,8 @@ describe("DbSync sync engine", () => {
 
 	test("isInitialSyncPending until first successful sync then clears on logout", async () => {
 		expect(db.auth.isBooted).toBe(true)
-		expect(db.sync.isInitialSyncPending).toBe(true)
+		expect(db.auth.isInitialSyncPending).toBe(true)
+		expect(db.auth.initialSyncPending$.val).toBe(true)
 		expect(db.auth.phase).toBe("initial-sync")
 		fetchMock.mockReset()
 		fetchMock
@@ -107,14 +108,14 @@ describe("DbSync sync engine", () => {
 			)
 			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
 		await db.sync.trigger()
-		expect(db.sync.isInitialSyncPending).toBe(false)
+		expect(db.auth.isInitialSyncPending).toBe(false)
 		expect(db.auth.phase).toBe("ready")
 		await db.auth.logout()
-		expect(db.sync.isInitialSyncPending).toBe(false)
+		expect(db.auth.isInitialSyncPending).toBe(false)
 		expect(db.auth.phase).toBe("logged-out")
 		writeIsLoggedIn(true)
 		const relogged = await createDb(fetchMock)
-		expect(relogged.sync.isInitialSyncPending).toBe(true)
+		expect(relogged.auth.isInitialSyncPending).toBe(true)
 		relogged.dispose()
 	})
 

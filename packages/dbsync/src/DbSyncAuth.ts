@@ -1,6 +1,6 @@
 import type { DbAuthPhase } from "./authTypes.js"
 import type { AuthManager } from "./internal/AuthManager.js"
-import type { SyncState } from "./internal/EventBus.js"
+import type { AuthObservables } from "./internal/AuthObservables.js"
 import type { SessionListener } from "./internal/listenerUtils.js"
 import type { SessionManager } from "./internal/SessionManager.js"
 
@@ -11,11 +11,52 @@ export class DbSyncAuth {
 	constructor(
 		private authManager: AuthManager,
 		private session: SessionManager,
+		readonly observables: AuthObservables,
 	) {}
+
+	get phase$() {
+		return this.observables.phase$
+	}
+
+	get initialSyncPending$() {
+		return this.observables.initialSyncPending$
+	}
+
+	get canQuery$() {
+		return this.observables.canQuery$
+	}
+
+	get isLoggedIn$() {
+		return this.observables.isLoggedIn$
+	}
+
+	get isReady$() {
+		return this.observables.isReady$
+	}
+
+	get isBooted$() {
+		return this.observables.isBooted$
+	}
+
+	get isBootstrapping$() {
+		return this.observables.isBootstrapping$
+	}
+
+	get pendingLogout$() {
+		return this.observables.pendingLogout$
+	}
+
+	get offline$() {
+		return this.observables.offline$
+	}
+
+	get online$() {
+		return this.observables.online$
+	}
 
 	/** App shell phase (`logged-out` | `booting` | `initial-sync` | `ready`). */
 	get phase(): DbAuthPhase {
-		return this.session.get().phase
+		return this.phase$.val
 	}
 
 	get isLoggedIn() {
@@ -46,19 +87,14 @@ export class DbSyncAuth {
 		return !this.offline
 	}
 
-	/** Current sync state for loading/error UI. */
-	get syncState(): SyncState {
-		return this.session.get().sync.state
-	}
-
 	/** Logged in with no successful sync since login (cleared on logout). */
 	get isInitialSyncPending() {
-		return this.phase === "initial-sync"
+		return this.initialSyncPending$.val
 	}
 
-	/** Subscribes to session, boot, sync, and connectivity changes. */
-	onChange(listener: () => void) {
-		return this.session.subscribe(listener)
+	/** Whether IndexedDB queries may run (`isReady` and auth gate). */
+	get canQuery() {
+		return this.canQuery$.val
 	}
 
 	/**

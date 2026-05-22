@@ -1,3 +1,5 @@
+import { Observable } from "@slimr/observable"
+
 export type SyncState = "idle" | "syncing" | "offline" | "error"
 
 /** Describes a single row-level change in a user table. */
@@ -5,22 +7,25 @@ export type RowChange =
 	| { table: string; change: "insert" | "update" | "delete"; id: string }
 	| { table: string; change: "clear" }
 
-/** Callback invoked when one or more tables change. */
-export type SubscribeCallback = (tables: string[], changes?: RowChange[]) => void
+/** Payload emitted on `updates$` after local or cross-tab data changes. */
+export type DbUpdatesPayload = {
+	tables: string[]
+	changes?: RowChange[]
+	/** Monotonic id so consecutive identical payloads still publish (Observable deep-equals). */
+	txId: number
+}
 
 /** Maximum row changes sent over BroadcastChannel before omitting the payload. */
 const BROADCAST_CHANGES_CAP = 100
 
 /**
- * Broadcasts store updates and sync state changes to local subscribers.
+ * Broadcasts store updates and sync state changes via observables.
  */
 export class EventBus {
-	/** Subscribers that listen for store updates. */
-	private subscribers = new Set<SubscribeCallback>()
-	/** Subscribers that listen for sync state transitions. */
-	private stateListeners = new Set<(state: SyncState) => void>()
-	/** Last sync state broadcast (defaults to `idle`). */
-	private syncStateValue: SyncState = "idle"
+	readonly state$: Observable<SyncState>
+	readonly updates$: Observable<DbUpdatesPayload>
+
+	private updateSeq = 0
 	/** Broadcast channel used to mirror updates across tabs. */
 	private bc =
 		typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("dbsync_events") : null
@@ -28,12 +33,18 @@ export class EventBus {
 	/** Auth message listeners (login/logout across tabs). */
 	private authListeners = new Set<(type: "AUTH_LOGIN" | "AUTH_LOGOUT") => void>()
 
-	/** Initializes the broadcast listener for cross-tab update propagation. */
-	constructor() {
+	/**
+	 * @param instanceId Unique id for observable debug names.
+	 */
+	constructor(instanceId: string) {
+		const prefix = `dbsync-${instanceId}`
+		this.state$ = new Observable(`${prefix}-eventSyncState`, "idle")
+		this.updates$ = new Observable(`${prefix}-updates`, { tables: [], txId: 0 })
+
 		if (this.bc) {
 			this.bc.onmessage = (e) => {
 				if (e.data.type === "DATA_UPDATED") {
-					this.notifySubscribers(e.data.stores, e.data.changes, { skipBroadcast: true })
+					this.emitUpdate(e.data.stores, e.data.changes, { skipBroadcast: true })
 				} else if (e.data.type === "AUTH_LOGIN" || e.data.type === "AUTH_LOGOUT") {
 					this.authListeners.forEach((cb) => cb(e.data.type))
 				}
@@ -52,19 +63,22 @@ export class EventBus {
 		if (this.bc) this.bc.postMessage({ type })
 	}
 
-	/** Adds a store-update subscriber and returns a handle for removing it. */
-	public subscribe(callback: SubscribeCallback) {
-		this.subscribers.add(callback)
-		return { close: () => this.subscribers.delete(callback) }
-	}
-
-	/** Notifies all store subscribers and mirrors the update to other tabs. */
+	/** Notifies `updates$` and mirrors the update to other tabs. */
 	public notifySubscribers(
 		stores: string[],
 		changes?: RowChange[],
 		options?: { skipBroadcast?: boolean },
 	) {
-		this.subscribers.forEach((cb) => cb(stores, changes))
+		this.emitUpdate(stores, changes, options)
+	}
+
+	private emitUpdate(
+		stores: string[],
+		changes?: RowChange[],
+		options?: { skipBroadcast?: boolean },
+	) {
+		const txId = ++this.updateSeq
+		void this.updates$.set({ tables: stores, changes, txId })
 		if (this.bc && !options?.skipBroadcast) {
 			const broadcastChanges =
 				changes && changes.length > BROADCAST_CHANGES_CAP ? undefined : changes
@@ -72,21 +86,9 @@ export class EventBus {
 		}
 	}
 
-	/** Current sync state. */
-	public get syncState() {
-		return this.syncStateValue
-	}
-
-	/** Adds a sync-state subscriber and returns a handle for removing it. */
-	public onSyncStateChange(callback: (state: SyncState) => void) {
-		this.stateListeners.add(callback)
-		return { close: () => this.stateListeners.delete(callback) }
-	}
-
-	/** Broadcasts a sync-state transition to all subscribers. */
+	/** Broadcasts a sync-state transition on `state$`. */
 	public setState(state: SyncState) {
-		this.syncStateValue = state
-		this.stateListeners.forEach((cb) => cb(state))
+		void this.state$.set(state)
 	}
 
 	/** Tears down the broadcast channel and stops cross-tab propagation. */

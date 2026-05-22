@@ -60,12 +60,12 @@ if (db.auth.isLoggedIn) {
     await db.posts.add({ userId: "u_1", content: "Hello" })
     const posts = await db.posts.find({ index: "updatedAt", order: "desc", limit: 20 })
 }
-// React apps: skip waitForBooted in components — use useDbAuth / useDbQuery (see Getting started)
+// React apps: skip waitForBooted in components — use DbSyncR + useDbQuery (see Getting started)
 ```
 
 Full setup (typed tables, indexes, `prepareCreate`): **[Getting started](./docs/GettingStarted.md)**.
 
-REST apps with login: **[Offline-first apps](./docs/Offline.md)** (routing, shell phases) · **[Auth listeners](./docs/Auth.md)**.
+REST apps with login: **[Integration guide](./docs/Offline.md)** (routing, phases) → **[React](./docs/React.md)** (shell, hooks) · **[Auth listeners](./docs/Auth.md)**.
 
 ## Documentation
 
@@ -74,9 +74,9 @@ REST apps with login: **[Offline-first apps](./docs/Offline.md)** (routing, shel
 | Start here | |
 | --- | --- |
 | [Getting started](./docs/GettingStarted.md) | Tables, listeners, module layout |
-| [Offline-first apps](./docs/Offline.md) | Phases, anti-patterns, recipes |
+| [Integration guide](./docs/Offline.md) | Phases, checklist, anti-patterns |
 | [API reference](./docs/API.md) | `db.auth`, `db.sync`, data APIs |
-| [React](./docs/React.md) | `useDbAuth`, `useDbQuery` |
+| [React](./docs/React.md) | `DbSyncR`, `.use()`, `useDbQuery` |
 
 ## When this is (and isn't) the right tool
 

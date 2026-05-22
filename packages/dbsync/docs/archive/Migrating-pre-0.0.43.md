@@ -1,6 +1,6 @@
 # Migrating (archived)
 
-> **Archived** — documents upgrades from pre-0.0.43 APIs. Current breaking changes are in [CHANGELOG UNRELEASED](../../CHANGELOG.md). New apps should start with [Getting started](../GettingStarted.md) and [Offline-first apps](../Offline.md).
+> **Archived** — documents upgrades from pre-0.0.43 APIs. Current breaking changes are in [CHANGELOG UNRELEASED](../../CHANGELOG.md). New apps should start with [Getting started](../GettingStarted.md) and [Integration guide](../Offline.md).
 
 [Documentation index](../README.md) · [CHANGELOG](../../CHANGELOG.md)
 
@@ -45,7 +45,7 @@ Register listeners in the same module immediately after `new DbSync`, before any
 | Root `db.isLive` / `isStarted` / `isInitialSyncPending` | `db.sync.*` or `db.auth.phase` / `isInitialSyncPending` |
 | `db.onSyncStateChange` | `db.sync.onStateChange` |
 | `db.waitForLive()` | `db.sync.waitForLive()` |
-| Nested `useDbSession` snapshot | `useDbAuth` — flat `DbAuthState`; `useDbSession` deprecated |
+| Nested `useDbSession` snapshot | `useDbAuth` — flat `DbAuthState` |
 | `onLogout` / `onAuthenticated` return `() => void` | `{ close() }` |
 
 `db.waitForBooted()` and `db.boot()` stay on the root `db` instance.
@@ -85,4 +85,4 @@ Register listeners in the same module immediately after `new DbSync`, before any
 
 - [Getting started](../GettingStarted.md)
 - [Auth listeners](../Auth.md)
-- [Offline-first apps](../Offline.md)
+- [Integration guide](../Offline.md)

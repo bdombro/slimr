@@ -1,5 +1,4 @@
 export * from "./merge-refs.js"
-export * from "./Observable.js"
 export * from "./useColorScheme.js"
 export * from "./useMemos.js"
 export * from "./useReRender.js"

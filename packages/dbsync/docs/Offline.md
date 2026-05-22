@@ -1,8 +1,16 @@
-# Offline-first apps
+# Integration guide (offline-first SPAs)
 
-[Documentation index](./README.md) · [Auth listeners](./Auth.md) · [Sync engine](./Sync.md)
+[Documentation index](./README.md) · [Getting started](./GettingStarted.md) · [React](./React.md) · [Auth listeners](./Auth.md) · [Sync engine](./Sync.md)
 
-How to build SPAs and PWAs where IndexedDB is the runtime database and the network is asynchronous. **Start here** for routing, app shell phases, and integration rules.
+How to build SPAs and PWAs where IndexedDB is the runtime database and the network is asynchronous. Use this after [Getting started](./GettingStarted.md) for routing, app shell phases, and integration rules. UI code lives in [React](./React.md).
+
+## Checklist
+
+1. **`db.ts`** — `AppDb extends DbSyncR`, adapter, `onLogout` / optional `onAuthenticated` **before any `await`**
+2. **Router** — initial route from **`db.auth.isLoggedIn`** at module load (not `onAuthenticated` on refresh)
+3. **`AppShell`** — `db.auth.phase$.use()` with all four phases ([React — App shell](./React.md#app-shell))
+4. **Lists** — `useDbQuery(db, …)` per table; skeletons when `loading`, not a global block on `ready`
+5. **Scripts / handlers** — `await db.waitForBooted()` before first `db.posts.*` (components usually skip this)
 
 ## Mental model
 
@@ -15,13 +23,13 @@ How to build SPAs and PWAs where IndexedDB is the runtime database and the netwo
 
 **Router rule:** initial route = **`db.auth.isLoggedIn` at module load**.
 
-**Loading rule:** `db.auth.phase === "initial-sync"` (or `db.auth.isInitialSyncPending`) for a full-page loader until the first successful sync (survives refresh). Use skeletons / `useDbQuery` `loading` for per-query loading when `phase === "ready"`.
+**Loading rule:** drive the React shell with **`db.auth.phase$.use()`** and handle all four phases. Use skeletons / `useDbQuery` `loading` for per-query loading when `phase === "ready"`. Use **`initialSyncPending$`** only when you want one loader for the whole logged-in, not-yet-synced window ([alternative](#alternative-one-loader-until-first-sync)).
 
 **Data rule (imperative code):** `await db.waitForBooted()` before the first `db.posts.*` / `db.put` in scripts, tests, or event handlers. React components usually skip it — `useDbQuery` waits for `db.auth.isReady`.
 
 **Sync rule:** do not put `await db.sync.waitForLive()` in `onAuthenticated` if you want the shell visible immediately.
 
-Canonical setup (typed tables, env swap): [Getting started](./GettingStarted.md). Listener matrix: [Auth](./Auth.md).
+Listener matrix: [Auth](./Auth.md).
 
 ## Phase flow
 
@@ -36,39 +44,37 @@ stateDiagram-v2
     initial_sync --> logged_out: logout
 ```
 
-## Phase reference
+`initialSyncPending$` is true for both **`booting`** and **`initial-sync`** while logged in (until the first successful sync).
 
-| `phase` | Typical UI |
-| --- | --- |
-| `logged-out` | Login |
-| `booting` | Boot skeleton (`db.auth.isBootstrapping` for spinner) |
-| `initial-sync` | Full-page sync loader (use `db.auth.syncState` for error/offline) |
-| `ready` | App shell + `useDbQuery` skeletons as needed |
+## Session & shell reference
 
-## Auth getters
+| Signal | Meaning | Typical UI |
+| --- | --- | --- |
+| `phase` / `phase$` | `logged-out` → `booting` → `initial-sync` → `ready` | `AppShell` switch — [React](./React.md#app-shell) |
+| `isLoggedIn` | Hydrated client session | Router guard at module load |
+| `isInitialSyncPending` / `initialSyncPending$` | Logged in, no successful sync since login | Optional one loader for boot + sync ([alternative](#alternative-one-loader-until-first-sync)) |
+| `isBooted` | Boot pipeline finished | — |
+| `isReady` | IndexedDB open | `useDbQuery` gate |
+| `isBootstrapping` | Session-start or `onAuthenticated` callbacks in flight | Spinner on boot skeleton |
+| `pendingLogout` | Remote logout queued until online | — |
+| `offline` / `online` | Browser connectivity | Sync / login errors |
+| `db.sync.state` / `state$` | `idle` \| `syncing` \| `offline` \| `error` | Initial-sync screen |
+| `waitForBooted()` | Boot finished; `sync.start()` scheduled when logged in | Scripts / tests |
+| `db.sync.waitForLive()` | Recent successful sync | Optional; see [Sync](./Sync.md) |
 
-| Getter | Meaning |
-| --- | --- |
-| `isLoggedIn` | Client session flag (hydrated) |
-| `isBooted` | Boot pipeline finished |
-| `isReady` | IndexedDB open |
-| `isBootstrapping` | Session-start or `onAuthenticated` callbacks in flight |
-| `pendingLogout` | Remote logout queued until online |
-| `offline` / `online` | Browser connectivity |
-| `syncState` | Sync UI: `idle` \| `syncing` \| `offline` \| `error` |
-| `isInitialSyncPending` | Logged in, no successful sync since login |
-
-Full tables: [API reference](./API.md#dbauth-dbsyncauth).
+Full getter tables: [API reference](./API.md#dbauth-dbsyncauth).
 
 ## Anti-patterns
 
 | Don't | Do instead |
 | --- | --- |
 | Route refresh boot on `onAuthenticated` | `db.auth.isLoggedIn` at module load; optional `onAuthenticated` only after `login()` |
-| Full-page loader from `!db.sync.isLive` or `waitForLive()` | `db.auth.phase === "initial-sync"` until first sync since login |
+| Full-page loader from `!db.sync.isLive` or `waitForLive()` | `phase$.use()` with `initial-sync` case, or `initialSyncPending$` for one combined loader |
+| `switch (phase)` missing `initial-sync` | Handle all four phases; `default: null` hides the sync screen |
+| One loader for boot + sync but only `case "initial-sync"` | `initialSyncPending$.use()` or same loader for `booting` and `initial-sync` |
 | `await db.sync.waitForLive()` inside `onAuthenticated` | Show shell; let `useDbQuery` load per table |
-| `await db.waitForBooted()` at module top level in SPAs | `useDbAuth` / `useDbQuery` in components |
-| Register `onLogout` / `onAuthenticated` after the first `await` | Same module, immediately after `new DbSync` |
+| `await db.waitForBooted()` at module top level in SPAs | `db.auth.*$.use()` + `useDbQuery` in components |
+| Register `onLogout` / `onAuthenticated` after the first `await` | Same module, immediately after `new` |
 | Expect `onLogout` on refresh | Refresh replays session silently; use `isLoggedIn` + phase |
 | Use `!db.sync.isStarted` as “logged out” | `db.auth.isLoggedIn` / `phase` |
 | Block all UI on `useDbQuery` `loading` when `phase === "ready"` | Shell visible; skeletons per query |
@@ -84,15 +90,20 @@ db.auth.onLogout(() => navigate("/login"))
 
 // Router.tsx — module load
 const authed = db.auth.isLoggedIn
+```
 
-// AppShell.tsx
-const { phase, offline, syncState } = useDbAuth(db)
-switch (phase) {
-  case "logged-out": return <Login />
-  case "initial-sync": return <InitialSyncScreen offline={offline} syncState={syncState} />
-  case "booting": return <BootSkeleton />
-  case "ready": return <Outlet />
+Implement **`AppShell`** (`phase$.use()`, four cases) and **`useDbQuery`** — [React](./React.md).
+
+### Alternative: one loader until first sync
+
+When boot and initial sync should show the **same** full-page loader:
+
+```tsx
+const pending = db.auth.initialSyncPending$.use()
+if (pending) {
+  return <InitialSyncScreen offline={db.auth.offline} syncState={db.sync.state} />
 }
+// then switch on phase for logged-out / ready only
 ```
 
 ### Manual lifecycle (tests, strict ordering)
@@ -123,31 +134,13 @@ Passive tabs run `onLogout` listeners only — no IndexedDB wipe, no `adapter.lo
 
 Passive tabs: `AUTH_LOGOUT` over `BroadcastChannel` — listeners only, no IDB wipe, no `adapter.logout()`.
 
-## React shell
-
-```tsx
-const { phase, offline, syncState, isBootstrapping } = useDbAuth(db)
-
-switch (phase) {
-  case "logged-out": return <Login />
-  case "initial-sync": return <InitialSyncScreen syncState={syncState} offline={offline} />
-  case "booting": return <BootSkeleton active={isBootstrapping} />
-  case "ready": return <App />
-}
-```
-
-Module-scoped `db`; pass it to hooks explicitly. Details: [React](./React.md).
-
 ## Service workers (PWAs)
 
 Session routes must not be served from cache while offline — stale `GET /api/session` makes the client think it is still logged in.
 
-## Manual lifecycle
-
-`lifecycle: { manual: true }` — `await db.boot()` then `await db.sync.start()` when logged in.
-
 ## See also
 
+- [React](./React.md) — `DbSyncR`, `.use()`, `useDbQuery`
 - [Auth listeners](./Auth.md) — callback matrix
 - [Sync engine](./Sync.md) — dirty queue, leader tab
 - [RestAdapter](./RestAdapter.md) — API endpoints

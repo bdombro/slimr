@@ -317,7 +317,7 @@ describe("DbSync ORM", () => {
 	/** Confirms buffered transactions commit atomically and notify subscribers once. */
 	test("commits batched transactions and notifies subscribers", async () => {
 		const subscriber = vi.fn()
-		db.subscribe(subscriber)
+		db.updates$.subscribe(({ tables }) => subscriber(tables))
 
 		const tx = db.getTransaction()
 		tx.put("posts", { id: "5", content: "batched", userId: "u1" })

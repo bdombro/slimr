@@ -1,24 +1,24 @@
 # Auth listeners
 
-[Documentation index](./README.md) · [Offline-first apps](./Offline.md) · [API reference](./API.md)
+[Documentation index](./README.md) · [Integration guide](./Offline.md) · [API reference](./API.md)
 
-Listener and action reference for `db.auth`. For app shell routing, phase rules, and getters, see [Offline-first apps](./Offline.md). For full method tables, see [API reference](./API.md).
+Listener and action reference for `db.auth`. For app shell routing, phase rules, and getters, see [Integration guide](./Offline.md). For full method tables, see [API reference](./API.md).
 
 ## Subscribe (register before any `await`)
 
 ```typescript
 const offLogout = db.auth.onLogout(() => navigate("/login"))
 const offAuth = db.auth.onAuthenticated(() => navigate("/app")) // optional
-const offChange = db.auth.onChange(() => {}) // phase / flags / sync
+// Session UI: db.auth.phase$.use() etc. — see [React](./React.md)
 
-// later: offLogout.close(); offAuth.close(); offChange.close();
+// later: offLogout.close(); offAuth.close();
 ```
 
 | Listener | Runs on |
 | --- | --- |
 | `onLogout` | `db.auth.logout()`, 401 / failed revalidation, cross-tab `AUTH_LOGOUT` — **not** refresh |
 | `onAuthenticated` | `db.auth.login()`, cross-tab `AUTH_LOGIN` — **not** refresh boot |
-| `onChange` | Phase, session flags, sync state, connectivity |
+| `db.auth.*$` + `.use()` on `DbSyncR` | Granular session/sync UI — [React](./React.md) |
 
 Listeners return `{ close() }` to unsubscribe. Logout listeners run in parallel (`Promise.allSettled`); rejections throw after teardown completes.
 
@@ -52,5 +52,5 @@ Listeners return `{ close() }` to unsubscribe. Logout listeners run in parallel 
 
 ## See also
 
-- [Offline-first apps](./Offline.md) — routing, phases, anti-patterns
+- [Integration guide](./Offline.md) — routing, phases, anti-patterns
 - [API reference](./API.md) — `db.auth` getters

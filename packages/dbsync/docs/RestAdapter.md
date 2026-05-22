@@ -83,4 +83,4 @@ The session endpoints expect basic HTTP Cookie-based authentication mechanisms.
 | `db.auth.logout()` | Clears local IndexedDB immediately; **defers** `POST /api/session/logout` until online (`dbsync-pendingLogout`). |
 | Browser `online` + logged in | dbsync calls `GET /api/session`; if 4xx, runs `onLogout` listeners. Also flushes pending logout. |
 
-**Service workers:** See [Offline-first apps — Service workers](./Offline.md#service-workers-pwas).
+**Service workers:** See [Integration guide — Service workers](./Offline.md#service-workers-pwas).

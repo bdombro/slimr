@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+## 0.0.9
+
+### Changed
+
+- Package `exports` include explicit `types` for `.`.
+
 ## 0.0.8
 
 ### Added

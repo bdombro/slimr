@@ -1,116 +1,105 @@
 # React
 
-[Documentation index](./README.md) · [Offline-first apps](./Offline.md)
+[Documentation index](./README.md) · [Getting started](./GettingStarted.md) · [Integration guide](./Offline.md)
 
-`dbsync` exposes change notifications for local writes, cross-tab updates, and sync. Use **`subscribe`** directly or the hooks in `@slimr/dbsync/react`.
+Use `**@slimr/dbsync/react**`: subclass `**DbSyncR**`, call `**.use()**` on `db.auth.*$` / `db.sync.*$` / `db.updates$`, and load tables with `**useDbQuery**`.
 
-Session routing and the app shell: [Offline-first apps](./Offline.md). React apps usually rely on automatic boot; call `await db.waitForBooted()` only when you need strict ordering in scripts.
+Setup (`db.ts`, typed tables, listeners): [Getting started](./GettingStarted.md). App shell phases and routing: [Integration guide](./Offline.md).
 
-## `db.subscribe`
+## `DbSyncR`
 
-```typescript
-const sub = db.subscribe((updatedTables, changes?) => {
-    if (!updatedTables.includes("posts")) return
-    if (changes?.some((c) => c.table === "posts" && c.change === "clear")) {
-        refreshAllPosts()
-        return
-    }
-    const touchedIds = changes?.map((c) => c.id)
-    refreshPosts(touchedIds)
-})
-sub.close()
-```
-
-Change types: `"insert"` | `"update"` | `"delete"` | `"clear"`.
-
-## Table-scoped subscribe
+Use `**DbSyncR**` (not plain `DbSync`) in React apps so observables on `db` expose `**.use()**` — a component-only hook (via `useSyncExternalStore`). Define `db` in `db.ts`; call `**.use()**` inside components, not at module top level.
 
 ```typescript
-const sub = db.posts.subscribe((changes) => {
-    if (!changes) {
-        refreshAllPosts()
-        return
-    }
-    if (changes.some((c) => c.change === "clear")) {
-        refreshAllPosts()
-        return
-    }
-    refreshPosts(changes.filter((c) => "id" in c).map((c) => c.id))
-})
+// db.ts — no .use() here
+import { DbSyncR } from "@slimr/dbsync/react"
 
-db.posts.subscribe(handler, { ids: [postId] }) // optional id filter
+class AppDb extends DbSyncR {
+  posts = new PostTable(this)
+}
 
-sub.close()
-```
-
-## `useDbQuery`
-
-Bind a query to table(s); refetches on relevant local/sync changes and session updates.
-
-```tsx
-import { createUseDbQuery } from "@slimr/dbsync/react"
-export const useDbQuery = createUseDbQuery(db)
+export const db = new AppDb({ adapter })
 ```
 
 ```tsx
-function PostList() {
-    const { value: posts, loading } = useDbQuery("posts", () => db.posts.find())
-
-    if (loading) return <PostListSkeleton />
-
-    return (
-        <ul>
-            {posts?.map((p) => (
-                <li key={p.id}>{p.content}</li>
-            ))}
-        </ul>
-    )
+// Inside a component (or custom hook)
+function SyncBadge() {
+  const syncing = db.sync.state$.use() === "syncing"
+  return syncing ? <Spinner /> : null
 }
 ```
 
-When the adapter **`requiresAuth`** and `db.auth.isLoggedIn` is false, the hook skips `queryFn` and returns `{ loading: true, value: null }`. After automatic boot, it refetches when `db.auth.isReady` is true.
+Outside React (scripts, listeners in `db.ts`): read `**observable.val**` or `**observable.subscribe(...)**` — [Data access — reacting to changes](./DataAccess.md#reacting-to-changes).
 
-## `useDbAuth`
+### `.use()` options
 
-Flat session state from `db.auth` getters, kept in sync via `db.auth.onChange`:
+Pass options from `@slimr/observable/react` (re-exported as `**UseObservableOptions**`):
 
 ```tsx
-import { useDbAuth } from "@slimr/dbsync/react"
+const phase = db.auth.phase$.use({
+  getServerSnapshot: () => "logged-out" as const, // SSR
+})
 
-function AppShell() {
-  const { phase, offline, syncState, isBootstrapping } = useDbAuth(db)
+const tables = db.updates$.use({ select: (p) => p.tables })
+```
 
+Prefer **granular** observables (`phase$`, `canQuery$`, …) when each drives its own UI. Use `**select`** when subscribing to a larger payload (e.g. `updates$`) and you only need part of it — see [@slimr/observable/react](../../observable/README.md).
+
+## App shell
+
+Drive the shell with `**db.auth.phase$.use()**` and handle all four phases. Mount routed content only on `"ready"`.
+
+```tsx
+export function AppShell() {
+  const phase = db.auth.phase$.use()
   switch (phase) {
     case "logged-out":
-      return <Navigate to="/login" replace />
+      return <Login />
+    case "booting":
+      return <BootSkeleton />
     case "initial-sync":
       return (
-        <InitialSyncScreen
-          offline={offline}
-          error={syncState === "error"}
+        <InitialSyncLoader
+          syncState={db.sync.state}
+          offline={db.auth.offline}
         />
       )
-    case "booting":
-      return <BootSkeleton active={isBootstrapping} />
     case "ready":
-      return (
-        <AppLayout showOfflineBanner={offline}>
-          <Outlet />
-        </AppLayout>
-      )
+      return <Outlet />
   }
 }
 ```
 
-`useDbSession` is a deprecated alias of `useDbAuth`.
+Phase semantics, anti-patterns, and the optional **one-loader** pattern (`initialSyncPending$`): [Offline](./Offline.md).
 
-Use a module-scoped `db` instance — pass it explicitly to hooks (no context provider required).
+SSR: [SSR & Next.js](./SSR.md).
 
-## Advanced `useDbQuery`
+## `useDbQuery`
+
+```tsx
+import { useDbQuery } from "@slimr/dbsync/react"
+import { db } from "./db"
+
+function PostList() {
+  const { value: posts, loading } = useDbQuery(db, "posts", () => db.posts.find())
+
+  if (loading) return <PostListSkeleton />
+
+  return (
+    <ul>
+      {posts?.map((p) => (
+        <li key={p.id}>{p.content}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+Subscribes to `**canQuery$**` and `**updates$**` only — not `phase$` or `sync.state$` — so connectivity/sync noise does not re-query IndexedDB.
+
+When the adapter `**requiresAuth**` and the user is not logged in, `canQuery$` is false: the hook skips `queryFn` and returns `{ loading: true, value: null }`.
 
 ### Multiple tables
-
-Pass an array when the query reads more than one store:
 
 ```tsx
 const { value, loading } = useDbQuery(
@@ -144,8 +133,21 @@ When the hook receives a table update but the filter returns `false`, it does no
 
 Query failures emit `query:error` on `config.onDebug` when set — see [Debugging](./Debugging.md). The hook leaves the last successful `value` and sets `loading: false`.
 
+## Exports
+
+
+| Export                                                             | Role                                                                    |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `DbSyncR`                                                          | Base class for React apps (`extends DbSyncR`, then `new AppDb(config)`) |
+| `useDbQuery`                                                       | Reactive IndexedDB queries                                              |
+| `DbSyncRInstance`, `DbSyncAuthR`, `DbSyncSyncR`, `ObservableReact` | Types                                                                   |
+| `UseObservableOptions`                                             | SSR / `select` for `.use()` (from `@slimr/observable/react`)            |
+
+
 ## See also
 
-- [Offline-first apps](./Offline.md) — routing, anti-patterns, recipes
+- [@slimr/observable/react](../../observable/README.md) — `useObservable`, `select`, app-owned observables
+- [Data access](./DataAccess.md) — CRUD, `db.posts.subscribe`, `db.updates$.subscribe`
+- [Integration guide](./Offline.md) — routing, phases, recipes
 - [Auth listeners](./Auth.md) — callback matrix
-- [SSR & Next.js](./SSR.md) — hydration caveats
+

@@ -1,6 +1,6 @@
 {
   "name": "@slimr/util",
-  "version": "3.2.79",
+  "version": "3.2.80",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -9,12 +9,14 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "require": "./cjs/index.cjs",
-      "import": "./esm/index.js"
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     },
     "./code-highlight": {
-      "require": "./cjs/code-highlight.cjs",
-      "import": "./esm/code-highlight.js"
+      "types": "./esm/code-highlight.d.ts",
+      "import": "./esm/code-highlight.js",
+      "require": "./cjs/code-highlight.cjs"
     }
   },
   "repository": {

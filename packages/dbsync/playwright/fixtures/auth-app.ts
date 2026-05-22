@@ -52,7 +52,7 @@ window.getState = () => {
 		isReady: db.auth.isReady,
 		pendingLogout: db.auth.pendingLogout,
 		offline: db.auth.offline,
-		syncState: db.auth.syncState,
+		syncState: db.sync.state,
 		onAuthenticatedCount: window.onAuthenticatedCount,
 		onLogoutCount: window.onLogoutCount,
 	}

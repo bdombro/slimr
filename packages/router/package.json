@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.99",
+  "version": "2.1.100",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -20,8 +20,9 @@
   "module": "./esm/index.js",
   "exports": {
     ".": {
-      "require": "./cjs/index.cjs",
-      "import": "./esm/index.js"
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     }
   },
   "scripts": {
