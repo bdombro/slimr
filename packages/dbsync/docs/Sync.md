@@ -69,7 +69,7 @@ Auth uses the same channel (`AUTH_LOGIN` / `AUTH_LOGOUT`) — see [Auth listener
 
 ## Conflict model
 
-Sync is **last-write-wins** at the record level using `updatedAt` ordering on pull.
+While a row is in **`dirtyQueue`** or **`deletedQueue`**, pull **does not** apply remote puts or deletes for that `(table, id)` — pending local edits win until push clears the queues. Other rows still follow server pull updates.
 
 ## See also
 

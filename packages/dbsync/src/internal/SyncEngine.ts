@@ -154,16 +154,36 @@ export class SyncEngine {
 		return getSchemaSignature(this.getSchemaTables(), "tableName")
 	}
 
+	/** Keys `table:id` for rows with pending local writes (dirty or deleted queues). */
+	private pendingLocalKey(table: string, id: string) {
+		return `${table}:${id}`
+	}
+
+	/** Loads pending local mutation keys so pull does not overwrite in-flight client edits. */
+	private async getPendingLocalKeys(): Promise<Set<string>> {
+		const dirty = await this.storage.find<{ id: string; table: string }>("dirtyQueue")
+		const deleted = await this.storage.find<{ id: string; table: string }>("deletedQueue")
+		const keys = new Set<string>()
+		for (const entry of dirty) {
+			keys.add(this.pendingLocalKey(entry.table, entry.id))
+		}
+		for (const entry of deleted) {
+			keys.add(this.pendingLocalKey(entry.table, entry.id))
+		}
+		return keys
+	}
+
 	/** Pulls remote changes and applies them to IndexedDB. Returns total items applied. */
 	private async syncPull() {
 		let totalPulled = 0
 		let hasMore = true
+		const pendingLocal = await this.getPendingLocalKeys()
+
 		while (hasMore) {
 			const cursor = localStorage.getItem("dbsync-pullSyncedUpTo") || ""
 			const data = await this.adapter.pull(cursor)
 
 			if (data.items && data.items.length > 0) {
-				totalPulled += data.items.length
 				const operations: {
 					type: "put" | "delete"
 					storeName: string
@@ -188,6 +208,15 @@ export class SyncEngine {
 						continue
 					}
 					const storeName = post.variant
+					if (pendingLocal.has(this.pendingLocalKey(storeName, post.id))) {
+						emitDebug(this.config.onDebug, {
+							type: "sync:pull",
+							skipped: "pending-local",
+							table: storeName,
+							id: post.id,
+						})
+						continue
+					}
 					if (post.isDeleted) {
 						operations.push({
 							type: "delete",
@@ -207,6 +236,7 @@ export class SyncEngine {
 
 				if (operations.length > 0) {
 					await this.storage.executeTransaction(operations)
+					totalPulled += operations.length
 				}
 				localStorage.setItem("dbsync-pullSyncedUpTo", data.items[data.items.length - 1].updatedAt)
 			}

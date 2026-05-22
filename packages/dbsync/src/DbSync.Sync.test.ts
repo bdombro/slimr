@@ -151,6 +151,38 @@ describe("DbSync sync engine", () => {
 		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBe("2026-05-17T00:00:00.000Z")
 	})
 
+	/** Confirms pull does not overwrite a row that still has a pending local mutation. */
+	test("pull skips rows in dirtyQueue", async () => {
+		await db.put("posts", { id: "local-3", content: "still editing", userId: "u1" })
+		fetchMock.mockReset()
+		fetchMock
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						items: [
+							{
+								id: "local-3",
+								variant: "posts",
+								content: JSON.stringify({ content: "from server echo", userId: "u1" }),
+								updatedAt: "2026-05-19T00:00:00.000Z",
+								isDeleted: false,
+							},
+						],
+						hasMore: false,
+					}),
+					{ status: 200 },
+				),
+			)
+			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+
+		await db.sync.trigger()
+
+		expect(await db.get<any>("posts", "local-3")).toMatchObject({
+			id: "local-3",
+			content: "still editing",
+		})
+	})
+
 	/** Confirms pulled rows are not pushed back in the same sync cycle. */
 	test("pull does not enqueue pulled rows for push", async () => {
 		fetchMock.mockReset()

@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.50
+
+### Fixed
+
+- Sync pull skips rows that are still in `dirtyQueue` or `deletedQueue` so pending local edits are not overwritten by echoed server data.
+
 ## 0.0.49
 
 ### Fixed
