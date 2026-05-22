@@ -40,7 +40,7 @@ When working inside a package, inspect that package's `package.json` first and u
 - `just start` — run the demo app
 - `just build` — build all publishable packages (excludes demo)
 - `just build-dirty` — build only changed packages
-- `just check` — Biome + `npm run typecheck` (each workspace's `typecheck` script, plus root `vite.config.ts`)
+- `just check` — Biome + `npm run typecheck` on all workspaces (plus root `vite.config.ts`); `just check-dirty` for changed packages only. Script-backed recipes (`build`, `check`, `test-dirty`, `publish`, etc.) forward extra CLI args to their script (e.g. `just check --fix`, `just build-dirty --include dbsync`).
 - `just lint` / `just lint-fix`
 - `just test` — vitest + Playwright for the repo's tests
 - `just publish-dirty` — bump + publish changed packages (and their dependents), and insert a new released-version heading in each published package's CHANGELOG.md
@@ -51,7 +51,7 @@ When working inside a package, inspect that package's `package.json` first and u
 
 - ESM only (`"type": "module"` at root).
 - Keep packages **slim** — minimal deps, small surface area. That's the product thesis; don't add heavy dependencies without a strong reason.
-- Each package owns its own build, `clean`, and `typecheck` scripts (`tsc -b` on composite `tsconfig.json`; `@slimr/dbsync` uses `tsc -b tsconfig.test.json`). Root `npm run typecheck` runs all workspace scripts plus `tsc -b tsconfig.node.json` for the repo Vite config (`npm run -ws clean` for clean).
+- Each package owns its own build, `clean`, and `typecheck` scripts (`tsc -b` on composite `tsconfig.json`; `@slimr/dbsync` uses `tsc -b tsconfig.test.json`). `just check` / `scripts/check.ts` run workspace typechecks in dependency order plus `tsc -b tsconfig.node.json` for the repo Vite config when checking all packages (`npm run -ws clean` for clean).
 - Each package has a [CHANGELOG.md](packages/*/CHANGELOG.md) that tracks changes in `UNRELEASED` until published.
 - Public API changes require bumping the package version (use `publish:dirty`), and bumping dependents.
 - File references in docs/comments: relative markdown links.

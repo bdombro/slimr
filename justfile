@@ -4,52 +4,47 @@
 _:
     @just --list
 
-# Build all publishable packages (excludes demo)
-build:
-    bun scripts/build.ts --all --exclude demo
+# Build all publishable packages (excludes demo); extra args pass through to scripts/build.ts
+build *ARGS='':
+    bun scripts/build.ts --all --exclude demo {{ARGS}}
 
-# Build only packages with uncommitted changes (faster than full build)
-build-dirty:
-    bun scripts/build.ts --dirty --exclude demo
+# Build only packages with uncommitted changes; extra args pass through to scripts/build.ts
+build-dirty *ARGS='':
+    bun scripts/build.ts --dirty --exclude demo {{ARGS}}
 
-# Check code style and TypeScript correctness
-check:
-    npx biome check && npm run typecheck
+# Check code style and TypeScript correctness; extra args pass through to scripts/check.ts
+check *ARGS='':
+    bun scripts/check.ts --all {{ARGS}}
+
+# Check only packages with uncommitted changes; extra args pass through to scripts/check.ts
+check-dirty *ARGS='':
+    bun scripts/check.ts --dirty --exclude demo {{ARGS}}
 
 # Remove build artifacts from all workspaces
 clean:
     npm run -ws clean
+
+alias fmt := format
+# Format code with Biome
+format:
+    npx biome check --write
 
 # Install dependencies and set up git hooks (run once after cloning)
 install:
     npm install
     echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
-# Check code style and correctness with Biome
-lint:
-    npx biome check
-
-
-alias fmt := lint-fix
-# Auto-fix Biome lint/format violations in place
-lint-fix:
-    npx biome check --write
-
-# Re-run lint on every file save for rapid feedback during development
-lint-watch:
-    npx nodemon -e js,jsx,ts,tsx,css,pcss --exec 'just lint'
-
 # Precommit check: build dirty workspaces, lint, and run dirty tests
 precommit:
     bun scripts/precommit.ts
 
-# Bump versions and publish all packages to npm (excludes demo)
-publish-all:
-    bun scripts/publish.ts --bump --all --exclude demo
+# Bump versions and publish all packages to npm (excludes demo); extra args pass through
+publish-all *ARGS='':
+    bun scripts/publish.ts --bump --all --exclude demo {{ARGS}}
 
-# Bump and publish only changed packages and their dependents
-publish-dirty:
-    bun scripts/publish.ts --bump --dirty --exclude demo
+# Bump and publish only changed packages; extra args pass through to scripts/publish.ts
+publish-dirty *ARGS='':
+    bun scripts/publish.ts --bump --dirty --exclude demo {{ARGS}}
 
 # Deploy the demo app
 publish-demo:
@@ -59,19 +54,19 @@ publish-demo:
 start:
     npm run -w @slimr/demo start
 
-# Run tests once (CI-style, no watch)
-test:
-    ./node_modules/.bin/vitest --run
+# Run tests once (CI-style, no watch); extra args pass through to vitest
+test *ARGS='':
+    ./node_modules/.bin/vitest --run {{ARGS}}
     ./node_modules/.bin/playwright test --config packages/dbsync/playwright.config.ts
 
-# Run tests only for dirty workspaces with test scripts
-test-dirty:
-    bun scripts/test.ts --dirty --exclude demo
+# Run tests only for dirty workspaces; extra args pass through to scripts/test.ts
+test-dirty *ARGS='':
+    bun scripts/test.ts --dirty --exclude demo {{ARGS}}
 
 # Check for newer versions of dependencies
 update:
     npx npm-check-updates
 
-# Run tests in watch mode
-watch:
-    ./node_modules/.bin/vitest
+# Run tests in watch mode; extra args pass through to vitest
+watch *ARGS='':
+    ./node_modules/.bin/vitest {{ARGS}}

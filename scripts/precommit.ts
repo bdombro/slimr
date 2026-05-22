@@ -15,7 +15,7 @@ import { getWorkspaces, type Workspace } from "./util/workspaces.ts"
 export async function precommit() {
 	const workspaces = await getWorkspaces()
 	assertDirtyDependentsWereChanged(workspaces)
-	await execPromise("just check")
+	await execPromise("just check-dirty")
 	await buildWorkspaces({ dirty: true, exclude: ["demo"] })
 	await testWorkspaces({ dirty: true, exclude: ["demo"] })
 }
