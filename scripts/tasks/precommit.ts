@@ -1,26 +1,23 @@
 /**
- * Precommit script that keeps changed public packages and their dependents in sync.
- *
- * It blocks commits when a public package changes without the packages that depend
- * on it, then runs Biome plus dirty-package builds and tests to catch regressions.
- * Use `git commit --no-verify` if you intentionally need to bypass the hook.
+ * Precommit checks: block inconsistent public-package bumps, then check, build, and test dirty workspaces.
+ * Use `git commit --no-verify` to bypass the hook intentionally.
  */
+import { throwError } from "../util/errors.ts"
+import { getWorkspaces, type Workspace } from "../util/workspaces.ts"
 import { buildWorkspaces } from "./build.ts"
+import { checkWorkspaces } from "./check.ts"
 import { testWorkspaces } from "./test.ts"
-import { throwError } from "./util/errors.ts"
-import { execPromise } from "./util/process"
-import { getWorkspaces, type Workspace } from "./util/workspaces.ts"
 
 /** Run the precommit checks for changed public packages and their dependents. */
 export async function precommit() {
 	const workspaces = await getWorkspaces()
 	assertDirtyDependentsWereChanged(workspaces)
-	await execPromise("just check-dirty")
+	await checkWorkspaces({ dirty: true, exclude: ["demo"] })
 	await buildWorkspaces({ dirty: true, exclude: ["demo"] })
 	await testWorkspaces({ dirty: true, exclude: ["demo"] })
 }
 
-/** Ensure that if a package is dirty, all of its public dependents are also dirty */
+/** Ensure that if a package is dirty, all of its public dependents are also dirty. */
 function assertDirtyDependentsWereChanged(workspaces: Record<string, Workspace>) {
 	const violations = Object.values(workspaces)
 		.filter((workspace) => workspace.dirty && !workspace.config.private)
@@ -49,5 +46,3 @@ function assertDirtyDependentsWereChanged(workspaces: Record<string, Workspace>)
 		),
 	)
 }
-
-if (import.meta.main) precommit()

@@ -22,13 +22,13 @@ Guidance for AI agents working in this repo.
 - [packages/swr/](packages/swr/) — stale-while-refresh data-fetching hook
 - [packages/util/](packages/util/) — framework-agnostic JS polyfills
 - [packages/demo/](packages/demo/) — demo app (not published)
-- [scripts/](scripts/) — bun scripts: `build.ts`, `publish.ts`, `test.ts`, `precommit.ts`, `build-lib.ts`, and shared utilities in `util/` (`workspaces.ts`, `workspace-task.ts`, `process.ts`)
+- [scripts/](scripts/) — `cli.ts` (argsbarg CLI: `build`, `build-lib`, `check`, `test`, `publish`, `precommit`), task modules in `tasks/`, and shared utilities in `util/` (`workspaces.ts`, `workspace-task.ts`, `process.ts`)
 
 Cross-package deps exist (e.g. `styled` → `css`, `react` re-exports others). When changing a lib, check and bump dependents.
 
 ## Tooling
 
-- **Runtime/build:** Node is the baseline runtime. Some repo-level scripts in `/scripts` use `bun`, but package work should follow the package's own `package.json` scripts and existing toolchain. If a package is npm-based, prefer `npm run` / `npx` / package-local commands over `bun` unless that package explicitly uses it. Vite 4; TypeScript 5. Published CommonJS artifacts use `.cjs` extensions, library packages build through the shared `scripts/build-lib.ts` entrypoint, workspace graph and task selection live in `scripts/util/workspaces.ts` and `scripts/util/workspace-task.ts`, and `scripts/util/process.ts` uses structured `{ cwd }` options.
+- **Runtime/build:** Node is the baseline runtime. Repo scripts run via `bun scripts/cli.ts <command>` (argsbarg); package work should follow each package's `package.json`. Vite 4; TypeScript 5. Published CommonJS artifacts use `.cjs` extensions; library packages build via `bun scripts/cli.ts build-lib --pkg .`. Workspace graph and task selection live in `scripts/util/workspaces.ts` and `scripts/util/workspace-task.ts`; `scripts/util/process.ts` uses structured `{ cwd }` options.
 - **Lint/format:** Biome (`biome.json`). Run `npm run lint` / `npm run lint:fix`. Do not introduce ESLint/Prettier.
 - **Test:** Vitest + Testing Library + jsdom. `npm test`.
 - **Package manager:** npm workspaces.
@@ -40,7 +40,7 @@ When working inside a package, inspect that package's `package.json` first and u
 - `just start` — run the demo app
 - `just build` — build all publishable packages (excludes demo)
 - `just build-dirty` — build only changed packages
-- `just check` — Biome + `npm run typecheck` on all workspaces (plus root `vite.config.ts`); `just check-dirty` for changed packages only. Script-backed recipes (`build`, `check`, `test-dirty`, `publish`, etc.) forward extra CLI args to their script (e.g. `just check --fix`, `just build-dirty --include dbsync`).
+- `just check` / `just check-dirty` — Biome + workspace typechecks via `scripts/cli.ts check`. `just build`, `test-dirty`, `publish-*`, etc. call the same CLI; extra args forward to the command (e.g. `just check --fix`, `just build-dirty --include dbsync`). Run `bun scripts/cli.ts --help` for subcommands and flags.
 - `just lint` / `just lint-fix`
 - `just test` — vitest + Playwright for the repo's tests
 - `just publish-dirty` — bump + publish changed packages (and their dependents), and insert a new released-version heading in each published package's CHANGELOG.md
@@ -51,7 +51,7 @@ When working inside a package, inspect that package's `package.json` first and u
 
 - ESM only (`"type": "module"` at root).
 - Keep packages **slim** — minimal deps, small surface area. That's the product thesis; don't add heavy dependencies without a strong reason.
-- Each package owns its own build, `clean`, and `typecheck` scripts (`tsc -b` on composite `tsconfig.json`; `@slimr/dbsync` uses `tsc -b tsconfig.test.json`). `just check` / `scripts/check.ts` run workspace typechecks in dependency order plus `tsc -b tsconfig.node.json` for the repo Vite config when checking all packages (`npm run -ws clean` for clean).
+- Each package owns its own build, `clean`, and `typecheck` scripts (`tsc -b` on composite `tsconfig.json`; `@slimr/dbsync` uses `tsc -b tsconfig.test.json`). `just check` runs workspace typechecks in dependency order plus `tsc -b tsconfig.node.json` for the repo Vite config when checking all packages (`npm run -ws clean` for clean).
 - Each package has a [CHANGELOG.md](packages/*/CHANGELOG.md) that tracks changes in `UNRELEASED` until published.
 - Public API changes require bumping the package version (use `publish:dirty`), and bumping dependents.
 - File references in docs/comments: relative markdown links.

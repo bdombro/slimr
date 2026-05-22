@@ -44,7 +44,7 @@
   "type": "module",
   "types": "esm/index.d.ts",
   "scripts": {
-    "build": "bun ../../scripts/build-lib.ts --pkg .",
+    "build": "bun ../../scripts/cli.ts build-lib --pkg .",
     "clean": "rm -rf esm cjs",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'",
     "test": "vitest run",

@@ -4,21 +4,21 @@
 _:
     @just --list
 
-# Build all publishable packages (excludes demo); extra args pass through to scripts/build.ts
+# Build all publishable packages (excludes demo); extra args pass through to slimr CLI
 build *ARGS='':
-    bun scripts/build.ts --all --exclude demo {{ARGS}}
+    bun scripts/cli.ts build --all --exclude demo {{ARGS}}
 
-# Build only packages with uncommitted changes; extra args pass through to scripts/build.ts
+# Build only packages with uncommitted changes; extra args pass through to slimr CLI
 build-dirty *ARGS='':
-    bun scripts/build.ts --dirty --exclude demo {{ARGS}}
+    bun scripts/cli.ts build --dirty --exclude demo {{ARGS}}
 
-# Check code style and TypeScript correctness; extra args pass through to scripts/check.ts
+# Check code style and TypeScript correctness; extra args pass through to slimr CLI
 check *ARGS='':
-    bun scripts/check.ts --all {{ARGS}}
+    bun scripts/cli.ts check --all {{ARGS}}
 
-# Check only packages with uncommitted changes; extra args pass through to scripts/check.ts
+# Check only packages with uncommitted changes; extra args pass through to slimr CLI
 check-dirty *ARGS='':
-    bun scripts/check.ts --dirty --exclude demo {{ARGS}}
+    bun scripts/cli.ts check --dirty --exclude demo {{ARGS}}
 
 # Remove build artifacts from all workspaces
 clean:
@@ -36,15 +36,15 @@ install:
 
 # Precommit check: build dirty workspaces, lint, and run dirty tests
 precommit:
-    bun scripts/precommit.ts
+    bun scripts/cli.ts precommit
 
 # Bump versions and publish all packages to npm (excludes demo); extra args pass through
 publish-all *ARGS='':
-    bun scripts/publish.ts --bump --all --exclude demo {{ARGS}}
+    bun scripts/cli.ts publish --bump --all --exclude demo {{ARGS}}
 
-# Bump and publish only changed packages; extra args pass through to scripts/publish.ts
+# Bump and publish only changed packages; extra args pass through to slimr CLI
 publish-dirty *ARGS='':
-    bun scripts/publish.ts --bump --dirty --exclude demo {{ARGS}}
+    bun scripts/cli.ts publish --bump --dirty --exclude demo {{ARGS}}
 
 # Deploy the demo app
 publish-demo:
@@ -59,9 +59,9 @@ test *ARGS='':
     ./node_modules/.bin/vitest --run {{ARGS}}
     ./node_modules/.bin/playwright test --config packages/dbsync/playwright.config.ts
 
-# Run tests only for dirty workspaces; extra args pass through to scripts/test.ts
+# Run tests only for dirty workspaces; extra args pass through to slimr CLI
 test-dirty *ARGS='':
-    bun scripts/test.ts --dirty --exclude demo {{ARGS}}
+    bun scripts/cli.ts test --dirty --exclude demo {{ARGS}}
 
 # Check for newer versions of dependencies
 update:

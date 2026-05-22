@@ -1,14 +1,6 @@
 /**
- * A simple npm library package builder using `tsc`
- *
- * `tsc` gets you most of the way there, but needs help producing a standard compliant npm package. Specifically,
- *
- * 1. `tsc` won't produce both ESM and CommonJS outputs in the same compilation, so we have to run it twice with different configs
- * 2. `tsc` doesn't output .cjs extensions for CommonJS modules, which causes issues for ESM-first consumers like Vite that expect
- *     .cjs for CJS modules when package.json::type=module
- *
+ * Build ESM and CommonJS library artifacts for a single package via `tsc`, then normalize `.cjs` output.
  */
-
 import fs from "node:fs"
 import path from "node:path"
 import { $ } from "bun"
@@ -19,15 +11,11 @@ export async function buildLib(packageDir = ".") {
 	fs.rmSync(path.join(packageRoot, "esm"), { force: true, recursive: true })
 	fs.rmSync(path.join(packageRoot, "cjs"), { force: true, recursive: true })
 	await $`tsc -d --outDir esm --noEmit false`.cwd(packageRoot)
-	// Node16 resolution honors package.json "exports" (e.g. @slimr/observable/react types).
 	await $`tsc -d -m node16 --moduleResolution node16 --outDir cjs --noEmit false`.cwd(packageRoot)
 	await normalizeCommonJsExtensions(path.join(packageRoot, "cjs"))
 }
 
-/**
- * tsc produces .js files, but consumers expect .cjs extension for the cjs dir when package.json::type=module
- * This fnc renames the .js files to .cjs and updates the source maps and require statements accordingly
- */
+/** Rename `.js` outputs to `.cjs` and fix maps and require paths for `type=module` packages. */
 async function normalizeCommonJsExtensions(rootDir: string) {
 	if (!fs.existsSync(rootDir)) {
 		return
@@ -64,9 +52,7 @@ async function normalizeCommonJsExtensions(rootDir: string) {
 	}
 }
 
-/**
- * Recursively lists all files in a directory and its subdirectories
- */
+/** Recursively list all files under a directory. */
 function listFiles(rootDir: string): string[] {
 	const entries = fs.readdirSync(rootDir, { withFileTypes: true })
 	const files: string[] = []
@@ -82,12 +68,3 @@ function listFiles(rootDir: string): string[] {
 
 	return files
 }
-
-/** The entrypoint if called directly (aka import.meta.main = true) */
-async function main() {
-	const packageDirArgIndex = process.argv.indexOf("--pkg")
-	const packageDir = packageDirArgIndex >= 0 ? process.argv[packageDirArgIndex + 1] : "."
-	await buildLib(packageDir)
-}
-
-if (import.meta.main) main()
