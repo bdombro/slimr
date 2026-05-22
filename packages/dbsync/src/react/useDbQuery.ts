@@ -1,8 +1,7 @@
 import { areEqualDeep } from "@slimr/util"
 import { useEffect, useState } from "react"
-import type { DbSync } from "../DbSync.js"
+import type { DbSyncQueryHost } from "../dbSyncLikeType.js"
 import type { DbUpdatesPayload, RowChange } from "../internal/EventBus.js"
-import type { DbSyncR } from "./DbSyncReact.js"
 
 type DbQueryState<T> = {
 	value: T | null
@@ -24,7 +23,7 @@ export type UseDbQueryOptions = {
  * re-evaluates a strictly typed query function whenever local mutations or
  * background sync events alter the underlying data.
  *
- * @param db The initialized `DbSync` or `DbSyncR` instance.
+ * @param db The initialized `DbSync` or `DbSyncR` subclass instance.
  * @param tableOrTables A string or array of strings containing the table names the query function reads from.
  * @param queryFn An asynchronous function invoked to pull data from IndexedDB.
  * @param deps A standard React dependency array for parameters referenced inside the `queryFn`.
@@ -32,7 +31,7 @@ export type UseDbQueryOptions = {
  * @returns An object containing the latest query result and whether the initial fetch is still pending.
  */
 export function useDbQuery<T>(
-	db: DbSync | DbSyncR,
+	db: DbSyncQueryHost,
 	tableOrTables: string | string[],
 	queryFn: () => Promise<T>,
 	deps: any[] = [],

@@ -2,6 +2,7 @@ import { describe, expectTypeOf, test } from "vitest"
 import type { DbRepository } from "./DbRepository.js"
 import { DbSync } from "./DbSync.js"
 import { DbTable } from "./DbTable.js"
+import { DbSyncR } from "./react/DbSyncReact.js"
 
 class PostsTable extends DbTable<{ id: string; title: string }, { title: string }> {
 	static tableName = "posts"
@@ -30,5 +31,20 @@ describe("TransactionOf", () => {
 		type PostsTxRepo = Tx["posts"]
 
 		expectTypeOf<PostsTxRepo>().toHaveProperty("patch")
+	})
+})
+
+class PostsTableR extends DbTable<{ id: string; title: string }, { title: string }> {
+	static tableName = "posts"
+}
+
+class TypedAppDbR extends DbSyncR {
+	posts = new PostsTableR(this)
+}
+
+describe("TransactionOf (DbSyncR)", () => {
+	test("includes DbTable properties on the transaction type", () => {
+		type Tx = ReturnType<InstanceType<typeof TypedAppDbR>["getTransaction"]>
+		expectTypeOf<Tx["posts"]>().toHaveProperty("add")
 	})
 })

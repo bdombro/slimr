@@ -1,8 +1,8 @@
-import type { DbSync } from "../DbSync.js"
+import type { DbSyncWireAuthHost } from "../dbSyncLikeType.js"
 
 /** Registers noop logout and optional authenticated listener (call right after `new DbSync`). */
 export function wireAuth(
-	db: DbSync,
+	db: DbSyncWireAuthHost,
 	options?: {
 		onLogout?: () => void | Promise<void>
 		onAuthenticated?: () => void | Promise<void>

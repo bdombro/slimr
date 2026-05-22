@@ -15,6 +15,7 @@ import { DbSyncAuth } from "./DbSyncAuth.js"
 import { DbSyncSync } from "./DbSyncSync.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
+import type { DbSyncLikeType } from "./dbSyncLikeType.js"
 import { AuthManager } from "./internal/AuthManager.js"
 import { AuthObservables } from "./internal/AuthObservables.js"
 import { ConnectivityTracker } from "./internal/ConnectivityTracker.js"
@@ -272,11 +273,12 @@ export class DbSync {
 		return applyDefaults(this.config.tables?.[tableName], record)
 	}
 	/** Returns a queued transaction object for batched writes. */
-	public getTransaction(this: DbSync): TransactionOf<this> {
-		this.authManager.assertAuthenticated()
-		const tx = this.storage.getTransaction()
+	public getTransaction(this: DbSyncLikeType): TransactionOf<this> {
+		const db = this as DbSync
+		db.authManager.assertAuthenticated()
+		const tx = db.storage.getTransaction()
 		const txWithTables = tx as unknown as Record<string, unknown>
-		for (const table of this.getSchemaTables()) {
+		for (const table of db.getSchemaTables()) {
 			txWithTables[table.tableName] = new DbTxRepository(tx, table.tableName, table)
 		}
 		return tx as TransactionOf<this>

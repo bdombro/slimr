@@ -3,7 +3,7 @@
  */
 import { Observable } from "@slimr/observable"
 import { renderHook } from "@testing-library/react"
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest"
 import { LocalAdapter } from "../adapters/LocalAdapter.js"
 import { DbTable } from "../DbTable.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
@@ -163,6 +163,29 @@ describe("DbSyncReact", () => {
 		it("keeps .use() on auth on the same AppDb instance", async () => {
 			const { result } = renderHook(() => db.auth.phase$.use())
 			expect(result.current).toBe("logged-out")
+		})
+
+		it("getTransaction exposes typed table repos and commits", async () => {
+			await db.posts.add({ title: "first" })
+
+			const tx = db.getTransaction()
+			tx.posts.add({ title: "  from tx  " })
+			await tx.commit()
+
+			expect(await db.posts.find()).toEqual([
+				{ id: "post-1", title: "first" },
+				{ id: "post-2", title: "from tx" },
+			])
+		})
+
+		it("types getTransaction from a DbSyncR subclass", () => {
+			type Tx = ReturnType<AppDb["getTransaction"]>
+			type PostsTx = Tx["posts"]
+
+			expectTypeOf<PostsTx>().toHaveProperty("add")
+			expectTypeOf<PostsTx>().toHaveProperty("patch")
+			expectTypeOf<Tx>().toHaveProperty("commit")
+			expectTypeOf<Tx>().toHaveProperty("cancel")
 		})
 	})
 })
