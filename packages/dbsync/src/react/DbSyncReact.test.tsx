@@ -3,8 +3,9 @@
  */
 import { Observable } from "@slimr/observable"
 import { renderHook } from "@testing-library/react"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import { LocalAdapter } from "../adapters/LocalAdapter.js"
+import { DbTable } from "../DbTable.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
 import { DbSyncR } from "./DbSyncReact.js"
 import { wrapObservable } from "./ObservableReact.js"
@@ -106,5 +107,62 @@ describe("DbSyncReact", () => {
 			useDbQuery(db, "test", () => Promise.resolve([{ id: "1" }])),
 		)
 		expect(result.current.value).toBeNull()
+	})
+
+	describe("with DbTable subclass field", () => {
+		let nextId = 0
+
+		class PostsTable extends DbTable<{ id: string; title: string }, { title: string }> {
+			static tableName = "posts"
+			static indexes = ["title"]
+
+			prepareCreate(input: { title: string }) {
+				return { ...super.prepareCreate(input), title: input.title.trim() }
+			}
+		}
+
+		class AppDb extends DbSyncR {
+			posts = new PostsTable(this)
+
+			override genUuid() {
+				nextId += 1
+				return `post-${nextId}`
+			}
+		}
+
+		const resetDatabase = async () => {
+			await new Promise<void>((resolve, reject) => {
+				const request = indexedDB.deleteDatabase("dbsync")
+				request.onsuccess = () => resolve()
+				request.onerror = () => reject(request.error)
+				request.onblocked = () => resolve()
+			})
+		}
+
+		let db: AppDb
+
+		beforeEach(async () => {
+			nextId = 0
+			await resetDatabase()
+			db = new AppDb({ adapter: new LocalAdapter(), version: 1 })
+			await db.sync.start()
+		})
+
+		afterEach(() => {
+			db.dispose()
+		})
+
+		it("exposes DbTable on the instance and supports CRUD after boot", async () => {
+			expect(db.posts).toBeInstanceOf(PostsTable)
+			expect(db.posts.tableName).toBe("posts")
+
+			await db.posts.add({ title: "  hello  " })
+			expect(await db.posts.find()).toEqual([{ id: "post-1", title: "hello" }])
+		})
+
+		it("keeps .use() on auth on the same AppDb instance", async () => {
+			const { result } = renderHook(() => db.auth.phase$.use())
+			expect(result.current).toBe("logged-out")
+		})
 	})
 })

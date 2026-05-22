@@ -1,11 +1,11 @@
 import { DbRepository } from "./DbRepository.js"
-import type { DbSync } from "./DbSync.js"
+import type { DbSyncLikeType } from "./dbSyncLikeType.js"
 import type { StorageManager } from "./internal/storage/index.js"
 
-const getStorage = (db: DbSync) => (db as unknown as { storage: StorageManager }).storage
+const getStorage = (db: DbSyncLikeType) => (db as unknown as { storage: StorageManager }).storage
 
 type DbTableConstructor<Row extends { id: string }, CreateInput extends object> = {
-	new (db: DbSync): DbTable<Row, CreateInput>
+	new (db: DbSyncLikeType): DbTable<Row, CreateInput>
 	tableName: string
 	indexes?: string[]
 	migrations?: unknown[]
@@ -21,7 +21,7 @@ export class DbTable<
 	Row extends { id: string },
 	CreateInput extends object = Row,
 > extends DbRepository<Row> {
-	constructor(db: DbSync) {
+	constructor(db: DbSyncLikeType) {
 		const ctor = new.target as DbTableConstructor<Row, CreateInput>
 		if (!ctor.tableName) {
 			throw new Error("DbTable subclasses must define static tableName")

@@ -6,6 +6,8 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.46
+
 ## 0.0.45
 
 ### Added
@@ -24,6 +26,7 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 - `DbSync.auth` / `sync` are getters; `DbSyncR` wraps them for `.use()` without casting `export const db`.
 - `useDbQuery` and `db.<table>.subscribe` refetch only on `canQuery$` + relevant `updates$` slices (`select` ignores `txId`-only republishes).
 - Docs: [Getting started](./docs/GettingStarted.md) → [Integration guide](./docs/Offline.md) → [React](./docs/React.md) — see [docs/README.md](./docs/README.md).
+- **`DbSyncLikeType`** — `DbTable` / `DbRepository` accept `DbSync` and `DbSyncR` subclasses (`new PostTable(this)` type-checks).
 
 ## 0.0.44
 

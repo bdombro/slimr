@@ -1,4 +1,4 @@
-import type { DbSync } from "./DbSync.js"
+import type { DbSyncLikeType } from "./dbSyncLikeType.js"
 import type { DbUpdatesPayload, RowChange } from "./internal/EventBus.js"
 import type { FindOptions } from "./internal/queryTypes.js"
 
@@ -37,7 +37,7 @@ export class DbRepository<T> {
 	 * @param tableName The name of the table this repository will manage.
 	 */
 	constructor(
-		protected db: DbSync,
+		protected db: DbSyncLikeType,
 		public readonly tableName: string,
 	) {}
 
