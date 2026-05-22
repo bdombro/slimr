@@ -35,9 +35,9 @@ describe("DbSync lifecycle", () => {
 		})
 		wireAuth(db)
 		await db.waitForBooted()
-		expect(db.isBooted).toBe(true)
-		expect(db.isReady).toBe(true)
-		expect(db.isStarted).toBe(true)
+		expect(db.auth.isBooted).toBe(true)
+		expect(db.auth.isReady).toBe(true)
+		expect(db.sync.isStarted).toBe(true)
 		db.dispose()
 	})
 
@@ -60,10 +60,10 @@ describe("DbSync lifecycle", () => {
 		})
 		wireAuth(db)
 		await new Promise<void>((resolve) => setTimeout(resolve, 0))
-		expect(db.isReady).toBe(false)
+		expect(db.auth.isReady).toBe(false)
 		await db.boot()
-		await db.start()
-		expect(db.isReady).toBe(true)
+		await db.sync.start()
+		expect(db.auth.isReady).toBe(true)
 		db.dispose()
 	})
 
@@ -72,7 +72,7 @@ describe("DbSync lifecycle", () => {
 			adapter: new LocalAdapter(),
 			tables: { posts: {} },
 		})
-		await vi.waitFor(() => expect(db.isReady).toBe(true))
+		await vi.waitFor(() => expect(db.auth.isReady).toBe(true))
 		db.dispose()
 	})
 
@@ -85,7 +85,7 @@ describe("DbSync lifecycle", () => {
 		wireAuth(db)
 		await db.waitForBooted()
 		expect(db.auth.isLoggedIn).toBe(true)
-		expect(db.isBooted).toBe(true)
+		expect(db.auth.isBooted).toBe(true)
 		db.dispose()
 	})
 
@@ -97,8 +97,8 @@ describe("DbSync lifecycle", () => {
 		wireAuth(db)
 		await db.waitForBooted()
 		expect(db.auth.isLoggedIn).toBe(false)
-		expect(db.isBooted).toBe(true)
-		expect(db.isReady).toBe(false)
+		expect(db.auth.isBooted).toBe(true)
+		expect(db.auth.isReady).toBe(false)
 		db.dispose()
 	})
 
@@ -110,7 +110,7 @@ describe("DbSync lifecycle", () => {
 		})
 		wireAuth(db, {
 			onAuthenticated: async () => {
-				order.push(`app:${db.isReady}`)
+				order.push(`app:${db.auth.isReady}`)
 			},
 		})
 		await db.waitForBooted()
@@ -130,7 +130,7 @@ describe("DbSync lifecycle", () => {
 		wireAuth(db, { onAuthenticated })
 		await db.waitForBooted()
 		expect(onAuthenticated).not.toHaveBeenCalled()
-		expect(db.isReady).toBe(true)
+		expect(db.auth.isReady).toBe(true)
 		db.dispose()
 	})
 

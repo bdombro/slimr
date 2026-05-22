@@ -1,46 +1,79 @@
+import type { DbAuthPhase } from "./authTypes.js"
 import type { AuthManager } from "./internal/AuthManager.js"
+import type { SyncState } from "./internal/EventBus.js"
 import type { SessionListener } from "./internal/listenerUtils.js"
+import type { SessionManager } from "./internal/SessionManager.js"
 
 /**
- * Authentication actions and session state for a `DbSync` instance.
- * Boot lifecycle (`isBooted`, `waitForBooted`) lives on the root `db` object.
+ * Authentication actions and session read accessors for a `DbSync` instance.
  */
 export class DbSyncAuth {
-	constructor(private authManager: AuthManager) {}
+	constructor(
+		private authManager: AuthManager,
+		private session: SessionManager,
+	) {}
 
-	/** Whether the app considers the user signed in (hydrated from localStorage). */
+	/** App shell phase (`logged-out` | `booting` | `initial-sync` | `ready`). */
+	get phase(): DbAuthPhase {
+		return this.session.get().phase
+	}
+
 	get isLoggedIn() {
 		return this.authManager.isLoggedIn
 	}
 
-	/** Whether a remote logout is deferred until online. */
 	get pendingLogout() {
 		return this.authManager.pendingLogout
 	}
 
-	/** True while session-start or `onAuthenticated` callbacks are running. */
 	get isBootstrapping() {
 		return this.authManager.isBootstrapping
 	}
 
-	/** Subscribes to session state changes (for React hooks). */
-	onSessionChange(listener: () => void) {
-		return this.authManager.onSessionChange(listener)
+	get isBooted() {
+		return this.authManager.isBooted
+	}
+
+	get isReady() {
+		return this.session.get().flags.isReady
+	}
+
+	get offline() {
+		return this.session.get().flags.offline
+	}
+
+	get online() {
+		return !this.offline
+	}
+
+	/** Current sync state for loading/error UI. */
+	get syncState(): SyncState {
+		return this.session.get().sync.state
+	}
+
+	/** Logged in with no successful sync since login (cleared on logout). */
+	get isInitialSyncPending() {
+		return this.phase === "initial-sync"
+	}
+
+	/** Subscribes to session, boot, sync, and connectivity changes. */
+	onChange(listener: () => void) {
+		return this.session.subscribe(listener)
 	}
 
 	/**
 	 * Subscribes to logout (`db.auth.logout()`, 401, cross-tab). Listeners run in parallel
 	 * before IndexedDB is cleared; rejections propagate after teardown completes.
 	 */
-	onLogout(listener: SessionListener): () => void {
+	onLogout(listener: SessionListener) {
 		return this.authManager.onLogout(listener)
 	}
 
 	/**
 	 * Subscribes to successful login and cross-tab login — not refresh boot.
-	 * Listeners run in parallel after internal `start()`.
+	 * Listeners run in parallel after internal `sync.start()`.
 	 */
-	onAuthenticated(listener: SessionListener): () => void {
+	onAuthenticated(listener: SessionListener) {
 		return this.authManager.onAuthenticated(listener)
 	}
 

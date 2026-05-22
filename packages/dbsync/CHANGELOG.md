@@ -6,13 +6,21 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
-### Added
+## 0.0.44
 
-- `db.isInitialSyncPending` and `useDbSession` → `isInitialSyncPending` — logged in with no successful sync since login (survives refresh until logout; distinct from `isLive`). Always `false` when logged out; sync cursors clear on every logout path.
+### Breaking
+
+- **Removed `db.session`** — session state lives on **`db.auth`** shallow getters (`phase`, `isLoggedIn`, `isReady`, `offline`, `syncState`, `isInitialSyncPending`, …) and **`db.auth.onChange()`**.
+- **`db.sync`** — `start`, `stop`, `trigger`, `waitForLive`, `waitForInitial`, `onStateChange`, `state`, `isLive`, `isStarted`, `isInitialSyncPending` moved off root `db`.
+- **Removed from root `db`:** `isReady`, `isBooted`, `offline`, `online`, `isLive`, `isStarted`, `isInitialSyncPending`, `start`, `stop`, `triggerSync`, `waitForLive`, `onSyncStateChange`.
+- **`useDbAuth`** — flat `DbAuthState` from `db.auth` getters; **`useDbSession`** is a deprecated alias.
+- **`db.auth.onLogout` / `onAuthenticated` / `onChange`** return `{ close() }` (not `() => void`).
+- **Exported types:** `DbAuthPhase`, `DbAuthState`, `SyncState` (`DbSessionPhase` / `DbSessionSnapshot` deprecated aliases).
 
 ### Changed
 
-- `db.start()` runs an immediate sync cycle when the timer starts (login, refresh boot, cross-tab login) instead of waiting for the first interval tick.
+- `db.sync.start()` runs an immediate sync cycle when the timer starts (login, refresh boot, cross-tab login).
+- **Docs:** restructured [docs/README.md](./docs/README.md) by intent; [Offline.md](./docs/Offline.md) is the canonical integration guide (phase diagram, anti-patterns, recipes); [Auth.md](./docs/Auth.md) replaces [Session.md](./docs/Session.md) (stub redirect retained); [LocalAdapter](./docs/Adapters.md#localadapter) merged into [Adapters.md](./docs/Adapters.md) (stub redirect retained); [Migrating.md](./docs/Migrating.md) archived under [docs/archive/](./docs/archive/Migrating-pre-0.0.43.md) (stub redirect retained); [React.md](./docs/React.md) documents advanced `useDbQuery`; [Testing](./docs/Testing.md) / [Debugging](./docs/Debugging.md) cover Playwright and `setPerformSyncHook`.
 
 ## 0.0.42
 

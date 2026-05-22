@@ -1,14 +1,20 @@
 export {}
 
+import type { DbAuthPhase, SyncState } from "../src/authTypes.js"
+
 /** Minimal `DbSync` surface exposed to Playwright fixture pages. */
 type PlaywrightDb = {
-	syncEngine: { performSync: () => Promise<void> }
-	triggerSync: () => Promise<unknown>
-	isLoggedIn: boolean
-	isReady: boolean
-	pendingLogout: boolean
-	offline: boolean
+	sync: {
+		trigger: () => Promise<void>
+		setPerformSyncHook: (fn: (() => Promise<void>) | null) => void
+	}
 	auth: {
+		phase: DbAuthPhase
+		isLoggedIn: boolean
+		isReady: boolean
+		pendingLogout: boolean
+		offline: boolean
+		syncState: SyncState
 		login: (email: string, code: string) => Promise<void>
 		logout: () => Promise<void>
 	}
@@ -26,10 +32,12 @@ declare global {
 		onAuthenticatedCount: number
 		onLogoutCount: number
 		getState: () => {
+			phase: DbAuthPhase
 			isLoggedIn: boolean
 			isReady: boolean
 			pendingLogout: boolean
 			offline: boolean
+			syncState: SyncState
 			onAuthenticatedCount: number
 			onLogoutCount: number
 		}

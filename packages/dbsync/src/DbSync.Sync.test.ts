@@ -31,9 +31,10 @@ const createDb = async (fetchMock: ReturnType<typeof vi.fn>) => {
 	fetchMock.mockResolvedValue(
 		new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
 	)
-	await db.start()
-	await db.triggerSync()
-	await db.stop()
+	await db.boot()
+	await db.sync.start()
+	await db.sync.trigger()
+	await db.sync.stop()
 	fetchMock.mockReset()
 	return db
 }
@@ -77,18 +78,18 @@ describe("DbSync sync engine", () => {
 		)
 		db.syncInterval = 25
 
-		await db.start()
-		expect(db.isStarted).toBe(true)
+		await db.sync.start()
+		expect(db.sync.isStarted).toBe(true)
 
-		await db.triggerSync()
+		await db.sync.trigger()
 		expect(fetchMock).toHaveBeenCalled()
 
 		fetchMock.mockClear()
 		await new Promise<void>((resolve) => setTimeout(resolve, 30))
 		expect(fetchMock).toHaveBeenCalled()
 
-		await db.stop()
-		expect(db.isStarted).toBe(false)
+		await db.sync.stop()
+		expect(db.sync.isStarted).toBe(false)
 
 		fetchMock.mockClear()
 		await new Promise<void>((resolve) => setTimeout(resolve, 30))
@@ -96,20 +97,24 @@ describe("DbSync sync engine", () => {
 	})
 
 	test("isInitialSyncPending until first successful sync then clears on logout", async () => {
-		expect(db.isInitialSyncPending).toBe(true)
+		expect(db.auth.isBooted).toBe(true)
+		expect(db.sync.isInitialSyncPending).toBe(true)
+		expect(db.auth.phase).toBe("initial-sync")
 		fetchMock.mockReset()
 		fetchMock
 			.mockResolvedValueOnce(
 				new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
 			)
 			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
-		await db.triggerSync()
-		expect(db.isInitialSyncPending).toBe(false)
+		await db.sync.trigger()
+		expect(db.sync.isInitialSyncPending).toBe(false)
+		expect(db.auth.phase).toBe("ready")
 		await db.auth.logout()
-		expect(db.isInitialSyncPending).toBe(false)
+		expect(db.sync.isInitialSyncPending).toBe(false)
+		expect(db.auth.phase).toBe("logged-out")
 		writeIsLoggedIn(true)
 		const relogged = await createDb(fetchMock)
-		expect(relogged.isInitialSyncPending).toBe(true)
+		expect(relogged.sync.isInitialSyncPending).toBe(true)
 		relogged.dispose()
 	})
 
@@ -133,7 +138,7 @@ describe("DbSync sync engine", () => {
 			),
 		)
 
-		await db.triggerSync()
+		await db.sync.trigger()
 
 		expect(await db.get<any>("posts", "remote-1")).toMatchObject({
 			id: "remote-1",
@@ -153,7 +158,7 @@ describe("DbSync sync engine", () => {
 			)
 			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
 
-		await db.triggerSync()
+		await db.sync.trigger()
 
 		expect(fetchMock).toHaveBeenCalledTimes(2)
 		const pushCall = fetchMock.mock.calls[1]
@@ -187,7 +192,7 @@ describe("DbSync sync engine", () => {
 			)
 			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
 
-		await db.triggerSync()
+		await db.sync.trigger()
 
 		const payload = JSON.parse(fetchMock.mock.calls[1][1]?.body as string)
 		expect(payload[0]).toMatchObject({
@@ -228,7 +233,7 @@ describe("DbSync sync engine", () => {
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		await freshDb.auth.logout()
 		fetchMock.mockClear()
-		await freshDb.triggerSync()
+		await freshDb.sync.trigger()
 		expect(fetchMock).not.toHaveBeenCalled()
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		freshDb.dispose()

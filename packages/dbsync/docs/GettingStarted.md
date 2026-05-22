@@ -56,17 +56,39 @@ db.auth.onAuthenticated(() => navigate("/app")) // optional; login + cross-tab o
 
 Register listeners in the same module immediately after `new DbSync`, before any `await`. Do not call `waitForBooted()` at module top level in SPAs — use the headless pattern below or React hooks.
 
+## Recommended module layout
+
+```text
+src/
+  db.ts          # AppDb subclass, adapter, listeners — export `db`
+  dbHooks.ts     # createUseDbQuery(db), thin useDbAuth wrapper if needed
+  AppShell.tsx   # switch (useDbAuth(db).phase)
+```
+
+```typescript
+// db.ts
+export const db = new AppDb({ adapter: new RestAdapter({ url: import.meta.env.VITE_API_URL }) })
+db.auth.onLogout(() => navigate("/login"))
+
+// dbHooks.ts
+import { createUseDbQuery, useDbAuth as useDbAuthRaw } from "@slimr/dbsync/react"
+import { db } from "./db"
+
+export const useDbQuery = createUseDbQuery(db)
+export const useDbAuth = () => useDbAuthRaw(db)
+```
+
 ## State at a glance
 
 | API | Meaning |
 | --- | --- |
-| `isLoggedIn` | Hydrated session — route on this at module load |
-| `waitForBooted()` / `isBooted` | Boot finished (internal `start()` when logged in) |
-| `isReady` | IndexedDB open |
-| `isBootstrapping` | Session / `onAuthenticated` callbacks running |
-| `waitForLive()` | Optional — recent successful sync ([Sync](./Sync.md)) |
+| `db.auth.isLoggedIn` | Hydrated session — route on this at module load |
+| `db.auth.phase` | App shell: `logged-out` \| `booting` \| `initial-sync` \| `ready` |
+| `waitForBooted()` | Boot finished (internal `sync.start()` when logged in) |
+| `db.auth.isReady` | IndexedDB open |
+| `db.sync.waitForLive()` | Optional — recent successful sync ([Sync](./Sync.md)) |
 
-Full callback matrix and logout flow: [Session](./Session.md) · [Offline](./Offline.md).
+Full callback matrix and logout flow: [Auth](./Auth.md) · [Offline](./Offline.md).
 
 ## Lifecycle (automatic by default)
 
@@ -88,11 +110,11 @@ if (db.auth.isLoggedIn) {
 
 ### React SPAs
 
-Route on **`db.auth.isLoggedIn` at module load**. Use `useDbSession` and `useDbQuery` — usually no `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
+Route on **`db.auth.isLoggedIn` at module load**. Use `useDbAuth` (`phase`) and `useDbQuery` — usually no `waitForBooted()` in components. See [React](./React.md) and [Offline-first apps](./Offline.md).
 
 ### Advanced
 
-`lifecycle: { manual: true }` — call `await db.boot()` then `await db.start()` when logged in. `boot()` throws when lifecycle is automatic.
+`lifecycle: { manual: true }` — call `await db.boot()` then `await db.sync.start()` when logged in. `boot()` throws when lifecycle is automatic.
 
 ## Developing before the backend
 
@@ -109,6 +131,8 @@ await db.waitForBooted()
 ```
 
 ## Local-only
+
+See [Adapters — LocalAdapter](./Adapters.md#localadapter).
 
 ```typescript
 import { LocalAdapter } from "@slimr/dbsync/adapters"
@@ -132,7 +156,7 @@ await db.waitForBooted()
 | React hooks | [React](./React.md) |
 | SSR and hydration | [SSR & Next.js](./SSR.md) |
 | Mocking IndexedDB, component tests | [Testing](./Testing.md) |
-| Auth API reference | [Session](./Session.md) |
+| Auth listeners | [Auth](./Auth.md) |
 | All public methods | [API reference](./API.md) |
 | Typed errors | [Errors](./Errors.md) |
-| Upgrade from pre-0.0.40 | [Migrating](./Migrating.md) |
+| Upgrade from older APIs | [CHANGELOG](../CHANGELOG.md) · [Migrating (archived)](./archive/Migrating-pre-0.0.43.md) |

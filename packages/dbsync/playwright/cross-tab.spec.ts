@@ -33,18 +33,18 @@ test.describe("DbSync cross-tab coordination", () => {
 		await expect(page2.locator("#content")).toContainText("ready")
 
 		await page1.evaluate(() => {
-			window.db.syncEngine.performSync = () => new Promise((resolve) => setTimeout(resolve, 5000))
+			window.db.sync.setPerformSyncHook(() => new Promise((resolve) => setTimeout(resolve, 5000)))
 		})
 
 		await page2.evaluate(() => {
 			window.lockAcquiredTime = 0
-			window.db.syncEngine.performSync = async () => {
+			window.db.sync.setPerformSyncHook(async () => {
 				window.lockAcquiredTime = Date.now()
-			}
+			})
 		})
 
-		const p1 = page1.evaluate(() => window.db.triggerSync())
-		const p2 = page2.evaluate(() => window.db.triggerSync())
+		const p1 = page1.evaluate(() => window.db.sync.trigger())
+		const p2 = page2.evaluate(() => window.db.sync.trigger())
 
 		await expect
 			.poll(async () => page2.evaluate(() => window.lockAcquiredTime), {

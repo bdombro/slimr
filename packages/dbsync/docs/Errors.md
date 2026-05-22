@@ -1,6 +1,6 @@
 # Errors
 
-[Documentation index](./README.md) · [Session](./Session.md) · [Offline-first apps](./Offline.md)
+[Documentation index](./README.md) · [Auth listeners](./Auth.md) · [Offline-first apps](./Offline.md)
 
 Typed errors exported from `@slimr/dbsync`:
 
@@ -46,5 +46,5 @@ Auth adapter failures and blocked login. `code` is one of:
 
 ## See also
 
-- [Session](./Session.md) — auth API
+- [Auth listeners](./Auth.md) — callbacks
 - [RestAdapter](./RestAdapter.md) — endpoint errors

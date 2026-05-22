@@ -20,6 +20,8 @@ type SchemaTable = {
 export class SyncEngine {
 	/** The active interval handle, or `null` when sync is disabled. */
 	private syncSetInterval: any = null
+	/** Playwright/tests may replace one cycle's work to simulate leader lock contention. */
+	private performSyncHook: (() => Promise<void>) | null = null
 
 	/**
 	 * Creates a sync engine bound to the given storage, auth, and adapter instances.
@@ -85,6 +87,11 @@ export class SyncEngine {
 		await this.sync()
 	}
 
+	/** Replaces `performSync` body until cleared (`null`). For Playwright leader-election tests. */
+	public setPerformSyncHook(fn: (() => Promise<void>) | null) {
+		this.performSyncHook = fn
+	}
+
 	/** Runs one sync pass, optionally under a Web Locks leader lock. */
 	private async sync() {
 		if (typeof navigator !== "undefined" && navigator.locks) {
@@ -98,6 +105,10 @@ export class SyncEngine {
 
 	/** Performs pull, push, and sync-state bookkeeping for one cycle. */
 	private async performSync() {
+		if (this.performSyncHook) {
+			await this.performSyncHook()
+			return
+		}
 		if (this.connectivity.offline) {
 			this.setSyncState("offline")
 			emitDebug(this.config.onDebug, {

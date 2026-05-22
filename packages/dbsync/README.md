@@ -60,37 +60,23 @@ if (db.auth.isLoggedIn) {
     await db.posts.add({ userId: "u_1", content: "Hello" })
     const posts = await db.posts.find({ index: "updatedAt", order: "desc", limit: 20 })
 }
-// React apps: skip waitForBooted in components — use useDbSession / useDbQuery (see Getting started)
+// React apps: skip waitForBooted in components — use useDbAuth / useDbQuery (see Getting started)
 ```
 
 Full setup (typed tables, indexes, `prepareCreate`): **[Getting started](./docs/GettingStarted.md)**.
 
-REST apps with login: `db.auth.onLogout(...)` after construction — **[Offline-first apps](./docs/Offline.md)** · **[Session](./docs/Session.md)**.
+REST apps with login: **[Offline-first apps](./docs/Offline.md)** (routing, shell phases) · **[Auth listeners](./docs/Auth.md)**.
 
 ## Documentation
 
+**[docs/README.md](./docs/README.md)** — index, learning paths, and full guide list.
 
-| Guide                                       | Description                                                |
-| ------------------------------------------- | ---------------------------------------------------------- |
-| [docs/README.md](./docs/README.md)          | Index and learning paths                                   |
-| [API reference](./docs/API.md)              | `DbSync`, `DbTable`, `db.auth` lookup                      |
-| [Getting started](./docs/GettingStarted.md) | Tables, listeners, lifecycle, adapters                     |
-| [Offline-first apps](./docs/Offline.md)     | Refresh boot, routing, logout, service workers             |
-| [Sync engine](./docs/Sync.md)               | Dirty queue, pull/push, leader tab                         |
-| [Session](./docs/Session.md)                | `db.auth` API reference                                    |
-| [Migrating](./docs/Migrating.md)            | Upgrade from pre-0.0.40 session APIs                       |
-| [Data access](./docs/DataAccess.md)         | CRUD, queries, streams, transactions                       |
-| [Data modeling](./docs/Modeling.md)         | 1:N relations, join tables, denormalization                |
-| [Schema evolution](./docs/Schema.md)        | Migrations and versioning                                  |
-| [React](./docs/React.md)                    | `useDbQuery`, `subscribe`, `useDbSession`                  |
-| [SSR & Next.js](./docs/SSR.md)              | Server-side rendering caveats                              |
-| [Testing](./docs/Testing.md)                | Mocking IndexedDB, component tests                         |
-| [Errors](./docs/Errors.md)                  | Typed auth and guard errors                                |
-| [Debugging](./docs/Debugging.md)            | Opt-in `onDebug` tracing                                   |
-| [Adapters](./docs/Adapters.md)              | `BackendAdapter` contract                                  |
-| [RestAdapter](./docs/RestAdapter.md)        | REST / [swift-crud](https://github.com/bdombro/swift-crud) |
-| [LocalAdapter](./docs/LocalAdapter.md)      | Local-only                                                 |
-
+| Start here | |
+| --- | --- |
+| [Getting started](./docs/GettingStarted.md) | Tables, listeners, module layout |
+| [Offline-first apps](./docs/Offline.md) | Phases, anti-patterns, recipes |
+| [API reference](./docs/API.md) | `db.auth`, `db.sync`, data APIs |
+| [React](./docs/React.md) | `useDbAuth`, `useDbQuery` |
 
 ## When this is (and isn't) the right tool
 

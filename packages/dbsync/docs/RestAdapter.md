@@ -1,6 +1,6 @@
 # RestAdapter
 
-[Documentation index](./README.md) · [Sync engine](./Sync.md) · [Session](./Session.md)
+[Documentation index](./README.md) · [Sync engine](./Sync.md) · [Auth listeners](./Auth.md)
 
 The `RestAdapter` is the default backend adapter shipped with `@slimr/dbsync`.
 

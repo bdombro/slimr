@@ -2,14 +2,28 @@ import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, test, vi } from "vitest"
 import { createUseDbQuery, useDbQuery } from "./useDbQuery.js"
 
-const mockDb = (overrides: Record<string, unknown> = {}) => ({
-	config: { adapter: { requiresAuth: false } },
-	auth: { isLoggedIn: true },
-	isReady: true,
-	emitDebug: vi.fn(),
-	subscribe: () => ({ close: vi.fn() }),
-	...overrides,
-})
+const mockDb = (overrides: Record<string, unknown> = {}) => {
+	const auth = {
+		phase: "ready" as const,
+		isLoggedIn: true,
+		isReady: true,
+		isBooted: true,
+		isBootstrapping: false,
+		pendingLogout: false,
+		offline: false,
+		online: true,
+		syncState: "idle" as const,
+		onChange: () => ({ close: vi.fn() }),
+		...(overrides.auth as object | undefined),
+	}
+	return {
+		config: { adapter: { requiresAuth: false } },
+		emitDebug: vi.fn(),
+		subscribe: () => ({ close: vi.fn() }),
+		auth,
+		...overrides,
+	}
+}
 
 /** Renders a component that consumes useDbQuery so the suite can verify subscription-driven re-fetches without depending on browser storage timing. */
 describe("useDbQuery", () => {

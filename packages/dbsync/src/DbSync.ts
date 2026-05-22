@@ -12,19 +12,15 @@ export type {
 
 import { DbRepository } from "./DbRepository.js"
 import { DbSyncAuth } from "./DbSyncAuth.js"
+import { DbSyncSync } from "./DbSyncSync.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
-import { readHasSyncedSuccessfully } from "./internal/authStorage.js"
 import { ConnectivityTracker } from "./internal/ConnectivityTracker.js"
-import {
-	EventBus,
-	type RowChange,
-	type SubscribeCallback,
-	type SyncState,
-} from "./internal/EventBus.js"
+import { EventBus, type RowChange, type SubscribeCallback } from "./internal/EventBus.js"
 import { type Migration, MigrationManager } from "./internal/MigrationManager.js"
 import type { FindOptions } from "./internal/queryTypes.js"
+import { SessionManager } from "./internal/SessionManager.js"
 import { SyncEngine } from "./internal/SyncEngine.js"
 import { applyDefaults, StorageManager } from "./internal/storage/index.js"
 import { resolveLifecyclePolicy } from "./lifecycle.js"
@@ -47,8 +43,10 @@ export class DbSync {
 	public syncInterval = 5000
 	/** The active configuration passed by the consumer. */
 	public config: DbSyncConfig
-	/** Authentication actions (session state is on the root `db` instance). */
+	/** Authentication actions and session read accessors (`phase`, `isLoggedIn`, `onChange`, …). */
 	public readonly auth: DbSyncAuth
+	/** Background sync controls and status. */
+	public readonly sync: DbSyncSync
 	/** Runtime-registered table instances for class-based schemas. */
 	private tableRegistry = new Map<string, DbTable<any, any>>()
 
@@ -96,13 +94,11 @@ export class DbSync {
 			this.events,
 			this.connectivity,
 			() => {
-				void this.stop()
+				this.sync.stop()
 			},
 			config.onDebug,
-			() => this.isReady,
+			() => this.storage.initted,
 		)
-		this.auth = new DbSyncAuth(this.authManager)
-
 		this.syncEngine = new SyncEngine(
 			config,
 			() => this.syncInterval,
@@ -115,9 +111,28 @@ export class DbSync {
 			() => this.getSchemaTables(),
 		)
 
+		this.sync = new DbSyncSync(
+			{
+				assertAuthenticated: () => this.authManager.assertAuthenticated(),
+				ensureReady: () => this.ensureStorageReady(),
+			},
+			this.syncEngine,
+			this.events,
+			this.authManager,
+		)
+
+		const sessionManager = new SessionManager(
+			this.authManager,
+			() => this.storage.initted,
+			this.connectivity,
+			this.syncEngine,
+			this.events,
+		)
+		this.auth = new DbSyncAuth(this.authManager, sessionManager)
+
 		if (policy.autoStart) {
 			this.authManager.onSessionStart(async () => {
-				await this.start()
+				await this.sync.start()
 			})
 		}
 
@@ -191,14 +206,10 @@ export class DbSync {
 		return createUid()
 	}
 
-	/** Whether IndexedDB is open (not the same as `boot()` finished or `waitForLive()`). */
-	public get isReady() {
-		return this.storage.initted
-	}
-
-	/** Opens IndexedDB and runs schema migrations. */
-	private async openStorage() {
+	/** Opens IndexedDB and runs schema migrations (requires authenticated session when `requiresAuth`). */
+	private async ensureStorageReady() {
 		this.authManager.assertAuthenticated()
+		if (this.storage.initted) return
 		await this.storage.init()
 
 		const schemaMigrations: Record<string, Migration[]> = {}
@@ -336,27 +347,9 @@ export class DbSync {
 	public subscribe(callback: SubscribeCallback) {
 		return this.events.subscribe(callback)
 	}
-	/** Subscribes to sync state changes. */
-	public onSyncStateChange(callback: (state: SyncState) => void) {
-		return this.events.onSyncStateChange(callback)
-	}
-
-	/** Whether the browser reports offline connectivity. */
-	public get offline() {
-		return this.connectivity.offline
-	}
-	/** Whether the browser reports online connectivity. */
-	public get online() {
-		return this.connectivity.online
-	}
-
-	/** Whether local startup has finished (not backend sync — see `waitForLive()`). */
-	public get isBooted() {
-		return this.authManager.isBooted
-	}
 
 	/**
-	 * Waits until the boot pipeline completes (session replay and internal `start()` when logged in).
+	 * Waits until the boot pipeline completes (session replay and internal `sync.start()` when logged in).
 	 * Idempotent — shares the run scheduled on a microtask when lifecycle is automatic.
 	 * Does not run `auth.onAuthenticated` on refresh. Does not wait for backend sync.
 	 */
@@ -384,42 +377,6 @@ export class DbSync {
 		})
 	}
 
-	/** Whether background sync is currently enabled. */
-	public get isStarted() {
-		return this.syncEngine.isStarted
-	}
-	/** Whether the sync engine has recently connected successfully. */
-	public get isLive() {
-		return this.syncEngine.isLive
-	}
-	/**
-	 * Logged in but no successful sync since login (or refresh before first success).
-	 * Always `false` when logged out; sync cursors (including success timestamp) clear on logout.
-	 */
-	public get isInitialSyncPending() {
-		if (!this.auth.isLoggedIn) return false
-		return !readHasSyncedSuccessfully()
-	}
-	/** Starts periodic background synchronization. */
-	public async start() {
-		this.authManager.assertAuthenticated()
-		if (!this.isReady) await this.openStorage()
-
-		this.syncEngine.start()
-	}
-	/** Stops periodic background synchronization. */
-	public async stop() {
-		this.syncEngine.stop()
-	}
-	/** Waits until the sync engine reports a live connection. */
-	public async waitForLive() {
-		return this.syncEngine.waitForLive()
-	}
-	/** Triggers a single sync cycle immediately. */
-	public async triggerSync() {
-		return this.syncEngine.triggerSync()
-	}
-
 	/** Emits a debug event when `config.onDebug` is set. */
 	public emitDebug(event: DbSyncDebugEvent) {
 		emitDebug(this.config.onDebug, event)
@@ -429,7 +386,7 @@ export class DbSync {
 	protected onSchemaChangeDetected() {
 		emitDebug(this.config.onDebug, { type: "schema:reload" })
 		this.storage.dispose()
-		this.stop()
+		this.sync.stop()
 		if (typeof window !== "undefined") {
 			window.location.reload()
 		}
@@ -437,8 +394,10 @@ export class DbSync {
 
 	/** Disposes all background resources and event listeners. */
 	public dispose() {
-		this.stop()
+		this.sync.stop()
 		this.events.dispose()
 		this.storage.dispose()
 	}
 }
+
+export type { RowChange, SubscribeCallback }

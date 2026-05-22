@@ -78,9 +78,34 @@ These records arrive in `push(payload)` formatted roughly like this:
 
 **Your custom backend adapter must save these records securely alongside the rest of your user data,** as they must be returned in future `pull()` queries so other clients remain fully in sync.
 
----
+## LocalAdapter
 
-### Included Adapters
+[Documentation index](./README.md) · [Getting started](./GettingStarted.md#developing-before-the-backend)
 
-- [LocalAdapter](./LocalAdapter.md) — `requiresAuth: false`; IndexedDB ORM without network sync.
+Use when the app is local-only, when sync is disabled per environment, or when you **swap adapters in one app** while the backend is not ready.
+
+### `requiresAuth: false`
+
+- **Data guards off** — data APIs work without `db.auth.isLoggedIn`.
+- **Session APIs on** — with `db.auth.onLogout` / `onAuthenticated`, behavior matches REST (stubbed network).
+- **`useDbQuery`** does not block on `!isLoggedIn`.
+
+```typescript
+import { LocalAdapter } from "@slimr/dbsync/adapters"
+
+const db = new DbSync({ adapter: new LocalAdapter(), tables: { posts: {} } })
+db.auth.onLogout(() => navigate("/login"))
+
+await db.auth.login("dev@local", "000") // optional; works offline
+
+await db.waitForBooted()
+await db.posts.add({ userId: "1", content: "Hello" })
+```
+
+Without session listeners, IndexedDB still opens automatically on construction. React apps can skip `waitForBooted()` in components — [React](./React.md).
+
+For production session-backed sync, use [RestAdapter](./RestAdapter.md) and [Offline-first apps](./Offline.md).
+
+## RestAdapter
+
 - [RestAdapter](./RestAdapter.md) — `requiresAuth: true` (default); pairs with `swift-crud`.

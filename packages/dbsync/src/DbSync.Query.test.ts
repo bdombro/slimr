@@ -34,7 +34,7 @@ describe("DbSync Query Features", () => {
 		db = new SearchDatabase({
 			adapter: new LocalAdapter(),
 		})
-		await db.start()
+		await db.sync.start()
 	})
 
 	afterEach(() => {

@@ -56,7 +56,7 @@ export function useDbQuery<T>(
 				return
 			}
 			// If storage is not open yet (boot/start still in flight), wait.
-			while (isMounted && !db.isReady) await sleep(50)
+			while (isMounted && !db.auth.isReady) await sleep(50)
 			if (!isMounted) return
 			try {
 				const result = await queryFn()
@@ -80,6 +80,8 @@ export function useDbQuery<T>(
 		// Initial fetch
 		fetchData()
 
+		const sessionSub = db.auth.onChange(() => fetchData())
+
 		// Subscribe to relevant tables
 		const sub = db.subscribe((updatedTables, changes) => {
 			const tableHit = updatedTables.some((s) => tableArray.includes(s))
@@ -98,10 +100,11 @@ export function useDbQuery<T>(
 
 		return () => {
 			isMounted = false
+			sessionSub.close()
 			sub.close()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [JSON.stringify(tableArray), shouldRefetchFilter, db.auth.isLoggedIn, ...deps])
+	}, [JSON.stringify(tableArray), shouldRefetchFilter, ...deps])
 
 	return state
 }

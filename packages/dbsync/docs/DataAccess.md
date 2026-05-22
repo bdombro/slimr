@@ -14,7 +14,7 @@ await db.waitForBooted()
 
 With `RestAdapter` (default `requiresAuth`), also ensure `db.auth.isLoggedIn` before reads/writes, or data APIs throw `DbSyncNotAuthenticatedError`.
 
-**React components** — usually omit `waitForBooted()`; `useDbQuery` waits for `db.isReady`. See [React](./React.md).
+**React components** — usually omit `waitForBooted()`; `useDbQuery` waits for `db.auth.isReady`. See [React](./React.md).
 
 ## CRUD on repositories
 

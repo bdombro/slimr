@@ -47,7 +47,7 @@ describe("DbSync auth integration", () => {
 		await db.waitForBooted()
 
 		expect(onAuthenticated).not.toHaveBeenCalled()
-		expect(db.isReady).toBe(true)
+		expect(db.auth.isReady).toBe(true)
 		db.dispose()
 	})
 
@@ -58,12 +58,12 @@ describe("DbSync auth integration", () => {
 			tables: { posts: {} },
 		})
 		wireAuth(db, { onAuthenticated })
-		await db.start()
+		await db.sync.start()
 		await db.put("posts", { id: "1", title: "before-login" })
 		await db.auth.login("dev@local", "000")
 		await vi.waitFor(() => expect(onAuthenticated).toHaveBeenCalled())
 		expect(db.auth.isLoggedIn).toBe(true)
-		expect(db.isReady).toBe(true)
+		expect(db.auth.isReady).toBe(true)
 
 		writeIsLoggedIn(true)
 		const onRefresh = vi.fn()
@@ -74,7 +74,7 @@ describe("DbSync auth integration", () => {
 		wireAuth(db2, { onAuthenticated: onRefresh })
 		await db2.waitForBooted()
 		expect(onRefresh).not.toHaveBeenCalled()
-		expect(db2.isReady).toBe(true)
+		expect(db2.auth.isReady).toBe(true)
 
 		db.dispose()
 		db2.dispose()

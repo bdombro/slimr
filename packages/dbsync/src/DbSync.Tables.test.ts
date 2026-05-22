@@ -46,7 +46,7 @@ describe("DbSync tables", () => {
 			adapter: new LocalAdapter(),
 			version: 1,
 		})
-		await db.start()
+		await db.sync.start()
 	})
 
 	afterEach(() => {

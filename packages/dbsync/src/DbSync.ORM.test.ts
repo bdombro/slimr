@@ -30,7 +30,7 @@ describe("DbSync ORM", () => {
 				users: { indexes: ["email"] },
 			},
 		})
-		await db.start()
+		await db.sync.start()
 	})
 
 	/** Confirms the preferred schema-class pattern exposes typed table properties and works at runtime. */
@@ -64,7 +64,7 @@ describe("DbSync ORM", () => {
 		})
 		db = typedDb
 
-		await typedDb.start()
+		await typedDb.sync.start()
 
 		expect(typedDb.todos).toBeInstanceOf(DbRepository)
 		expect(typedDb.users).toBeInstanceOf(DbRepository)
@@ -88,7 +88,7 @@ describe("DbSync ORM", () => {
 
 	/** Confirms initialization creates the configured tables plus the sync queues. */
 	test("initializes tables and sync queues", async () => {
-		expect(db.isReady).toBe(true)
+		expect(db.auth.isReady).toBe(true)
 		expect(await db.find("posts")).toEqual([])
 		expect(await db.find("users")).toEqual([])
 		expect(await db.find("dirtyQueue")).toEqual([])

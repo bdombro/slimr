@@ -89,30 +89,40 @@ export class AuthManager {
 	/** Subscribes to session/boot state changes (for React hooks). */
 	public onSessionChange(listener: SessionChangeListener) {
 		this.sessionListeners.add(listener)
-		return { close: () => this.sessionListeners.delete(listener) }
+		return {
+			close: () => {
+				this.sessionListeners.delete(listener)
+			},
+		}
 	}
 
 	/** Internal: open storage / start sync when a hydrated session is restored (boot only). */
 	public onSessionStart(callback: SessionListener) {
 		this.sessionStartCallbacks.add(callback)
-		return () => {
-			this.sessionStartCallbacks.delete(callback)
+		return {
+			close: () => {
+				this.sessionStartCallbacks.delete(callback)
+			},
 		}
 	}
 
 	/** App hook: runs on `login()` and cross-tab `AUTH_LOGIN` — not on refresh boot. */
 	public onAuthenticated(callback: SessionListener) {
 		this.authenticatedCallbacks.add(callback)
-		return () => {
-			this.authenticatedCallbacks.delete(callback)
+		return {
+			close: () => {
+				this.authenticatedCallbacks.delete(callback)
+			},
 		}
 	}
 
 	/** App hook: runs before IDB clear on logout / 401; awaited in parallel via `allSettled`. */
 	public onLogout(callback: SessionListener) {
 		this.logoutCallbacks.add(callback)
-		return () => {
-			this.logoutCallbacks.delete(callback)
+		return {
+			close: () => {
+				this.logoutCallbacks.delete(callback)
+			},
 		}
 	}
 
@@ -343,7 +353,7 @@ export class AuthManager {
 		}
 	}
 
-	/** Notifies `onSessionChange` subscribers (e.g. `useDbSession`, `isInitialSyncPending`). */
+	/** Notifies `onSessionChange` subscribers (e.g. `db.auth.onChange`). */
 	public notifySessionChange() {
 		this.sessionListeners.forEach((listener) => listener())
 	}

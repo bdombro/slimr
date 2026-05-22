@@ -37,19 +37,33 @@ export const db = new AppDb({
 Subscribe to existing hooks:
 
 ```typescript
-db.onSyncStateChange((state) => console.debug("[dbsync sync]", state))
-db.auth.onSessionChange(() =>
-  console.debug("[dbsync session]", {
+db.sync.onStateChange((state) => console.debug("[dbsync sync]", state))
+db.auth.onChange(() =>
+  console.debug("[dbsync auth]", {
+    phase: db.auth.phase,
     isLoggedIn: db.auth.isLoggedIn,
-    isBooted: db.isBooted,
-    isReady: db.isReady,
-    pendingLogout: db.auth.pendingLogout,
+    syncState: db.auth.syncState,
   }),
 )
 ```
+
+## E2E / Playwright
+
+The package ships browser fixtures under `playwright/fixtures/`. To stub sync without a real backend, use `db.sync.setPerformSyncHook` (test-only) so cycles complete deterministically:
+
+```typescript
+await page.evaluate(() => {
+  window.db.sync.setPerformSyncHook(async () => {
+    /* mark records synced, advance state, etc. */
+  })
+})
+```
+
+See [Testing](./Testing.md#playwright-e2e).
 
 ## See also
 
 - [API reference](./API.md) — `onDebug`, `emitDebug`
 - [Sync engine](./Sync.md)
-- [Session](./Session.md)
+- [Auth listeners](./Auth.md)
+- [Testing](./Testing.md)

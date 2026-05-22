@@ -29,18 +29,31 @@ if (typeof window !== "undefined") {
 
 ## 2. React Hooks in SSR
 
-The hooks provided by `@slimr/dbsync/react` (`useDbQuery`, `useDbSession`) are safe to render on the server, provided you handle the `null` db instance gracefully.
+The hooks provided by `@slimr/dbsync/react` (`useDbQuery`, `useDbAuth`) are safe to render on the server, provided you handle the `null` db instance gracefully.
 
 During the initial server render (and the first hydration pass on the client), IndexedDB is not yet open. Your components must return a fallback (like a skeleton).
 
 ```tsx
-import { createUseDbQuery, useDbSession as useDbSessionRaw } from "@slimr/dbsync/react"
+import { createUseDbQuery, useDbAuth as useDbAuthRaw } from "@slimr/dbsync/react"
+import type { DbAuthState } from "@slimr/dbsync/react"
 import { db } from "./db"
 
+const ssrAuthFallback: DbAuthState = {
+    phase: "booting",
+    isLoggedIn: false,
+    isBooted: false,
+    isReady: false,
+    isBootstrapping: false,
+    pendingLogout: false,
+    offline: false,
+    online: true,
+    syncState: "idle",
+}
+
 // Create safe wrappers that handle the null db during SSR
-export function useDbSession() {
-    if (!db) return { isLoggedIn: false, isReady: false, isBootstrapping: false }
-    return useDbSessionRaw(db)
+export function useDbAuth() {
+    if (!db) return ssrAuthFallback
+    return useDbAuthRaw(db)
 }
 
 export const useDbQuery = createUseDbQuery(db as any) // Type cast for SSR
@@ -50,7 +63,7 @@ In your React tree:
 
 ```tsx
 function AppShell() {
-    const { isReady, isLoggedIn } = useDbSession()
+    const { isReady, isLoggedIn } = useDbAuth()
 
     // During SSR, isReady is ALWAYS false. The server renders this skeleton.
     // On the client, it hydrates as the skeleton, then updates once IDB opens.
@@ -71,7 +84,7 @@ To avoid React hydration errors (e.g. "Text content did not match. Server: 'Logi
 ```tsx
 function Root() {
     const [mounted, setMounted] = useState(false)
-    const { isLoggedIn } = useDbSession()
+    const { isLoggedIn } = useDbAuth()
 
     useEffect(() => {
         setMounted(true)

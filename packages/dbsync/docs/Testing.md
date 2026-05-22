@@ -60,21 +60,41 @@ When testing UI components, mounting a full `DbSync` instance with an IndexedDB 
 
 ```tsx
 import { vi } from "vitest"
-import { useDbQuery, useDbSession } from "../src/dbHooks" // your bound hooks
+import { useDbQuery, useDbAuth } from "../src/dbHooks" // your bound hooks
 
 vi.mock("../src/dbHooks", () => ({
     useDbQuery: vi.fn(),
-    useDbSession: vi.fn(),
+    useDbAuth: vi.fn(),
 }))
 
 test("renders loading skeleton when not ready", () => {
-    vi.mocked(useDbSession).mockReturnValue({ isReady: false, isLoggedIn: true })
+    vi.mocked(useDbAuth).mockReturnValue({
+        phase: "booting",
+        isReady: false,
+        isLoggedIn: true,
+        isBooted: false,
+        isBootstrapping: true,
+        pendingLogout: false,
+        offline: false,
+        online: true,
+        syncState: "idle",
+    })
     const { getByTestId } = render(<AppShell />)
     expect(getByTestId("skeleton")).toBeInTheDocument()
 })
 
 test("renders posts", () => {
-    vi.mocked(useDbSession).mockReturnValue({ isReady: true, isLoggedIn: true })
+    vi.mocked(useDbAuth).mockReturnValue({
+        phase: "ready",
+        isReady: true,
+        isLoggedIn: true,
+        isBooted: true,
+        isBootstrapping: false,
+        pendingLogout: false,
+        offline: false,
+        online: true,
+        syncState: "idle",
+    })
     vi.mocked(useDbQuery).mockReturnValue({
         loading: false,
         value: [{ id: "1", content: "Mocked post" }]
@@ -85,7 +105,26 @@ test("renders posts", () => {
 })
 ```
 
+## Playwright (E2E)
+
+The repo includes browser fixtures under `packages/dbsync/playwright/fixtures/` (e.g. `auth-app.ts`) wired for Vitest Playwright or your own E2E runner.
+
+**Stub sync** — avoid real network in auth/sync UI tests:
+
+```typescript
+await page.evaluate(() => {
+  window.db.sync.setPerformSyncHook(async () => {
+    // run minimal logic so sync cycle completes
+  })
+})
+```
+
+Clear the hook when done: `setPerformSyncHook(null)`. See [Debugging](./Debugging.md#e2e--playwright).
+
+**Assert session state** — `page.evaluate(() => window.getState())` returns `phase`, `isLoggedIn`, `syncState`, and listener counts from the auth fixture.
+
 ## See also
 
-- [LocalAdapter](./LocalAdapter.md)
+- [Adapters — LocalAdapter](./Adapters.md#localadapter)
 - [React](./React.md)
+- [Debugging](./Debugging.md)

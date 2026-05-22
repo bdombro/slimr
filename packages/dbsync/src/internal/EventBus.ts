@@ -19,6 +19,8 @@ export class EventBus {
 	private subscribers = new Set<SubscribeCallback>()
 	/** Subscribers that listen for sync state transitions. */
 	private stateListeners = new Set<(state: SyncState) => void>()
+	/** Last sync state broadcast (defaults to `idle`). */
+	private syncStateValue: SyncState = "idle"
 	/** Broadcast channel used to mirror updates across tabs. */
 	private bc =
 		typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("dbsync_events") : null
@@ -70,6 +72,11 @@ export class EventBus {
 		}
 	}
 
+	/** Current sync state. */
+	public get syncState() {
+		return this.syncStateValue
+	}
+
 	/** Adds a sync-state subscriber and returns a handle for removing it. */
 	public onSyncStateChange(callback: (state: SyncState) => void) {
 		this.stateListeners.add(callback)
@@ -78,6 +85,7 @@ export class EventBus {
 
 	/** Broadcasts a sync-state transition to all subscribers. */
 	public setState(state: SyncState) {
+		this.syncStateValue = state
 		this.stateListeners.forEach((cb) => cb(state))
 	}
 
