@@ -17,6 +17,7 @@ export type DbSyncDebugEvent =
 	  }
 	| { type: "sync:state"; state: DbSyncDebugSyncState }
 	| { type: "sync:pull"; skipped: "pending-local"; table: string; id: string }
+	| { type: "sync:pull"; stuck: true; cursor: string }
 	| { type: "sync:error"; error: unknown }
 	| { type: "auth:invalidate"; reason: "401" | "revalidate" }
 	| { type: "schema:reload" }

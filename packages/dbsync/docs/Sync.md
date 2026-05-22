@@ -55,7 +55,7 @@ Your adapter receives and returns records in the REST envelope (see [RestAdapter
 - `variant` — table name, or `__dbsync_system` for schema version records.
 - `content` — JSON string of the row body.
 - `isDeleted` — tombstone flag.
-- `updatedAt` — ISO timestamp used as the pull cursor.
+- `updatedAt` — Unix epoch milliseconds (number) used as the pull cursor.
 
 ## Cross-tab data coherence
 

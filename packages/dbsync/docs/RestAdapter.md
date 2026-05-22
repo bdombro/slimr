@@ -25,7 +25,7 @@ If you are building your own backend instead of using `swift-crud`, your server 
 Used to fetch remote changes and sync them to the local IndexedDB.
 
 **Query Parameters:**
-- `after`: A cursor (an ISO 8601 timestamp string) representing the `updatedAt` of the last synced record on the client.
+- `after`: Pull cursor — **Unix epoch milliseconds** (string of ms, e.g. `1715904000000`) from the previous page’s last item `updatedAt`.
 - `limit`: The maximum number of records to return per page.
 
 **Response Shape:**
@@ -37,7 +37,7 @@ Used to fetch remote changes and sync them to the local IndexedDB.
       "variant": "tableName",
       "content": "{\"field\": \"value\"}",
       "isDeleted": false,
-      "updatedAt": "2026-05-17T12:00:00.000Z"
+      "updatedAt": 1715904000000
     }
   ],
   "hasMore": false

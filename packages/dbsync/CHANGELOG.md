@@ -6,6 +6,16 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.52
+
+## 0.0.51
+
+### Changed
+
+- Sync pull/push post envelope `updatedAt` uses **Unix epoch milliseconds** (numbers), not ISO-8601 strings.
+- Pull cursor (`dbsync-pullSyncedUpTo`) stores ms; legacy ISO cursors are converted on read.
+- Stops pull pagination when the cursor would not advance (guards against stuck `hasMore` loops).
+
 ## 0.0.50
 
 ### Fixed

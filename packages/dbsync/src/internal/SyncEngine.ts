@@ -8,6 +8,7 @@ import { emitDebug } from "./debug.js"
 import type { EventBus, SyncState } from "./EventBus.js"
 import type { StorageManager } from "./storage/index.js"
 import { getSchemaSignature } from "./storage/index.js"
+import { normalizePullCursor, pullCursorFromUpdatedAt } from "./syncCursor.js"
 
 type SchemaTable = {
 	tableName: string
@@ -180,7 +181,7 @@ export class SyncEngine {
 		const pendingLocal = await this.getPendingLocalKeys()
 
 		while (hasMore) {
-			const cursor = localStorage.getItem("dbsync-pullSyncedUpTo") || ""
+			const cursor = normalizePullCursor(localStorage.getItem("dbsync-pullSyncedUpTo") || "")
 			const data = await this.adapter.pull(cursor)
 
 			if (data.items && data.items.length > 0) {
@@ -238,9 +239,17 @@ export class SyncEngine {
 					await this.storage.executeTransaction(operations)
 					totalPulled += operations.length
 				}
-				localStorage.setItem("dbsync-pullSyncedUpTo", data.items[data.items.length - 1].updatedAt)
+				const nextCursor = pullCursorFromUpdatedAt(data.items[data.items.length - 1].updatedAt)
+				if (data.hasMore && nextCursor === cursor) {
+					emitDebug(this.config.onDebug, { type: "sync:pull", stuck: true, cursor })
+					hasMore = false
+				} else {
+					localStorage.setItem("dbsync-pullSyncedUpTo", nextCursor)
+					hasMore = data.hasMore
+				}
+			} else {
+				hasMore = data.hasMore
 			}
-			hasMore = data.hasMore
 		}
 		return totalPulled
 	}
@@ -256,14 +265,14 @@ export class SyncEngine {
 				variant: d.table,
 				content: JSON.stringify(d.payload),
 				isDeleted: false,
-				updatedAt: new Date(d.timestamp).toISOString(),
+				updatedAt: d.timestamp,
 			})),
 			...deleted.map((d) => ({
 				id: d.id,
 				variant: d.table,
 				content: "{}",
 				isDeleted: true,
-				updatedAt: new Date(d.timestamp).toISOString(),
+				updatedAt: d.timestamp,
 			})),
 		]
 
@@ -275,7 +284,7 @@ export class SyncEngine {
 					variant: "__dbsync_system",
 					content: JSON.stringify({ version: this.config.version }),
 					isDeleted: false,
-					updatedAt: new Date().toISOString(),
+					updatedAt: Date.now(),
 				})
 			}
 		} else {
@@ -287,7 +296,7 @@ export class SyncEngine {
 					variant: "__dbsync_system",
 					content: JSON.stringify({ signature: currentSignature }),
 					isDeleted: false,
-					updatedAt: new Date().toISOString(),
+					updatedAt: Date.now(),
 				})
 			}
 		}

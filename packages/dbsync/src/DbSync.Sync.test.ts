@@ -129,7 +129,7 @@ describe("DbSync sync engine", () => {
 							id: "remote-1",
 							variant: "posts",
 							content: JSON.stringify({ content: "from remote", userId: "u1" }),
-							updatedAt: "2026-05-17T00:00:00.000Z",
+							updatedAt: Date.parse("2026-05-17T00:00:00.000Z"),
 							isDeleted: false,
 						},
 					],
@@ -148,7 +148,9 @@ describe("DbSync sync engine", () => {
 		})
 		expect(await db.find("dirtyQueue")).toEqual([])
 		expect(await db.find("deletedQueue")).toEqual([])
-		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBe("2026-05-17T00:00:00.000Z")
+		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBe(
+			String(Date.parse("2026-05-17T00:00:00.000Z")),
+		)
 	})
 
 	/** Confirms pull does not overwrite a row that still has a pending local mutation. */
@@ -164,7 +166,7 @@ describe("DbSync sync engine", () => {
 								id: "local-3",
 								variant: "posts",
 								content: JSON.stringify({ content: "from server echo", userId: "u1" }),
-								updatedAt: "2026-05-19T00:00:00.000Z",
+								updatedAt: 1_715_769_600_000,
 								isDeleted: false,
 							},
 						],
@@ -195,7 +197,7 @@ describe("DbSync sync engine", () => {
 								id: "remote-2",
 								variant: "posts",
 								content: JSON.stringify({ content: "only pull", userId: "u1" }),
-								updatedAt: "2026-05-18T00:00:00.000Z",
+								updatedAt: 1_715_856_000_000,
 								isDeleted: false,
 							},
 						],
@@ -313,7 +315,7 @@ describe("DbSync sync engine", () => {
 		const freshDb = await createDb(fetchMock)
 		await freshDb.put("posts", { id: "wipe-me", content: "before logout", userId: "u1" })
 		localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
-		localStorage.setItem("dbsync-pullSyncedUpTo", "2026-05-17T00:00:00.000Z")
+		localStorage.setItem("dbsync-pullSyncedUpTo", String(Date.parse("2026-05-17T00:00:00.000Z")))
 		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 
 		await freshDb.auth.logout()
