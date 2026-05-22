@@ -81,7 +81,7 @@ test("renders loading skeleton when not ready", () => {
 test("renders posts", () => {
     vi.mocked(useObservable).mockImplementation((source) => {
         if (source.name?.endsWith("-phase")) return "ready"
-        if (source.name?.endsWith("-initialSyncPending")) return false
+        if (source.name?.endsWith("-isInitialSyncPending")) return false
         return false
     })
     vi.mocked(useDbQuery).mockReturnValue({

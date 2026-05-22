@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.48
+
+### Changed
+
+- Renamed `db.auth.initialSyncPending$` → `isInitialSyncPending$` (matches `isInitialSyncPending` and other `is*` observables).
+
 ## 0.0.47
 
 ### Changed

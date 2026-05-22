@@ -41,7 +41,7 @@ await db.sync.trigger()
 | `db.sync.isStarted` | Sync timer running. |
 | `db.sync.isLive` | Last successful sync within ~4× `syncInterval`. |
 | `db.auth.phase` / `phase$` | Shell phases: `logged-out` → `booting` → `initial-sync` → `ready` — primary React routing signal. |
-| `db.auth.isInitialSyncPending` / `initialSyncPending$` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional one loader for both. |
+| `db.auth.isInitialSyncPending` / `isInitialSyncPending$` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional one loader for both. |
 | `db.sync.waitForInitial()` | Promise until first successful sync since login. |
 | `db.sync.waitForLive()` | Polls until `isLive` (rejects if sync never started). |
 | `db.sync.state$` / `state` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"`. |

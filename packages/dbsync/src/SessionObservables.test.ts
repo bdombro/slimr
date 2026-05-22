@@ -26,23 +26,23 @@ describe("session observables", () => {
 		vi.unstubAllGlobals()
 	})
 
-	test("initialSyncPending$ is true while booting when logged in", async () => {
+	test("isInitialSyncPending$ is true while booting when logged in", async () => {
 		writeIsLoggedIn(true)
 		const db = new DbSync({ adapter: new LocalAdapter(), tables: { posts: {} } })
 		await db.waitForBooted()
 		expect(db.auth.isLoggedIn).toBe(true)
-		expect(db.auth.initialSyncPending$.val).toBe(true)
+		expect(db.auth.isInitialSyncPending$.val).toBe(true)
 		expect(db.auth.isInitialSyncPending).toBe(true)
 		db.dispose()
 	})
 
-	test("initialSyncPending$ clears after first successful sync", async () => {
+	test("isInitialSyncPending$ clears after first successful sync", async () => {
 		writeIsLoggedIn(true)
 		const db = new DbSync({ adapter: new LocalAdapter(), tables: { posts: {} } })
 		await db.waitForBooted()
 		await db.sync.start()
 		await db.sync.trigger()
-		await vi.waitFor(() => expect(db.auth.initialSyncPending$.val).toBe(false))
+		await vi.waitFor(() => expect(db.auth.isInitialSyncPending$.val).toBe(false))
 		expect(db.auth.phase).toBe("ready")
 		db.dispose()
 	})

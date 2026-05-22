@@ -99,7 +99,7 @@ describe("DbSync sync engine", () => {
 	test("isInitialSyncPending until first successful sync then clears on logout", async () => {
 		expect(db.auth.isBooted).toBe(true)
 		expect(db.auth.isInitialSyncPending).toBe(true)
-		expect(db.auth.initialSyncPending$.val).toBe(true)
+		expect(db.auth.isInitialSyncPending$.val).toBe(true)
 		expect(db.auth.phase).toBe("initial-sync")
 		fetchMock.mockReset()
 		fetchMock

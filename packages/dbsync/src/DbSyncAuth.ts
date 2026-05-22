@@ -18,8 +18,8 @@ export class DbSyncAuth {
 		return this.observables.phase$
 	}
 
-	get initialSyncPending$() {
-		return this.observables.initialSyncPending$
+	get isInitialSyncPending$() {
+		return this.observables.isInitialSyncPending$
 	}
 
 	get canQuery$() {
@@ -89,7 +89,7 @@ export class DbSyncAuth {
 
 	/** Logged in with no successful sync since login (cleared on logout). */
 	get isInitialSyncPending() {
-		return this.initialSyncPending$.val
+		return this.isInitialSyncPending$.val
 	}
 
 	/** Whether IndexedDB queries may run (`isReady` and auth gate). */

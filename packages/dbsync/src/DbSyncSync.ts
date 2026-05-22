@@ -90,7 +90,7 @@ export class DbSyncSync {
 				reject(new Error("dbsync: session ended before initial sync completed"))
 			}
 		})
-		const pendingSub = this.authObs.initialSyncPending$.subscribe((pending: boolean) => {
+		const pendingSub = this.authObs.isInitialSyncPending$.subscribe((pending: boolean) => {
 			if (!pending) {
 				cleanup()
 				resolve()
@@ -100,7 +100,7 @@ export class DbSyncSync {
 			loginSub.close()
 			pendingSub()
 		}
-		if (!this.authObs.initialSyncPending$.val) {
+		if (!this.authObs.isInitialSyncPending$.val) {
 			cleanup()
 			resolve()
 		}

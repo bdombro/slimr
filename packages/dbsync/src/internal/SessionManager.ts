@@ -75,7 +75,7 @@ export class SessionManager {
 
 		await Promise.all([
 			this.authObs.phase$.set(snap.phase),
-			this.authObs.initialSyncPending$.set(initialSyncPending),
+			this.authObs.isInitialSyncPending$.set(initialSyncPending),
 			this.authObs.canQuery$.set(canQuery),
 			this.authObs.isLoggedIn$.set(flags.isLoggedIn),
 			this.authObs.isReady$.set(flags.isReady),

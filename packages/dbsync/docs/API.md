@@ -48,7 +48,7 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | Observable | Getter | Notes |
 | --- | --- | --- |
 | `phase$` | `phase` | `"logged-out"` \| `"booting"` \| `"initial-sync"` \| `"ready"` |
-| `initialSyncPending$` | `isInitialSyncPending` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional: one loader for both; primary shell uses `phase$` ([Integration guide](./Offline.md)) |
+| `isInitialSyncPending$` | `isInitialSyncPending` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional: one loader for both; primary shell uses `phase$` ([Integration guide](./Offline.md)) |
 | `canQuery$` | `canQuery` | `isReady` && auth gate — used by `useDbQuery` |
 | `isLoggedIn$` | `isLoggedIn` | Hydrated client session |
 | `isReady$` | `isReady` | IndexedDB open |

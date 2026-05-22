@@ -70,7 +70,7 @@ export function AppShell() {
 }
 ```
 
-Phase semantics, anti-patterns, and the optional **one-loader** pattern (`initialSyncPending$`): [Offline](./Offline.md).
+Phase semantics, anti-patterns, and the optional **one-loader** pattern (`isInitialSyncPending$`): [Offline](./Offline.md).
 
 SSR: [SSR & Next.js](./SSR.md).
 

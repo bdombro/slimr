@@ -23,7 +23,7 @@ How to build SPAs and PWAs where IndexedDB is the runtime database and the netwo
 
 **Router rule:** initial route = **`db.auth.isLoggedIn` at module load**.
 
-**Loading rule:** drive the React shell with **`db.auth.phase$.use()`** and handle all four phases. Use skeletons / `useDbQuery` `loading` for per-query loading when `phase === "ready"`. Use **`initialSyncPending$`** only when you want one loader for the whole logged-in, not-yet-synced window ([alternative](#alternative-one-loader-until-first-sync)).
+**Loading rule:** drive the React shell with **`db.auth.phase$.use()`** and handle all four phases. Use skeletons / `useDbQuery` `loading` for per-query loading when `phase === "ready"`. Use **`isInitialSyncPending$`** only when you want one loader for the whole logged-in, not-yet-synced window ([alternative](#alternative-one-loader-until-first-sync)).
 
 **Data rule (imperative code):** `await db.waitForBooted()` before the first `db.posts.*` / `db.put` in scripts, tests, or event handlers. React components usually skip it — `useDbQuery` waits for `db.auth.isReady`.
 
@@ -44,7 +44,7 @@ stateDiagram-v2
     initial_sync --> logged_out: logout
 ```
 
-`initialSyncPending$` is true for both **`booting`** and **`initial-sync`** while logged in (until the first successful sync).
+`isInitialSyncPending$` is true for both **`booting`** and **`initial-sync`** while logged in (until the first successful sync).
 
 ## Session & shell reference
 
@@ -52,7 +52,7 @@ stateDiagram-v2
 | --- | --- | --- |
 | `phase` / `phase$` | `logged-out` → `booting` → `initial-sync` → `ready` | `AppShell` switch — [React](./React.md#app-shell) |
 | `isLoggedIn` | Hydrated client session | Router guard at module load |
-| `isInitialSyncPending` / `initialSyncPending$` | Logged in, no successful sync since login | Optional one loader for boot + sync ([alternative](#alternative-one-loader-until-first-sync)) |
+| `isInitialSyncPending` / `isInitialSyncPending$` | Logged in, no successful sync since login | Optional one loader for boot + sync ([alternative](#alternative-one-loader-until-first-sync)) |
 | `isBooted` | Boot pipeline finished | — |
 | `isReady` | IndexedDB open | `useDbQuery` gate |
 | `isBootstrapping` | Session-start or `onAuthenticated` callbacks in flight | Spinner on boot skeleton |
@@ -69,9 +69,9 @@ Full getter tables: [API reference](./API.md#dbauth-dbsyncauth).
 | Don't | Do instead |
 | --- | --- |
 | Route refresh boot on `onAuthenticated` | `db.auth.isLoggedIn` at module load; optional `onAuthenticated` only after `login()` |
-| Full-page loader from `!db.sync.isLive` or `waitForLive()` | `phase$.use()` with `initial-sync` case, or `initialSyncPending$` for one combined loader |
+| Full-page loader from `!db.sync.isLive` or `waitForLive()` | `phase$.use()` with `initial-sync` case, or `isInitialSyncPending$` for one combined loader |
 | `switch (phase)` missing `initial-sync` | Handle all four phases; `default: null` hides the sync screen |
-| One loader for boot + sync but only `case "initial-sync"` | `initialSyncPending$.use()` or same loader for `booting` and `initial-sync` |
+| One loader for boot + sync but only `case "initial-sync"` | `isInitialSyncPending$.use()` or same loader for `booting` and `initial-sync` |
 | `await db.sync.waitForLive()` inside `onAuthenticated` | Show shell; let `useDbQuery` load per table |
 | `await db.waitForBooted()` at module top level in SPAs | `db.auth.*$.use()` + `useDbQuery` in components |
 | Register `onLogout` / `onAuthenticated` after the first `await` | Same module, immediately after `new` |
@@ -99,7 +99,7 @@ Implement **`AppShell`** (`phase$.use()`, four cases) and **`useDbQuery`** — [
 When boot and initial sync should show the **same** full-page loader:
 
 ```tsx
-const pending = db.auth.initialSyncPending$.use()
+const pending = db.auth.isInitialSyncPending$.use()
 if (pending) {
   return <InitialSyncScreen offline={db.auth.offline} syncState={db.sync.state} />
 }
