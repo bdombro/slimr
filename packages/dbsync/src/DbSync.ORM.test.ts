@@ -303,7 +303,7 @@ describe("DbSync ORM", () => {
 		])
 	})
 
-	/** Confirms clear wipes only the requested table so reset-style flows can rebuild state. */
+	/** Confirms clear wipes only the requested table and enqueues tombstones for sync. */
 	test("clears a single table", async () => {
 		await db.put("posts", { id: "4", content: "keep me", userId: "u1" })
 		await db.put("users", { id: "u1", email: "user@example.com" })
@@ -312,6 +312,9 @@ describe("DbSync ORM", () => {
 
 		expect(await db.find("posts")).toEqual([])
 		expect(await db.find("users")).toHaveLength(1)
+		expect(await db.find("deletedQueue")).toEqual([
+			expect.objectContaining({ id: "4", table: "posts" }),
+		])
 	})
 
 	/** Confirms buffered transactions commit atomically and notify subscribers once. */

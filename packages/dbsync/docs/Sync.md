@@ -6,11 +6,11 @@ How `@slimr/dbsync` moves data between IndexedDB and your backend after the app 
 
 ## Write path
 
-1. App code calls `db.posts.add` / `put` / `patch` / `delete` (or lower-level `db.put`, etc.).
+1. App code calls `db.posts.add` / `put` / `patch` / `delete` / `clear` (or lower-level `db.put`, etc.).
 2. The write lands in IndexedDB immediately — the UI never waits on the network.
 3. Each mutation is recorded in internal stores:
    - **`dirtyQueue`** — inserts and updates (payload + table + timestamp).
-   - **`deletedQueue`** — tombstones for deletes.
+   - **`deletedQueue`** — tombstones for deletes (including every row removed by `clear` on that table).
 
 On the next successful sync cycle, queued rows are pushed, then removed from those stores.
 

@@ -68,6 +68,21 @@ class RowChangeAccumulator {
 	}
 }
 
+/** Loads primary keys for every record in a store (used before clear enqueues tombstones). */
+const loadStoreRecordIds = (db: IDBDatabase, storeName: string): Promise<string[]> => {
+	const { promise, resolve, reject } = promiseWithResolvers<string[]>()
+	const preTx = db.transaction([storeName], "readonly")
+	const getAllReq = preTx.objectStore(storeName).getAll()
+	getAllReq.onsuccess = () => {
+		const ids = (getAllReq.result ?? [])
+			.map((record) => record?.id)
+			.filter((id): id is string => typeof id === "string" && id.length > 0)
+		resolve(ids)
+	}
+	getAllReq.onerror = () => reject(getAllReq.error)
+	return promise
+}
+
 /** Maps a write operation type to a row change kind. */
 const toRowChangeKind = (type: string): "insert" | "update" | "delete" | "clear" | undefined => {
 	switch (type) {
@@ -129,6 +144,19 @@ export class WriteEngine {
 			await Promise.all(fetchPromises)
 		}
 
+		const clearOperations = operations.filter(
+			(op) => op.type === "clear" && !op.skipQueue && !INTERNAL_STORES.has(op.storeName),
+		)
+		const clearPrefetchedIds: Record<string, string[]> = {}
+		if (clearOperations.length > 0) {
+			const clearStoreNames = Array.from(new Set(clearOperations.map((op) => op.storeName)))
+			await Promise.all(
+				clearStoreNames.map(async (storeName) => {
+					clearPrefetchedIds[storeName] = await loadStoreRecordIds(db, storeName)
+				}),
+			)
+		}
+
 		// Now execute the actual write bundle synchronously.
 		const { promise, resolve, reject } = promiseWithResolvers<ExecutedWrite[]>()
 		const tx = db.transaction(storeNames, "readwrite")
@@ -138,6 +166,8 @@ export class WriteEngine {
 			resolve(executedWrites)
 		}
 		tx.onerror = () => reject(tx.error)
+
+		const batchIdsByStore = new Map<string, Set<string>>()
 
 		operations.forEach((op) => {
 			const store = tx.objectStore(op.storeName)
@@ -178,6 +208,14 @@ export class WriteEngine {
 						payload: payloadToWrite,
 						timestamp: Date.now(),
 					})
+					if (recordId) {
+						let batchIds = batchIdsByStore.get(op.storeName)
+						if (!batchIds) {
+							batchIds = new Set()
+							batchIdsByStore.set(op.storeName, batchIds)
+						}
+						batchIds.add(recordId)
+					}
 				}
 			} else if (op.type === "delete") {
 				if (!recordId) {
@@ -198,8 +236,27 @@ export class WriteEngine {
 						timestamp: Date.now(),
 					})
 					tx.objectStore("dirtyQueue").delete(recordId)
+					batchIdsByStore.get(op.storeName)?.delete(recordId)
 				}
 			} else if (op.type === "clear") {
+				if (!op.skipQueue && op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
+					const idsToDelete = new Set([
+						...(clearPrefetchedIds[op.storeName] ?? []),
+						...(batchIdsByStore.get(op.storeName) ?? []),
+					])
+					const deletedStore = tx.objectStore("deletedQueue")
+					const dirtyStore = tx.objectStore("dirtyQueue")
+					const timestamp = Date.now()
+					for (const id of idsToDelete) {
+						deletedStore.put({
+							id,
+							table: op.storeName,
+							timestamp,
+						})
+						dirtyStore.delete(id)
+					}
+					batchIdsByStore.delete(op.storeName)
+				}
 				store.clear()
 				if (changeKind === "clear") {
 					rowChanges.add({ table: op.storeName, change: "clear" })

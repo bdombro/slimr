@@ -252,6 +252,36 @@ describe("DbSync sync engine", () => {
 		expect(await db.find("dirtyQueue")).toHaveLength(0)
 	})
 
+	/** Confirms large dirty queues are pushed in multiple upsert-many batches. */
+	test("chunks large dirty queues into multiple upsert-many requests", async () => {
+		const tx = db.getTransaction()
+		for (let i = 0; i < 45; i++) {
+			tx.put("posts", { id: `bulk-${i}`, content: `post ${i}`, userId: "u1" })
+		}
+		await tx.commit()
+
+		fetchMock.mockReset()
+		fetchMock
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
+			)
+			.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+
+		await db.sync.trigger()
+
+		const pushCalls = fetchMock.mock.calls.filter((c) =>
+			String(c[0]).includes("/api/posts/upsert-many"),
+		)
+		expect(pushCalls.length).toBeGreaterThanOrEqual(2)
+		const pushedIds = pushCalls.flatMap((c) =>
+			(JSON.parse(c[1]?.body as string) as { id: string }[])
+				.filter((p) => p.id.startsWith("bulk-"))
+				.map((p) => p.id),
+		)
+		expect(new Set(pushedIds).size).toBe(45)
+		expect(await db.find("dirtyQueue")).toHaveLength(0)
+	})
+
 	/** Confirms delete tombstones are preserved for the backend and removed from the local dirty queue. */
 	test("pushes deleted records as tombstones", async () => {
 		await db.put("posts", { id: "local-2", content: "delete me", userId: "u1" })

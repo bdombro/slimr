@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.53
+
+### Fixed
+
+- `db.clear` / table `clear()` enqueue per-row tombstones on `deletedQueue` before wiping IndexedDB so other clients receive deletes on the next sync (logout `clearAllStores` remains local-only).
+
 ## 0.0.52
 
 ## 0.0.51

@@ -182,9 +182,52 @@ describe("WriteEngine", () => {
 			},
 			{ type: "clear", storeName: "posts" },
 		])
+		expect(await storage.find("posts")).toEqual([])
+		expect(await storage.find("deletedQueue")).toEqual([
+			expect.objectContaining({ id: "post-1", table: "posts" }),
+		])
 		expect(events.notifySubscribers).toHaveBeenCalledWith(
 			["posts", "dirtyQueue", "deletedQueue"],
 			[{ table: "posts", change: "clear" }],
 		)
+	})
+
+	test("clear enqueues tombstones for existing rows so sync can propagate deletes", async () => {
+		await engine.executeTransaction([
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "post-1", name: "alpha" },
+			},
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "post-2", name: "beta" },
+			},
+		])
+		await engine.executeTransaction([{ type: "clear", storeName: "posts" }])
+
+		expect(await storage.find("posts")).toEqual([])
+		expect(await storage.find("deletedQueue")).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ id: "post-1", table: "posts" }),
+				expect.objectContaining({ id: "post-2", table: "posts" }),
+			]),
+		)
+		expect(await storage.find("dirtyQueue")).toEqual([])
+	})
+
+	test("skipQueue clear does not enqueue deleted tombstones", async () => {
+		await engine.executeTransaction([
+			{
+				type: "add",
+				storeName: "posts",
+				value: { id: "post-1", name: "alpha" },
+			},
+		])
+		await engine.executeTransaction([{ type: "clear", storeName: "posts", skipQueue: true }])
+
+		expect(await storage.find("posts")).toEqual([])
+		expect(await storage.find("deletedQueue")).toEqual([])
 	})
 })

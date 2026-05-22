@@ -15,6 +15,9 @@ type SchemaTable = {
 	indexes?: string[]
 }
 
+/** Max rows per `upsert-many` request (matches default pull page size). */
+const SYNC_PUSH_BATCH_SIZE = 40
+
 /**
  * Coordinates periodic pull/push sync cycles against the configured backend.
  */
@@ -302,7 +305,10 @@ export class SyncEngine {
 		}
 
 		if (payload.length > 0) {
-			await this.adapter.push(payload)
+			for (let i = 0; i < payload.length; i += SYNC_PUSH_BATCH_SIZE) {
+				const batch = payload.slice(i, i + SYNC_PUSH_BATCH_SIZE)
+				await this.adapter.push(batch)
+			}
 
 			if (this.config.version !== undefined)
 				localStorage.setItem("dbsync-version", String(this.config.version))
