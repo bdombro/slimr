@@ -84,7 +84,7 @@ export class MigrationManager {
 			await MigrationManager.upgradeRecord(recordNext, migrations)
 
 			if (recordNext.storeVersion !== recordCurrent.storeVersion) {
-				tx.put(storeName, recordNext)
+				tx.put(storeName, recordNext, undefined, true)
 			}
 		}
 

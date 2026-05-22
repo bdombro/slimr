@@ -28,11 +28,14 @@ export type ExecutedWrite = {
 	key?: string
 }
 
-type WriteOperation = {
+/** A single queued write applied inside one IndexedDB transaction. */
+export type WriteOperation = {
 	type: string
 	storeName: string
 	value?: any
 	key?: string
+	/** When true, apply to user stores without enqueueing dirty/deleted queues (e.g. sync pull). */
+	skipQueue?: boolean
 }
 
 /** Accumulates deduplicated row changes for a single transaction. */
@@ -144,7 +147,9 @@ export class WriteEngine {
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
 				if (op.type === "put" || op.type === "add") {
-					payloadToWrite = applyDefaults(this.config.tables?.[op.storeName], payloadToWrite)
+					if (!op.skipQueue) {
+						payloadToWrite = applyDefaults(this.config.tables?.[op.storeName], payloadToWrite)
+					}
 					recordId = op.key ?? payloadToWrite?.id
 				} else if (op.type === "patch") {
 					const existingRecord = patchRecords[`${op.storeName}-${recordId}`]
@@ -166,7 +171,7 @@ export class WriteEngine {
 						id: recordId,
 					})
 				}
-				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
+				if (!op.skipQueue && op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
 					tx.objectStore("dirtyQueue").put({
 						id: recordId,
 						table: op.storeName,
@@ -186,7 +191,7 @@ export class WriteEngine {
 						id: recordId,
 					})
 				}
-				if (op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
+				if (!op.skipQueue && op.storeName !== "dirtyQueue" && op.storeName !== "deletedQueue") {
 					tx.objectStore("deletedQueue").put({
 						id: recordId,
 						table: op.storeName,

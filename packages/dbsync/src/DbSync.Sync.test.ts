@@ -146,7 +146,43 @@ describe("DbSync sync engine", () => {
 			content: "from remote",
 			userId: "u1",
 		})
+		expect(await db.find("dirtyQueue")).toEqual([])
+		expect(await db.find("deletedQueue")).toEqual([])
 		expect(localStorage.getItem("dbsync-pullSyncedUpTo")).toBe("2026-05-17T00:00:00.000Z")
+	})
+
+	/** Confirms pulled rows are not pushed back in the same sync cycle. */
+	test("pull does not enqueue pulled rows for push", async () => {
+		fetchMock.mockReset()
+		fetchMock
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						items: [
+							{
+								id: "remote-2",
+								variant: "posts",
+								content: JSON.stringify({ content: "only pull", userId: "u1" }),
+								updatedAt: "2026-05-18T00:00:00.000Z",
+								isDeleted: false,
+							},
+						],
+						hasMore: false,
+					}),
+					{ status: 200 },
+				),
+			)
+			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+
+		await db.sync.trigger()
+
+		expect(await db.find("dirtyQueue")).toEqual([])
+		const pushBody = fetchMock.mock.calls[1]?.[1]?.body as string
+		expect(pushBody).toBeDefined()
+		const payload = JSON.parse(pushBody)
+		expect(payload).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ id: "remote-2", variant: "posts" })]),
+		)
 	})
 
 	/** Confirms syncPush converts dirty records into the backend payload format and clears the dirty queue after a successful push. */

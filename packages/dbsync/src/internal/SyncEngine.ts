@@ -164,8 +164,15 @@ export class SyncEngine {
 
 			if (data.items && data.items.length > 0) {
 				totalPulled += data.items.length
-				const tx = this.storage.getTransaction()
-				data.items.forEach((post: any) => {
+				const operations: {
+					type: "put" | "delete"
+					storeName: string
+					value?: any
+					key?: string
+					skipQueue: true
+				}[] = []
+
+				for (const post of data.items) {
 					if (post.variant === "__dbsync_system" && post.id === "version") {
 						const remoteContent = JSON.parse(post.content)
 						if (this.config.version !== undefined) {
@@ -178,13 +185,29 @@ export class SyncEngine {
 								this.onSchemaChange()
 							}
 						}
-						return
+						continue
 					}
 					const storeName = post.variant
-					if (post.isDeleted) tx.delete(storeName, post.id)
-					else tx.put(storeName, { id: post.id, ...JSON.parse(post.content) })
-				})
-				await tx.commit()
+					if (post.isDeleted) {
+						operations.push({
+							type: "delete",
+							storeName,
+							key: post.id,
+							skipQueue: true,
+						})
+					} else {
+						operations.push({
+							type: "put",
+							storeName,
+							value: { id: post.id, ...JSON.parse(post.content) },
+							skipQueue: true,
+						})
+					}
+				}
+
+				if (operations.length > 0) {
+					await this.storage.executeTransaction(operations)
+				}
 				localStorage.setItem("dbsync-pullSyncedUpTo", data.items[data.items.length - 1].updatedAt)
 			}
 			hasMore = data.hasMore

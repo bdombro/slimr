@@ -15,6 +15,7 @@ export class DbTransaction {
 		storeName: string
 		value?: any
 		key?: string
+		skipQueue?: boolean
 	}[] = []
 
 	/**
@@ -44,8 +45,8 @@ export class DbTransaction {
 	 * @param value The object payload to write.
 	 * @param key An optional explicit primary key.
 	 */
-	put(storeName: string, value: any, key?: string) {
-		this.operations.push({ type: "put", storeName, value, key })
+	put(storeName: string, value: any, key?: string, skipQueue?: boolean) {
+		this.operations.push({ type: "put", storeName, value, key, skipQueue })
 	}
 
 	/**

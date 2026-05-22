@@ -154,6 +154,24 @@ describe("WriteEngine", () => {
 		)
 	})
 
+	test("skipQueue writes do not enqueue dirty or deleted queues", async () => {
+		await engine.executeTransaction([
+			{
+				type: "put",
+				storeName: "posts",
+				value: { id: "remote-1", name: "from server" },
+				skipQueue: true,
+			},
+		])
+
+		expect(await storage.get("posts", "remote-1")).toEqual({
+			id: "remote-1",
+			name: "from server",
+		})
+		expect(await storage.find("dirtyQueue")).toEqual([])
+		expect(await storage.find("deletedQueue")).toEqual([])
+	})
+
 	test("notifies clear changes and drops prior row ops in the same batch", async () => {
 		events.notifySubscribers.mockClear()
 		await engine.executeTransaction([

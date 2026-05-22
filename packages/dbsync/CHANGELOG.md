@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.49
+
+### Fixed
+
+- Sync pull no longer enqueues pulled rows on `dirtyQueue` / `deletedQueue` (avoids echoing server data on the next push in the same cycle).
+
 ## 0.0.48
 
 ### Changed

@@ -60,7 +60,9 @@ describe("MigrationManager", () => {
 		expect(db.find).toHaveBeenCalledWith("posts")
 		expect(put).toHaveBeenCalledWith(
 			"posts",
-			expect.objectContaining({ name: "new", storeVersion: 1 }),
+			expect.objectContaining({ id: "1", name: "new", storeVersion: 1 }),
+			undefined,
+			true,
 		)
 		expect(commit).toHaveBeenCalledTimes(1)
 	})
