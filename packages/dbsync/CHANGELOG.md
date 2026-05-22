@@ -6,6 +6,14 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+### Added
+
+- `db.isInitialSyncPending` and `useDbSession` → `isInitialSyncPending` — logged in with no successful sync since login (survives refresh until logout; distinct from `isLive`). Always `false` when logged out; sync cursors clear on every logout path.
+
+### Changed
+
+- `db.start()` runs an immediate sync cycle when the timer starts (login, refresh boot, cross-tab login) instead of waiting for the first interval tick.
+
 ## 0.0.42
 
 ### Breaking

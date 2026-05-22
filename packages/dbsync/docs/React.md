@@ -78,7 +78,10 @@ Session and boot state without polling:
 import { useDbSession } from "@slimr/dbsync/react"
 
 function AppShell() {
-  const { isLoggedIn, isBooted, isBootstrapping, isReady, offline, online } = useDbSession(db)
+  const { isLoggedIn, isBooted, isBootstrapping, isReady, isInitialSyncPending, offline, online } =
+    useDbSession(db)
+
+  if (isInitialSyncPending) return <LoadingPage />
 
   if (!isLoggedIn) return <Navigate to="/login" replace />
 

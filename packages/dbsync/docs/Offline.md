@@ -53,7 +53,9 @@ Passive tabs: `AUTH_LOGOUT` over `BroadcastChannel` — listeners only, no IDB w
 ## React shell
 
 ```tsx
-const { isLoggedIn, isBooted, isReady, isBootstrapping, offline } = useDbSession(db)
+const { isLoggedIn, isBooted, isReady, isBootstrapping, isInitialSyncPending, offline } =
+  useDbSession(db)
+// Full-page loader until first successful sync (survives refresh): isInitialSyncPending
 
 if (!isLoggedIn) return <Login />
 if (!isReady) return <AppSkeleton active={isBootstrapping} />

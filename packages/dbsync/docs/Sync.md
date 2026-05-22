@@ -16,7 +16,7 @@ On the next successful sync cycle, queued rows are pushed, then removed from tho
 
 ## Sync cycle
 
-When `db.start()` runs (automatically after boot when logged in, or manually), the engine starts a timer (`db.syncInterval`, default **5000 ms**). Each tick:
+When `db.start()` runs (automatically after boot when logged in, or manually), the engine starts a timer (`db.syncInterval`, default **5000 ms**) and runs **one sync cycle immediately** (same as `triggerSync()`). Each tick:
 
 1. **Skip** if offline, or `!auth.canSync()` (not logged in or `pendingLogout`).
 2. Acquire the **`dbsync-leader`** Web Lock (if `navigator.locks` exists) so only one tab syncs at a time.
@@ -64,10 +64,11 @@ Multiple open tabs would otherwise each run pull/push on the same interval. **We
 | `isReady` | IndexedDB open. |
 | `isStarted` | Sync timer running. |
 | `isLive` | Last successful sync within ~4× `syncInterval`. |
+| `isInitialSyncPending` | Logged in but no successful sync since login (persists across refresh until logout; use for a post-login loading screen — not the same as `!isLive`). |
 | `waitForLive()` | Polls until `isLive` (rejects if sync never started). |
 | `onSyncStateChange` | `"idle"` \| `"syncing"` \| `"offline"` \| `"error"`. |
 
-**App rule:** show the shell on `isLoggedIn` + `isReady`; use skeletons / `useDbQuery` `loading` for data. Do not block the shell on `waitForLive()` unless you explicitly need server-fresh data.
+**App rule:** show the shell on `isLoggedIn` + `isReady`; use skeletons / `useDbQuery` `loading` for data. For a full-page loader until the first pull after login (including refresh before that pull finishes), use `isInitialSyncPending` / `useDbSession` → `isInitialSyncPending`. Do not block the shell on `waitForLive()` unless you explicitly need server-fresh data.
 
 ## Conflict model
 

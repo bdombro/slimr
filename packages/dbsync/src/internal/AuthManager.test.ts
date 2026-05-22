@@ -5,7 +5,12 @@ import type { DbSyncDebugEvent, DbSyncDebugListener } from "../debugEvents.js"
 import { DbSyncOfflineError } from "../errors.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
 import { AuthManager } from "./AuthManager.js"
-import { writeIsLoggedIn, writePendingLogout } from "./authStorage.js"
+import {
+	SYNC_LAST_SUCCESS_AT_KEY,
+	writeIsLoggedIn,
+	writeLastSuccessAt,
+	writePendingLogout,
+} from "./authStorage.js"
 import { ConnectivityTracker } from "./ConnectivityTracker.js"
 import { EventBus } from "./EventBus.js"
 import { StorageManager } from "./storage/index.js"
@@ -278,6 +283,20 @@ describe("AuthManager", () => {
 		await vi.waitFor(() => expect(adapter.logout).toHaveBeenCalled())
 		expect(localStorage.getItem("dbsync-pendingLogout")).toBeNull()
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+	})
+
+	test("logout clears sync success cursor so initial sync is pending on next login", async () => {
+		const adapter = createAdapter()
+		await storage.init()
+		const manager = createAuthManager(adapter, storage, events, connectivity, () => {})
+		writeLastSuccessAt(new Date().toISOString())
+		writeIsLoggedIn(true)
+		await manager.login("a@b.com", "123")
+		expect(localStorage.getItem(SYNC_LAST_SUCCESS_AT_KEY)).toBeNull()
+		writeLastSuccessAt(new Date().toISOString())
+		await manager.logout()
+		expect(manager.isLoggedIn).toBe(false)
+		expect(localStorage.getItem(SYNC_LAST_SUCCESS_AT_KEY)).toBeNull()
 	})
 
 	test("invalidateSession clears login and fires onLogout", async () => {

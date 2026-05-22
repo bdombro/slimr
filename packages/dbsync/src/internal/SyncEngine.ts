@@ -2,6 +2,7 @@ import type { BackendAdapter } from "../adapters/types.js"
 import type { DbSyncConfig } from "../dbSyncConfig.js"
 import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
+import { readLastSuccessAt, writeLastSuccessAt } from "./authStorage.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
 import { emitDebug } from "./debug.js"
 import type { EventBus, SyncState } from "./EventBus.js"
@@ -39,6 +40,7 @@ export class SyncEngine {
 	public start() {
 		if (!this.syncSetInterval) {
 			this.syncSetInterval = setInterval(() => this.sync(), this.getSyncInterval())
+			void this.sync()
 		}
 	}
 
@@ -57,7 +59,7 @@ export class SyncEngine {
 
 	/** Whether the last successful sync is still considered fresh. */
 	public get isLive() {
-		const lastSuccess = localStorage.getItem("dbsync-lastSuccessAt")
+		const lastSuccess = readLastSuccessAt()
 		if (!lastSuccess) return false
 		return Date.now() - new Date(lastSuccess).getTime() < this.getSyncInterval() * 4
 	}
@@ -118,7 +120,8 @@ export class SyncEngine {
 			const pushCount = await this.syncPush()
 			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "push", pushCount })
 			this.setSyncState("idle")
-			localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
+			writeLastSuccessAt(new Date().toISOString())
+			this.auth.notifySessionChange()
 			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "done" })
 		} catch (err: any) {
 			emitDebug(this.config.onDebug, { type: "sync:error", error: err })

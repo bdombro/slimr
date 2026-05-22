@@ -16,7 +16,7 @@ const resetDatabase = async () => {
 }
 
 /** Creates a database with the minimum tables needed to exercise sync, auth, and logout behavior. */
-const createDb = async () => {
+const createDb = async (fetchMock: ReturnType<typeof vi.fn>) => {
 	writeIsLoggedIn(true)
 	const db = new DbSync({
 		adapter: new RestAdapter({ url: "http://localhost:3000" }),
@@ -28,8 +28,13 @@ const createDb = async () => {
 		lifecycle: { manual: true },
 	})
 	wireAuth(db)
+	fetchMock.mockResolvedValue(
+		new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
+	)
 	await db.start()
+	await db.triggerSync()
 	await db.stop()
+	fetchMock.mockReset()
 	return db
 }
 
@@ -53,7 +58,7 @@ describe("DbSync sync engine", () => {
 				},
 			},
 		})
-		db = await createDb()
+		db = await createDb(fetchMock)
 	})
 
 	/** Cleans up globals and local storage after each case so the suite remains deterministic. */
@@ -90,6 +95,24 @@ describe("DbSync sync engine", () => {
 		expect(fetchMock).not.toHaveBeenCalled()
 	})
 
+	test("isInitialSyncPending until first successful sync then clears on logout", async () => {
+		expect(db.isInitialSyncPending).toBe(true)
+		fetchMock.mockReset()
+		fetchMock
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
+			)
+			.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+		await db.triggerSync()
+		expect(db.isInitialSyncPending).toBe(false)
+		await db.auth.logout()
+		expect(db.isInitialSyncPending).toBe(false)
+		writeIsLoggedIn(true)
+		const relogged = await createDb(fetchMock)
+		expect(relogged.isInitialSyncPending).toBe(true)
+		relogged.dispose()
+	})
+
 	/** Confirms syncPull writes remote records locally and advances the cursor. */
 	test("pulls remote records into IndexedDB", async () => {
 		fetchMock.mockResolvedValueOnce(
@@ -123,6 +146,7 @@ describe("DbSync sync engine", () => {
 	/** Confirms syncPush converts dirty records into the backend payload format and clears the dirty queue after a successful push. */
 	test("pushes dirty records and clears queues on success", async () => {
 		await db.put("posts", { id: "local-1", content: "needs sync", userId: "u1" })
+		fetchMock.mockReset()
 		fetchMock
 			.mockResolvedValueOnce(
 				new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
@@ -156,6 +180,7 @@ describe("DbSync sync engine", () => {
 	test("pushes deleted records as tombstones", async () => {
 		await db.put("posts", { id: "local-2", content: "delete me", userId: "u1" })
 		await db.delete("posts", "local-2")
+		fetchMock.mockReset()
 		fetchMock
 			.mockResolvedValueOnce(
 				new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }),
@@ -199,7 +224,7 @@ describe("DbSync sync engine", () => {
 	})
 
 	test("sync skips pull/push while pendingLogout", async () => {
-		const freshDb = await createDb()
+		const freshDb = await createDb(fetchMock)
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		await freshDb.auth.logout()
 		fetchMock.mockClear()
@@ -211,7 +236,7 @@ describe("DbSync sync engine", () => {
 
 	/** Confirms logout clears every table and resets cursor state so the browser starts fresh. */
 	test("logout clears local tables and sync cursors", async () => {
-		const freshDb = await createDb()
+		const freshDb = await createDb(fetchMock)
 		await freshDb.put("posts", { id: "wipe-me", content: "before logout", userId: "u1" })
 		localStorage.setItem("dbsync-lastSuccessAt", new Date().toISOString())
 		localStorage.setItem("dbsync-pullSyncedUpTo", "2026-05-17T00:00:00.000Z")
@@ -224,7 +249,7 @@ describe("DbSync sync engine", () => {
 		await expect(freshDb.get("posts", "wipe-me")).rejects.toThrow("not logged in")
 
 		writeIsLoggedIn(true)
-		const afterLogout = await createDb()
+		const afterLogout = await createDb(fetchMock)
 		expect(await afterLogout.find("posts")).toEqual([])
 		expect(await afterLogout.find("dirtyQueue")).toEqual([])
 		afterLogout.dispose()

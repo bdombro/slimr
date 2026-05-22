@@ -15,6 +15,7 @@ import { DbSyncAuth } from "./DbSyncAuth.js"
 import type { DbTable } from "./DbTable.js"
 import { DbTxRepository } from "./DbTxRepository.js"
 import { AuthManager } from "./internal/AuthManager.js"
+import { readHasSyncedSuccessfully } from "./internal/authStorage.js"
 import { ConnectivityTracker } from "./internal/ConnectivityTracker.js"
 import {
 	EventBus,
@@ -390,6 +391,14 @@ export class DbSync {
 	/** Whether the sync engine has recently connected successfully. */
 	public get isLive() {
 		return this.syncEngine.isLive
+	}
+	/**
+	 * Logged in but no successful sync since login (or refresh before first success).
+	 * Always `false` when logged out; sync cursors (including success timestamp) clear on logout.
+	 */
+	public get isInitialSyncPending() {
+		if (!this.auth.isLoggedIn) return false
+		return !readHasSyncedSuccessfully()
 	}
 	/** Starts periodic background synchronization. */
 	public async start() {

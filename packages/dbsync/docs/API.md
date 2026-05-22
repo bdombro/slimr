@@ -63,6 +63,7 @@ Throws `DbSyncNotAuthenticatedError` when `requiresAuth` and `!db.auth.isLoggedI
 | --- | --- | --- |
 | `isStarted` | `boolean` | Background sync timer active |
 | `isLive` | `boolean` | Recent successful sync (~4× `syncInterval`) |
+| `isInitialSyncPending` | `boolean` | Logged in, no successful sync since login (refresh-safe; cleared on logout) |
 | `start()` | `Promise<void>` | Open IDB (if needed) + start timer |
 | `stop()` | `void` | Stop timer |
 | `waitForLive()` | `Promise<void>` | Poll until `isLive` (rejects if sync never started) |
@@ -155,7 +156,7 @@ Used by `find` / `stream` (on `db` or repository).
 | --- | --- |
 | `createUseDbQuery(db)` | Factory for app-bound `useDbQuery` |
 | `useDbQuery` | Generic hook (prefer factory) |
-| `useDbSession(db)` | `isLoggedIn`, `isBooted`, `isReady`, `isBootstrapping`, `offline`, `online` |
+| `useDbSession(db)` | `isLoggedIn`, `isBooted`, `isReady`, `isBootstrapping`, `isInitialSyncPending`, `offline`, `online` |
 
 See [React](./React.md), [SSR](./SSR.md).
 

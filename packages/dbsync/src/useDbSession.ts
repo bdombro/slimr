@@ -6,20 +6,25 @@ export type DbSessionState = {
 	isBooted: boolean
 	isBootstrapping: boolean
 	isReady: boolean
+	isInitialSyncPending: boolean
 	offline: boolean
 	online: boolean
 }
 
 /**
- * Subscribes to session, boot, and connectivity state without polling.
+ * Subscribes to session, boot, sync completion, and connectivity state without polling.
  */
 export function useDbSession(db: DbSync): DbSessionState {
 	const [, bump] = useState(0)
 
 	useEffect(() => {
-		const sub = db.auth.onSessionChange(() => bump((n) => n + 1))
+		const sessionSub = db.auth.onSessionChange(() => bump((n) => n + 1))
+		const syncSub = db.onSyncStateChange(() => bump((n) => n + 1))
+		const offLogout = db.auth.onLogout(() => bump((n) => n + 1))
 		return () => {
-			sub.close()
+			sessionSub.close()
+			syncSub.close()
+			offLogout()
 		}
 	}, [db])
 
@@ -28,6 +33,7 @@ export function useDbSession(db: DbSync): DbSessionState {
 		isBooted: db.isBooted,
 		isBootstrapping: db.auth.isBootstrapping,
 		isReady: db.isReady,
+		isInitialSyncPending: db.isInitialSyncPending,
 		offline: db.offline,
 		online: db.online,
 	}

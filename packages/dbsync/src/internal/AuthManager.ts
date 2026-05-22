@@ -188,6 +188,7 @@ export class AuthManager {
 		}
 		await this.adapter.login(email, code)
 		this.setLoggedIn(true)
+		clearSyncCursorKeys()
 		this.events.broadcastAuth("AUTH_LOGIN")
 		await this.fireSessionStart()
 		await this.fireAuthenticated()
@@ -214,6 +215,7 @@ export class AuthManager {
 	public async handlePassiveLogout() {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
+		clearSyncCursorKeys()
 		const results = await runListenersSettled(this.logoutCallbacks)
 		this.notifySessionChange()
 		throwListenerRejections(results)
@@ -241,6 +243,8 @@ export class AuthManager {
 			await this.storage.clearAllStores()
 			clearSyncCursorKeys()
 			emitDebug(this.onDebug, { type: "session:logout", phase: "cleared" })
+		} else {
+			clearSyncCursorKeys()
 		}
 
 		if (!options.remote) {
@@ -339,7 +343,8 @@ export class AuthManager {
 		}
 	}
 
-	private notifySessionChange() {
+	/** Notifies `onSessionChange` subscribers (e.g. `useDbSession`, `isInitialSyncPending`). */
+	public notifySessionChange() {
 		this.sessionListeners.forEach((listener) => listener())
 	}
 
