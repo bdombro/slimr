@@ -73,7 +73,7 @@ export function useDbQuery<T>(
 		fetchData()
 
 		const unsubCanQuery = db.auth.canQuery$.subscribe(() => fetchData())
-		type UpdatesSlice = Pick<DbUpdatesPayload, "tables" | "changes">
+		type UpdatesSlice = Pick<DbUpdatesPayload, "tables" | "changes" | "txId">
 		const unsubUpdates = db.updates$.subscribe(
 			({ tables, changes }: UpdatesSlice) => {
 				const tableHit = tables.some((s: string) => tableArray.includes(s))
@@ -89,7 +89,11 @@ export function useDbQuery<T>(
 
 				fetchData()
 			},
-			(p: DbUpdatesPayload): UpdatesSlice => ({ tables: p.tables, changes: p.changes }),
+			(p: DbUpdatesPayload): UpdatesSlice => ({
+				tables: p.tables,
+				changes: p.changes,
+				txId: p.txId,
+			}),
 		)
 
 		return () => {

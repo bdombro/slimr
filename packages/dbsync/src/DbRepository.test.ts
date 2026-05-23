@@ -118,8 +118,8 @@ describe("DbRepository", () => {
 		expect(callback).toHaveBeenCalledWith([{ change: "update", id: "post-1" }])
 	})
 
-	/** `select` skips duplicate publishes when only `txId` advances. */
-	test("subscribe ignores txId-only republish of the same table slice", async () => {
+	/** Each transaction notifies even when the row-change list is identical (e.g. two patches to the same id). */
+	test("subscribe notifies on each transaction with the same row changes", async () => {
 		const { updates$, emit } = mockUpdatesDb()
 		const db = { updates$ }
 		const repo = new DbRepository<any>(db as any, "posts")
@@ -131,6 +131,7 @@ describe("DbRepository", () => {
 		expect(callback).toHaveBeenCalledTimes(1)
 
 		emit(["posts"], changes)
-		expect(callback).toHaveBeenCalledTimes(1)
+		expect(callback).toHaveBeenCalledTimes(2)
+		expect(callback).toHaveBeenNthCalledWith(2, [{ change: "update", id: "post-1" }])
 	})
 })

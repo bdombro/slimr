@@ -151,7 +151,7 @@ unsub()
 
 `undefined` `changes` means the table changed but row detail was omitted (e.g. large cross-tab broadcast).
 
-Table `subscribe` uses `select` internally so republishes that only bump `txId` (same `tables` / `changes`) do not invoke your callback.
+Table `subscribe` includes `txId` in its internal `select` slice so each committed transaction invokes your callback, including consecutive updates to the same row id (the `RowChange` list alone cannot distinguish two writes from a duplicate notify).
 
 ## See also
 

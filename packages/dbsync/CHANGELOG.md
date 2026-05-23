@@ -6,13 +6,11 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
-## 0.0.53
+## 0.0.54
 
 ### Fixed
 
-- `db.clear` / table `clear()` enqueue per-row tombstones on `deletedQueue` before wiping IndexedDB so other clients receive deletes on the next sync (logout `clearAllStores` remains local-only).
-
-## 0.0.52
+- `db.<table>.subscribe` and `useDbQuery` include `txId` in their `updates$` select slice so consecutive writes that produce the same `RowChange` shape (e.g. two patches to one row) still notify subscribers. Previously the slice omitted `txId` and `@slimr/observable` deduped the second notification.
 
 ## 0.0.51
 

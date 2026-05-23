@@ -191,7 +191,7 @@ describe("useDbQuery", () => {
 		expect(queryFn).toHaveBeenCalledTimes(1)
 	})
 
-	test("does not refetch when updates$ republishes with a new txId but the same tables/changes", async () => {
+	test("refetches on each transaction even when tables/changes match a prior update", async () => {
 		const db = mockDb()
 		const queryFn = vi.fn(async () => [{ id: "1", content: "done" }])
 
@@ -204,13 +204,12 @@ describe("useDbQuery", () => {
 			db.emitUpdate(["posts"], changes)
 		})
 		expect(queryFn).toHaveBeenCalledTimes(2)
-		queryFn.mockClear()
 
 		await act(async () => {
 			db.emitUpdate(["posts"], changes)
 		})
 
-		expect(queryFn).not.toHaveBeenCalled()
+		expect(queryFn).toHaveBeenCalledTimes(3)
 	})
 
 	test("does not refetch when only phase$ would change (canQuery$ stable)", async () => {

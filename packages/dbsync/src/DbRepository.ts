@@ -148,7 +148,7 @@ export class DbRepository<T> {
 	 * @returns An unsubscribe function.
 	 */
 	subscribe(callback: TableSubscribeCallback, options?: TableSubscribeOptions) {
-		type Slice = { changes?: RowChange[] } | null
+		type Slice = { changes?: RowChange[]; txId: number } | null
 		return this.db.updates$.subscribe(
 			(slice: Slice) => {
 				if (slice === null) return
@@ -173,7 +173,7 @@ export class DbRepository<T> {
 				callback(relevant)
 			},
 			(p: DbUpdatesPayload): Slice =>
-				p.tables.includes(this.tableName) ? { changes: p.changes } : null,
+				p.tables.includes(this.tableName) ? { changes: p.changes, txId: p.txId } : null,
 		)
 	}
 }
