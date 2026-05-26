@@ -1,21 +1,29 @@
-import { DbSyncAuthError } from "../errors.js"
+import { DbSyncHttpError } from "../errors.js"
 import type { BackendAdapter, SyncPullResult } from "./types.js"
 
 /**
- * Throws `DbSyncAuthError` using the swift-crud `{ message }` body when present.
+ * Throws `DbSyncHttpError` using the swift-crud `{ message }` body when present.
  */
 async function throwIfNotOk(res: Response, fallback: string): Promise<void> {
 	if (res.ok) return
 	let message = fallback
+	let serverCode: string | undefined
 	try {
 		const body = await res.json()
 		if (typeof body?.message === "string" && body.message.length > 0) {
 			message = body.message
 		}
+		if (typeof body?.code === "string") {
+			serverCode = body.code
+		}
 	} catch {
 		// Non-JSON or empty body — use fallback.
 	}
-	throw new DbSyncAuthError("server", message, { serverMessage: message })
+	throw new DbSyncHttpError("server", message, {
+		status: res.status,
+		serverCode,
+		serverMessage: message,
+	})
 }
 
 /**
@@ -80,7 +88,7 @@ export class RestAdapter implements BackendAdapter {
 		const res = await fetch(`${this.config.url}/api/posts?after=${cursor}&limit=40`, {
 			credentials: "include",
 		})
-		if (!res.ok) throw { status: res.status }
+		await throwIfNotOk(res, "Pull failed")
 		return await res.json()
 	}
 
@@ -92,6 +100,6 @@ export class RestAdapter implements BackendAdapter {
 			credentials: "include",
 			body: JSON.stringify(payload),
 		})
-		if (!res.ok) throw { status: res.status }
+		await throwIfNotOk(res, "Push failed")
 	}
 }

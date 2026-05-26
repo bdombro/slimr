@@ -12,7 +12,7 @@ export { DbSyncSync } from "./DbSyncSync.js"
 export { DbTable } from "./DbTable.js"
 export type { DbSyncLikeType } from "./dbSyncLikeType.js"
 export {
-	DbSyncAuthError,
+	DbSyncHttpError,
 	DbSyncNotAuthenticatedError,
 	DbSyncOfflineError,
 } from "./errors.js"

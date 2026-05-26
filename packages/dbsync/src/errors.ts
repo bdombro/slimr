@@ -14,19 +14,23 @@ export class DbSyncNotAuthenticatedError extends Error {
 	}
 }
 
-/** Thrown for auth adapter failures and blocked login attempts. */
-export class DbSyncAuthError extends Error {
+/** Thrown for HTTP adapter failures (auth, pull, push, etc.). */
+export class DbSyncHttpError extends Error {
 	readonly code: "offline" | "pending_logout" | "server"
+	readonly status?: number
+	readonly serverCode?: string
 	readonly serverMessage?: string
 
 	constructor(
-		code: DbSyncAuthError["code"],
+		code: DbSyncHttpError["code"],
 		message: string,
-		options?: { serverMessage?: string },
+		options?: { status?: number; serverCode?: string; serverMessage?: string },
 	) {
 		super(message)
-		this.name = "DbSyncAuthError"
+		this.name = "DbSyncHttpError"
 		this.code = code
+		this.status = options?.status
+		this.serverCode = options?.serverCode
 		this.serverMessage = options?.serverMessage
 	}
 }

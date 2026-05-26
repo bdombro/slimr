@@ -340,6 +340,26 @@ describe("DbSync sync engine", () => {
 		freshDb.dispose()
 	})
 
+	test("pull 401 invalidates session and stops sync", async () => {
+		const freshDb = await createDb(fetchMock)
+		writeIsLoggedIn(true)
+		fetchMock.mockResolvedValue(
+			new Response(JSON.stringify({ message: "Unauthorized" }), {
+				status: 401,
+				headers: { "Content-Type": "application/json" },
+			}),
+		)
+		await freshDb.sync.start()
+		expect(freshDb.sync.isStarted).toBe(true)
+		expect(freshDb.auth.isLoggedIn).toBe(true)
+
+		await freshDb.sync.trigger()
+
+		expect(freshDb.auth.isLoggedIn).toBe(false)
+		expect(freshDb.sync.isStarted).toBe(false)
+		freshDb.dispose()
+	})
+
 	/** Confirms logout clears every table and resets cursor state so the browser starts fresh. */
 	test("logout clears local tables and sync cursors", async () => {
 		const freshDb = await createDb(fetchMock)

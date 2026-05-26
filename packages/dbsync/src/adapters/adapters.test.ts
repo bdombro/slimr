@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
-import type { DbSyncAuthError } from "../errors.js"
+import type { DbSyncHttpError } from "../errors.js"
 import { LocalAdapter } from "./LocalAdapter.js"
 import { RestAdapter } from "./RestAdapter.js"
 
@@ -40,10 +40,11 @@ describe("adapters sendCode", () => {
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
 		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
-			name: "DbSyncAuthError",
+			name: "DbSyncHttpError",
 			code: "server",
 			serverMessage: "Invalid email",
-		} satisfies Partial<DbSyncAuthError>)
+			status: 400,
+		} satisfies Partial<DbSyncHttpError>)
 	})
 
 	test("RestAdapter falls back when send-code error body is not JSON", async () => {
@@ -53,12 +54,13 @@ describe("adapters sendCode", () => {
 		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
 			code: "server",
 			message: "Send code failed",
+			status: 400,
 		})
 	})
 
 	test("RestAdapter throws server message when login fails", async () => {
 		fetchMock.mockResolvedValue(
-			new Response(JSON.stringify({ message: "Invalid code" }), {
+			new Response(JSON.stringify({ message: "Invalid code", code: "INVALID_CODE" }), {
 				status: 401,
 				headers: { "Content-Type": "application/json" },
 			}),
@@ -68,6 +70,80 @@ describe("adapters sendCode", () => {
 		await expect(adapter.login("user@example.com", "000000")).rejects.toMatchObject({
 			code: "server",
 			message: "Invalid code",
+			status: 401,
+			serverCode: "INVALID_CODE",
+		})
+	})
+
+	test("RestAdapter throwIfNotOk includes status and serverCode from body", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(JSON.stringify({ message: "Bad request", code: "BAD_REQ" }), {
+				status: 400,
+				headers: { "Content-Type": "application/json" },
+			}),
+		)
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
+			code: "server",
+			message: "Bad request",
+			status: 400,
+			serverCode: "BAD_REQ",
+		} satisfies Partial<DbSyncHttpError>)
+	})
+
+	test("RestAdapter pull throws DbSyncHttpError with status on non-ok", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(JSON.stringify({ message: "Unauthorized" }), {
+				status: 401,
+				headers: { "Content-Type": "application/json" },
+			}),
+		)
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.pull("cursor")).rejects.toMatchObject({
+			code: "server",
+			message: "Unauthorized",
+			status: 401,
+		} satisfies Partial<DbSyncHttpError>)
+	})
+
+	test("RestAdapter push throws DbSyncHttpError with status on non-ok", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(JSON.stringify({ message: "Forbidden", code: "FORBIDDEN" }), {
+				status: 403,
+				headers: { "Content-Type": "application/json" },
+			}),
+		)
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.push([])).rejects.toMatchObject({
+			code: "server",
+			message: "Forbidden",
+			status: 403,
+			serverCode: "FORBIDDEN",
+		} satisfies Partial<DbSyncHttpError>)
+	})
+
+	test("RestAdapter pull throws with fallback message when body is not JSON", async () => {
+		fetchMock.mockResolvedValue(new Response("", { status: 500 }))
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.pull("cursor")).rejects.toMatchObject({
+			code: "server",
+			message: "Pull failed",
+			status: 500,
+		})
+	})
+
+	test("RestAdapter push throws with fallback message when body is not JSON", async () => {
+		fetchMock.mockResolvedValue(new Response("", { status: 502 }))
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.push([])).rejects.toMatchObject({
+			code: "server",
+			message: "Push failed",
+			status: 502,
 		})
 	})
 

@@ -8,7 +8,7 @@ Typed errors exported from `@slimr/dbsync`:
 import {
   DbSyncOfflineError,
   DbSyncNotAuthenticatedError,
-  DbSyncAuthError,
+  DbSyncHttpError,
 } from "@slimr/dbsync"
 ```
 
@@ -32,17 +32,26 @@ Thrown when guarded data APIs run without a session:
 
 Call `await db.waitForBooted()` before the first data access in scripts/tests, then ensure `db.auth.isLoggedIn` when `requiresAuth` is true.
 
-## `DbSyncAuthError`
+## `DbSyncHttpError`
 
-Auth adapter failures and blocked login. `code` is one of:
+HTTP adapter failures and blocked login. Properties:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `"offline" \| "pending_logout" \| "server"` | Error category |
+| `status` | `number \| undefined` | HTTP response status code |
+| `serverCode` | `string \| undefined` | Application-level error code from the server body (`{ code }`) |
+| `serverMessage` | `string \| undefined` | Human-readable message from the server body (`{ message }`) |
+
+`code` values:
 
 | Code | Typical cause |
 | --- | --- |
 | `offline` | Adapter reported offline (REST helpers) |
 | `pending_logout` | `login()` while `pendingLogout` is set |
-| `server` | `sendCode` / `login` HTTP failure |
+| `server` | `sendCode` / `login` / `pull` / `push` HTTP failure |
 
-`RestAdapter` sets `serverMessage` from swift-crud `{ message }` JSON when present.
+`RestAdapter` sets `serverMessage` from swift-crud `{ message }` JSON when present, and `status` / `serverCode` from the response.
 
 ## See also
 

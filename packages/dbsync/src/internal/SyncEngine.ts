@@ -1,5 +1,6 @@
 import type { BackendAdapter } from "../adapters/types.js"
 import type { DbSyncConfig } from "../dbSyncConfig.js"
+import { DbSyncHttpError } from "../errors.js"
 import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
 import { readLastSuccessAt, writeLastSuccessAt } from "./authStorage.js"
@@ -140,7 +141,7 @@ export class SyncEngine {
 			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "done" })
 		} catch (err: any) {
 			emitDebug(this.config.onDebug, { type: "sync:error", error: err })
-			if (err.status === 401) {
+			if (err instanceof DbSyncHttpError && err.status === 401) {
 				await this.auth.invalidateSession("401")
 				this.stop()
 			}

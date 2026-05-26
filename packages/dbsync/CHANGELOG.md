@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.55
+
+### Changed
+
+- **Breaking:** Renamed `DbSyncAuthError` → `DbSyncHttpError`. Added `status?: number` and `serverCode?: string` fields. `RestAdapter.pull` and `RestAdapter.push` now throw structured `DbSyncHttpError` (instead of raw `{ status }`) consistent with `sendCode`/`login`. The `SyncEngine` 401-detection uses `instanceof DbSyncHttpError` + `.status`. Consumers importing `DbSyncAuthError` must update to `DbSyncHttpError`.
+
 ## 0.0.54
 
 ### Fixed

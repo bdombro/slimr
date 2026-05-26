@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
-import { DbSyncAuthError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "./errors.js"
+import { DbSyncHttpError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "./errors.js"
 import { writeIsLoggedIn, writePendingLogout } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 import { wireAuth } from "./test-support/wireAuth.js"
@@ -136,7 +136,7 @@ describe("DbSync auth integration", () => {
 			tables: { posts: {} },
 		})
 		wireAuth(db)
-		await expect(db.auth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncAuthError)
+		await expect(db.auth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncHttpError)
 		db.dispose()
 	})
 })

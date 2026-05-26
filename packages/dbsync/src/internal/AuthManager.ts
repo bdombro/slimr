@@ -1,6 +1,6 @@
 import type { BackendAdapter } from "../adapters/types.js"
 import type { DbSyncDebugListener } from "../debugEvents.js"
-import { DbSyncAuthError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "../errors.js"
+import { DbSyncHttpError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "../errors.js"
 import {
 	AUTH_IS_LOGGED_IN_KEY,
 	AUTH_PENDING_LOGOUT_KEY,
@@ -191,7 +191,7 @@ export class AuthManager {
 	public async login(email: string, code: string) {
 		if (this.requiresAuth && this.connectivity.offline) throw new DbSyncOfflineError()
 		if (this.pendingLogout) {
-			throw new DbSyncAuthError(
+			throw new DbSyncHttpError(
 				"pending_logout",
 				"dbsync: cannot login while remote logout is pending",
 			)
