@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "../adapters/LocalAdapter.js"
 import type { BackendAdapter } from "../adapters/types.js"
 import type { DbSyncDebugEvent, DbSyncDebugListener } from "../debugEvents.js"
-import { DbSyncOfflineError } from "../errors.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
 import { AuthManager } from "./AuthManager.js"
 import {
@@ -98,7 +97,11 @@ describe("AuthManager", () => {
 		const offlineConnectivity = new ConnectivityTracker()
 		const adapter = createAdapter()
 		const offlineAuth = createAuthManager(adapter, storage, events, offlineConnectivity, () => {})
-		await expect(offlineAuth.sendCode("a@b.com")).rejects.toBeInstanceOf(DbSyncOfflineError)
+		await expect(offlineAuth.sendCode("a@b.com")).rejects.toMatchObject({
+			name: "DbSyncOfflineError",
+			code: "offline",
+			severity: 0,
+		})
 		expect(adapter.sendCode).not.toHaveBeenCalled()
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 	})
@@ -120,7 +123,11 @@ describe("AuthManager", () => {
 			offlineConnectivity,
 			() => {},
 		)
-		await expect(offlineAuth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncOfflineError)
+		await expect(offlineAuth.login("a@b.com", "123")).rejects.toMatchObject({
+			name: "DbSyncOfflineError",
+			code: "offline",
+			severity: 0,
+		})
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 	})
 

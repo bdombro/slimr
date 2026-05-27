@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 
+const SPECIAL_HASHES = ["#replace", "#clear", "#back"]
+
 export interface RouterOptions {
 	/**
 	 * A document.querySelector selector to be used for scroll restoration
@@ -13,7 +15,7 @@ export interface RouterOptions {
  * A declaration of a route to be passed to Router class constructor
  */
 export interface RouteDef {
-	/** Boolean indicating if should fuzzy match. Defaults to false */
+	/** Boolean indicating if should exact match. Defaults to false */
 	exact?: boolean
 	/** A function that returns a promise that resolves to a Svelte component */
 	component: React.FC<any>
@@ -108,8 +110,17 @@ export class Router<
 		return Object.values(this.routes)
 	}
 
-	/** Custom history so we can restore scroll on back */
-	history: { route: Route; url: string; scrollTop: number }[] = []
+	/** Entry snapshots keyed by sequence number (stored in history.state) */
+	historyBySeq: Map<number, { route: Route; url: string; scrollTop: number }> = new Map()
+
+	/** Monotonically increasing seq counter. Each pushState gets a unique seq. */
+	private _seq = 0
+
+	/** The seq of the entry we are currently on (matches history.state). */
+	private currentSeq = -1
+
+	/** Max entries to keep in historyBySeq (matching typical browser history limit) */
+	private maxHistoryEntries = 50
 
 	get current() {
 		return {
@@ -123,12 +134,12 @@ export class Router<
 				window.scrollY,
 		}
 	}
-	get previous() {
-		return this.history.at(-1)
-	}
 
 	/** What the scrollY should after a route change */
 	private scrollNext = 0
+
+	/** Timeout IDs for scroll restoration, cleared on each new navigation */
+	private loadTimeouts: ReturnType<typeof setTimeout>[] = []
 
 	/** An array of onChange callbacks, aka subscribers */
 	private subscribers: ((route: RouteMatch) => any)[] = []
@@ -151,7 +162,7 @@ export class Router<
 					let path = routeDef.path.replace(/:([^/]*)/g, (_, arg) => {
 						const param = urlParamsTodo[arg]
 						delete urlParamsTodo[arg]
-						return param
+						return encodeURIComponent(param)
 					})
 					// Append any remaining urlParams as query string using URLSearchParams
 					const qs = new URLSearchParams(urlParamsTodo).toString()
@@ -182,7 +193,7 @@ export class Router<
 			const urlParams = route.isMatch(url.pathname)
 			if (urlParams) {
 				const qs = Object.fromEntries(url.searchParams)
-				return { ...route, urlParams: { ...urlParams, ...qs } }
+				return { ...route, urlParams: { ...qs, ...urlParams } }
 			}
 		}
 		throw new Error(
@@ -214,11 +225,13 @@ export class Router<
 	 */
 	public onLoad = () => {
 		if (navigator.userAgent.includes("jsdom")) return
+		this.loadTimeouts.forEach(clearTimeout)
+		this.loadTimeouts = []
 		const scrollToNext = () => this.scrollTo({ top: this.scrollNext })
 		scrollToNext()
-		setTimeout(scrollToNext, 100)
-		setTimeout(scrollToNext, 200)
-		setTimeout(scrollToNext, 300)
+		this.loadTimeouts.push(setTimeout(scrollToNext, 100))
+		this.loadTimeouts.push(setTimeout(scrollToNext, 200))
+		this.loadTimeouts.push(setTimeout(scrollToNext, 300))
 	}
 
 	/** history.pushState, un pony-filled */
@@ -228,8 +241,17 @@ export class Router<
 
 	/** Navigate to a route by replaceState */
 	public replace = (routeOrKey: Route | string, urlParams: Record<string, string> = {}) => {
-		const route = typeof routeOrKey === "string" ? this.routes[routeOrKey] : routeOrKey
-		history.replaceState(Date.now(), "", route.toPath(urlParams))
+		let replacePath = ""
+		if (
+			typeof routeOrKey === "string" &&
+			(routeOrKey.startsWith("http") || routeOrKey.startsWith("/"))
+		) {
+			replacePath = routeOrKey
+		} else {
+			const route = typeof routeOrKey === "string" ? this.routes[routeOrKey] : routeOrKey
+			replacePath = route.toPath(urlParams)
+		}
+		history.replaceState(Date.now(), "", replacePath)
 	}
 
 	/** history.replaceState, un pony-filled */
@@ -278,7 +300,9 @@ export class Router<
 	 */
 	public use() {
 		const [_, setValue] = useState(Date.now())
-		useEffect(() => this.subscribe(() => setValue(Date.now())), [])
+		useEffect(() => {
+			return this.subscribe(() => setValue(Date.now()))
+		}, [])
 	}
 
 	/**
@@ -288,7 +312,8 @@ export class Router<
 		/**
 		 * A custom pushState intercepts soft navigations, i.e. same origin
 		 *
-		 * 0. If the url is the same as current url, just scroll to top
+		 * 0. If the url has the same pathname and only a hash changed (and it's
+		 *    not a special hash), let the browser handle the anchor natively
 		 * 1. If hash is '#replace', call history.replaceState. Is convenient for
 		 *    anchor tags so you dont need to use onClick or javascript
 		 * 2. Clear the stack if,
@@ -323,9 +348,22 @@ export class Router<
 				return Router.pushStateRaw(date, unused, urlObj)
 			}
 
+			if (
+				urlObj.pathname === location.pathname &&
+				urlObj.hash &&
+				!SPECIAL_HASHES.includes(urlObj.hash) &&
+				urlObj.search === location.search
+			) {
+				Router.pushStateRaw({ seq: this.currentSeq }, unused, urlObj)
+				const el = document.getElementById(urlObj.hash.slice(1))
+				if (el) el.scrollIntoView()
+				return
+			}
+
 			if (urlObj.href === location.href) {
 				this.scrollNext = 0
 				this.scrollTo({ top: 0, behavior: "smooth" })
+				Router.pushStateRaw(date, unused, urlObj)
 				return
 			}
 
@@ -337,6 +375,13 @@ export class Router<
 
 			const isClear = next.stack && urlObj.hash === "#clear"
 			if (isClear || navToInnerStackPageFromOutOfStack) {
+				const clearSeq = ++this._seq
+				this.historyBySeq.set(clearSeq, {
+					url: location.href,
+					route: this.current.route,
+					scrollTop: this.current.scrollTop,
+				})
+				this.currentSeq = clearSeq
 				next.stack!.stackHistory = []
 				this.scrollNext = 0
 				if (!navToInnerStackPageFromOutOfStack) {
@@ -346,13 +391,15 @@ export class Router<
 			}
 
 			// If the next route is a stack root, treat as if it's a #back
+			const currentStack = this.current.route.stack
 			const isBack =
 				!isClear &&
 				next.stack &&
-				(urlObj.hash === "#back" || this.current.route.stack?.key === next.key)
+				currentStack &&
+				(urlObj.hash === "#back" || currentStack.key === next.key)
 
 			if (isBack) {
-				urlObj = toUrlObj(this.current.route.stack?.path as any)
+				urlObj = toUrlObj(currentStack.path)
 				next = this.find(urlObj)
 			}
 
@@ -363,6 +410,7 @@ export class Router<
 				next = this.find(urlObj)
 			}
 
+			const seq = ++this._seq
 			if (!isClear && !isBack) {
 				this.current.route.stack?.stackHistory?.push({
 					href: location.href,
@@ -370,35 +418,84 @@ export class Router<
 						(this.scrollElSelector && document.querySelector(this.scrollElSelector)?.scrollTop) ||
 						window.scrollY,
 				})
-				this.history.push(this.current)
+				this.historyBySeq.set(seq, {
+					url: location.href,
+					route: this.current.route,
+					scrollTop: this.current.scrollTop,
+				})
+				this.currentSeq = seq
+				if (this.historyBySeq.size > this.maxHistoryEntries) {
+					const oldestSeq = Math.min(...this.historyBySeq.keys())
+					this.historyBySeq.delete(oldestSeq)
+				}
 			}
 
-			this.subscribers.forEach((fn) => fn(next))
+			;[...this.subscribers].forEach((fn) => fn(next))
 			dispatchEvent(new CustomEvent("locationchange", { detail: next }))
-			Router.pushStateRaw(date, unused, urlObj)
+			Router.pushStateRaw({ seq }, unused, urlObj)
 		}
 		history.replaceState = (date, unused, url) => {
 			const urlObj = toUrlObj(url as any)
 			const next = this.find(urlObj)
-			this.subscribers.forEach((fn) => fn(next))
+			const current = this.current
+			if (this.currentSeq >= 0) {
+				const entry = this.historyBySeq.get(this.currentSeq)
+				if (entry) {
+					entry.route = next
+					entry.url = urlObj.href
+					entry.scrollTop = current.scrollTop
+				}
+			}
+			try {
+				Router.replaceStateRaw({ seq: this.currentSeq }, unused, urlObj)
+			} catch (e) {
+				console.error("Router: replaceState failed", e)
+				return
+			}
+			;[...this.subscribers].forEach((fn) => fn(next))
 			dispatchEvent(new CustomEvent("locationchange", { detail: next }))
-			Router.replaceStateRaw(date, unused, urlObj)
 		}
 
-		/* Listen for back/forward event. Sadly we can't detect back vs forward */
-		addEventListener("popstate", () => {
-			this.previous?.route.stack?.stackHistory?.pop()
-			this.scrollNext = this.previous?.scrollTop || 0
-			this.history.pop()
+		/* Listen for back/forward event. Use seq in history.state for exact lookups. */
+		addEventListener("popstate", (e: PopStateEvent) => {
+			const state = e.state as { seq?: number } | null
+			const seq = state?.seq ?? -1
+			const dest = this.historyBySeq.get(seq)
+			const prevSeq = this.currentSeq
+
+			if (dest) {
+				if (seq < prevSeq) {
+					dest.route.stack?.stackHistory?.pop()
+				}
+				this.scrollNext = dest.scrollTop
+				this.currentSeq = seq
+			} else {
+				/* Navigated to a URL never recorded by this router */
+				this.scrollNext = 0
+				this.currentSeq = -1
+			}
+
 			const next = this.find(new URL(location.href))
-			this.subscribers.forEach((fn) => fn(next))
+			;[...this.subscribers].forEach((fn) => fn(next))
 			dispatchEvent(new CustomEvent("locationchange", { detail: next }))
 		})
 
 		/** intercept anchor tag clicks */
 		addEventListener("click", (e: any) => {
-			if (e.metaKey || e.ctrlKey) return
+			if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return
 			const ln = findLinkTagInParents(e.target) // aka linkNode
+			if (!ln) return
+			const lnUrl = new URL(ln.href)
+			if (
+				lnUrl.pathname === location.pathname &&
+				lnUrl.hash &&
+				!SPECIAL_HASHES.includes(lnUrl.hash) &&
+				lnUrl.search === location.search &&
+				(ln.href.startsWith(location.origin) || ln.href.startsWith("/")) &&
+				ln.target !== "_blank"
+			) {
+				return
+			}
 			if (
 				(ln?.href.startsWith(location.origin) || ln?.href.startsWith("/")) &&
 				ln.target !== "_blank"
@@ -412,8 +509,8 @@ export class Router<
 	/** Returns an object of URL params if path matches route.path, false otherwise */
 	static isMatch = (path: string, pathMask: string, exact = true) => {
 		const argRx = /:([^/]*)/g
-		const urlRx = `^${pathMask.replace(argRx, "([^/]*)")}${exact ? "$" : ""}`
-		const match = [...(path || "/").matchAll(new RegExp(urlRx, "gi"))]?.[0]
+		const urlRx = `^${escapeRegExp(pathMask).replace(argRx, "([^/]*)")}${exact ? "$" : ""}`
+		const match = [...(path || "/").matchAll(new RegExp(urlRx, "g"))]?.[0]
 		const urlParams = match
 			? [...pathMask.matchAll(argRx)].reduce(
 					(acc, arg, i) => ({ ...acc, [arg[1]]: match[i + 1] }),
@@ -423,6 +520,11 @@ export class Router<
 		return urlParams
 	}
 }
+
+/**
+ * Escapes regex metacharacters so a string can be used literally in a RegExp.
+ */
+const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 /**
  * Searches up the dom from an element to find an enclosing anchor tag

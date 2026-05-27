@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
-import { DbSyncHttpError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "./errors.js"
+import { DbSyncHttpError } from "./errors.js"
 import { writeIsLoggedIn, writePendingLogout } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 import { wireAuth } from "./test-support/wireAuth.js"
@@ -86,9 +86,11 @@ describe("DbSync auth integration", () => {
 			tables: { posts: {} },
 		})
 		wireAuth(db)
-		await expect(db.put("posts", { id: "1", title: "x" })).rejects.toBeInstanceOf(
-			DbSyncNotAuthenticatedError,
-		)
+		await expect(db.put("posts", { id: "1", title: "x" })).rejects.toMatchObject({
+			name: "DbSyncNotAuthenticatedError",
+			code: "not_authenticated",
+			severity: 2,
+		})
 		db.dispose()
 	})
 
@@ -99,7 +101,11 @@ describe("DbSync auth integration", () => {
 			tables: { posts: {} },
 		})
 		wireAuth(db)
-		await expect(db.auth.sendCode("a@b.com")).rejects.toBeInstanceOf(DbSyncOfflineError)
+		await expect(db.auth.sendCode("a@b.com")).rejects.toMatchObject({
+			name: "DbSyncOfflineError",
+			code: "offline",
+			severity: 0,
+		})
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		db.dispose()
 	})
@@ -123,7 +129,11 @@ describe("DbSync auth integration", () => {
 			tables: { posts: {} },
 		})
 		wireAuth(db)
-		await expect(db.auth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncOfflineError)
+		await expect(db.auth.login("a@b.com", "123")).rejects.toMatchObject({
+			name: "DbSyncOfflineError",
+			code: "offline",
+			severity: 0,
+		})
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		db.dispose()
 	})
@@ -136,7 +146,11 @@ describe("DbSync auth integration", () => {
 			tables: { posts: {} },
 		})
 		wireAuth(db)
-		await expect(db.auth.login("a@b.com", "123")).rejects.toBeInstanceOf(DbSyncHttpError)
+		await expect(db.auth.login("a@b.com", "123")).rejects.toMatchObject({
+			name: "DbSyncHttpError",
+			code: "pending_logout",
+			severity: 2,
+		})
 		db.dispose()
 	})
 })

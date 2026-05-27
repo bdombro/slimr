@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.100",
+  "version": "2.1.101",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -28,6 +28,9 @@
   "scripts": {
     "build": "bun ../../scripts/cli.ts build-lib --pkg .",
     "clean": "rm -rf esm cjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "tsc -b",
     "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
   },

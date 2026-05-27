@@ -42,6 +42,7 @@ describe("adapters sendCode", () => {
 		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
 			name: "DbSyncHttpError",
 			code: "server",
+			severity: 0,
 			serverMessage: "Invalid email",
 			status: 400,
 		} satisfies Partial<DbSyncHttpError>)
@@ -53,6 +54,7 @@ describe("adapters sendCode", () => {
 
 		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
 			code: "server",
+			severity: 0,
 			message: "Send code failed",
 			status: 400,
 		})
@@ -68,7 +70,8 @@ describe("adapters sendCode", () => {
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
 		await expect(adapter.login("user@example.com", "000000")).rejects.toMatchObject({
-			code: "server",
+			code: "unauthorized",
+			severity: 2,
 			message: "Invalid code",
 			status: 401,
 			serverCode: "INVALID_CODE",
@@ -86,6 +89,7 @@ describe("adapters sendCode", () => {
 
 		await expect(adapter.sendCode("user@example.com")).rejects.toMatchObject({
 			code: "server",
+			severity: 0,
 			message: "Bad request",
 			status: 400,
 			serverCode: "BAD_REQ",
@@ -102,7 +106,8 @@ describe("adapters sendCode", () => {
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
 		await expect(adapter.pull("cursor")).rejects.toMatchObject({
-			code: "server",
+			code: "unauthorized",
+			severity: 2,
 			message: "Unauthorized",
 			status: 401,
 		} satisfies Partial<DbSyncHttpError>)
@@ -118,7 +123,8 @@ describe("adapters sendCode", () => {
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
 		await expect(adapter.push([])).rejects.toMatchObject({
-			code: "server",
+			code: "forbidden",
+			severity: 2,
 			message: "Forbidden",
 			status: 403,
 			serverCode: "FORBIDDEN",
@@ -130,7 +136,8 @@ describe("adapters sendCode", () => {
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
 		await expect(adapter.pull("cursor")).rejects.toMatchObject({
-			code: "server",
+			code: "server_error",
+			severity: 1,
 			message: "Pull failed",
 			status: 500,
 		})
@@ -141,9 +148,42 @@ describe("adapters sendCode", () => {
 		const adapter = new RestAdapter({ url: "http://localhost:3000" })
 
 		await expect(adapter.push([])).rejects.toMatchObject({
-			code: "server",
+			code: "server_error",
+			severity: 1,
 			message: "Push failed",
 			status: 502,
+		})
+	})
+
+	test("RestAdapter 404 pull returns not_found with severity 1", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(JSON.stringify({ message: "Not found" }), {
+				status: 404,
+				headers: { "Content-Type": "application/json" },
+			}),
+		)
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.pull("cursor")).rejects.toMatchObject({
+			code: "not_found",
+			severity: 1,
+			status: 404,
+		})
+	})
+
+	test("RestAdapter 409 push returns conflict with severity 1", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(JSON.stringify({ message: "Conflict" }), {
+				status: 409,
+				headers: { "Content-Type": "application/json" },
+			}),
+		)
+		const adapter = new RestAdapter({ url: "http://localhost:3000" })
+
+		await expect(adapter.push([])).rejects.toMatchObject({
+			code: "conflict",
+			severity: 1,
+			status: 409,
 		})
 	})
 

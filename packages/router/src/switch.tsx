@@ -10,5 +10,5 @@ export const Switch = memo(function Switch({ router }: { router: RouterInstance 
 	useEffect(() => router.subscribe(setRoute), [])
 	useEffect(router.onLoad, [route])
 	const C = route.component
-	return <C route={route} url={new URL(location.href)} />
+	return <C key={route.key} route={route} url={new URL(location.href)} />
 })

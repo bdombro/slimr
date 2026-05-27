@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.56
+
+### Added
+
+- Error codes (`DbSyncErrorCode`) and severity levels (`ErrorSeverity`) on all dbsync errors. `DbSyncOfflineError` now exposes `code: "offline"` (severity 0), `DbSyncNotAuthenticatedError` exposes `code: "not_authenticated"` (severity 2), and `DbSyncHttpError` derives sub-codes from HTTP status (e.g. `"unauthorized"`, `"forbidden"`, `"server_error"`) with appropriate severity. The `DbSyncErrorCode` and `ErrorSeverity` types are exported from the package.
+
 ## 0.0.55
 
 ### Changed
