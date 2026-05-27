@@ -197,10 +197,12 @@ export class AuthManager {
 			)
 		}
 		await this.adapter.login(email, code)
-		this.setLoggedIn(true)
+		this.isLoggedInValue = true
+		writeIsLoggedIn(true)
 		clearSyncCursorKeys()
 		this.events.broadcastAuth("AUTH_LOGIN")
 		await this.fireSessionStart()
+		this.notifySessionChange()
 		await this.fireAuthenticated()
 	}
 
@@ -233,8 +235,10 @@ export class AuthManager {
 
 	/** Passive tab: session started elsewhere. */
 	public async handlePassiveLogin() {
-		this.setLoggedIn(true, { persist: true })
+		this.isLoggedInValue = true
+		writeIsLoggedIn(true)
 		await this.fireSessionStart()
+		this.notifySessionChange()
 		await this.fireAuthenticated()
 	}
 

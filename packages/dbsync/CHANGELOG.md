@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.57
+
+### Fixed
+
+- `login()` and `handlePassiveLogin()` now set `isLoggedInValue` before `fireSessionStart()` but defer `notifySessionChange()` (which fires the `isLoggedIn$` observable) until after storage initialization completes. Previously, `login()` called `setLoggedIn(true)` first, which synchronously triggered `isLoggedIn$` subscribers via `SessionManager.publish()` — but `storage.db` was still `undefined` because `storage.init()` only runs inside `fireSessionStart()`. Any subscriber reacting to `isLoggedIn$` by querying the database would crash with `TypeError: undefined is not an object (evaluating 'this.getDb().transaction')`.
+
 ## 0.0.56
 
 ### Added
