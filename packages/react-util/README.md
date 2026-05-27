@@ -36,6 +36,29 @@ function MyComponent() {
 
 Like `useMemo` but with deep/shallow comparison to avoid misfires.
 
+### useEvent
+
+Adds a global window event listener on mount and removes it on unmount.
+
+```typescript
+function MyComponent() {
+  useEvent("keydown", (e) => {
+    console.log(e.key)
+  })
+}
+```
+
+### useMedia
+
+Returns whether a CSS media query matches, and updates reactively on change.
+
+```typescript
+function MyComponent() {
+  const isSmall = useMedia("(max-width: 768px)")
+  return <div>{isSmall ? "Mobile" : "Desktop"}</div>
+}
+```
+
 ### useReRender
 
 Returns a stable function that triggers a component re-render when called.
@@ -55,5 +78,18 @@ Returns a reactive `Set` with `toggle` and `reset` methods. Mutations trigger re
 function MyComponent() {
   const set = useSet(new Set([1, 2, 3]))
   return <button onClick={() => set.toggle(4)}>{set.size} items</button>
+}
+```
+
+### useUpdateEffect
+
+Like useEffect, but skips running the effect on the initial render.
+
+```typescript
+function MyComponent({ id }: { id: string }) {
+  const [data, setData] = useState(null)
+  useUpdateEffect(() => {
+    fetchData(id).then(setData)
+  }, [id])
 }
 ```
