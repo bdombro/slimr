@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react-util",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -27,7 +27,9 @@
   "scripts": {
     "build": "bun ../../scripts/cli.ts build-lib --pkg .",
     "clean": "rm -rf esm cjs",
-    "typecheck": "tsc -b"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b tsconfig.test.json"
   },
   "files": [
     "cjs",

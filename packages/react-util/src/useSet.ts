@@ -27,6 +27,7 @@ export interface UseSet<T> extends Set<T> {
  */
 export function useSet<T>(initial: Set<T> = new Set()) {
 	const rerender = useReRender()
+	const initialRef = useRef(new Set(initial))
 	const setRef = useRef(initial as unknown as UseSet<T>)
 	const set = setRef.current
 
@@ -54,7 +55,7 @@ export function useSet<T>(initial: Set<T> = new Set()) {
 
 		set.reset = () => {
 			set._clear()
-			set._union(initial)
+			set._union(initialRef.current)
 			rerender()
 			return set
 		}

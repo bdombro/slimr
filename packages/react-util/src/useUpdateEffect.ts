@@ -14,6 +14,7 @@ import { useEffect, useRef } from "react"
  * }
  * ```
  */
+// biome-ignore lint/suspicious/noConfusingVoidType: matches React's useEffect callback signature
 export function useUpdateEffect(effect: () => void | (() => void), deps?: readonly unknown[]) {
 	const isFirst = useRef(true)
 

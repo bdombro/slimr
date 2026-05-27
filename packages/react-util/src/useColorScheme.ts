@@ -1,22 +1,17 @@
 import { useEffect, useState } from "react"
 
-const matchMediaPrefersDark = globalThis.matchMedia?.("(prefers-color-scheme:dark)")
-
-/**
- * Returns the current color scheme and whether dark/light mode is active, updating on
- * system preference changes.
- * Note: depends on the "prefers-color-scheme" media query, which is not supported in all browsers.
- */
 export function useColorScheme() {
-	const [dark, setDark] = useState(!!matchMediaPrefersDark?.matches)
+	const mql = globalThis.matchMedia?.("(prefers-color-scheme:dark)")
+	const [dark, setDark] = useState(!!mql?.matches)
 
 	useEffect(() => {
+		const mql = globalThis.matchMedia?.("(prefers-color-scheme:dark)")
 		const updateColorScheme = () => {
-			setDark(!!matchMediaPrefersDark?.matches)
+			setDark(!!mql?.matches)
 		}
-		matchMediaPrefersDark?.addEventListener("change", updateColorScheme)
+		mql?.addEventListener("change", updateColorScheme)
 		return () => {
-			matchMediaPrefersDark?.removeEventListener("change", updateColorScheme)
+			mql?.removeEventListener("change", updateColorScheme)
 		}
 	}, [])
 
