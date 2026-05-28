@@ -32,18 +32,18 @@ format:
 # Install dependencies and set up git hooks (run once after cloning)
 install:
     npm install
-    echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+    @# echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 # Precommit check: build dirty workspaces, lint, and run dirty tests
 precommit:
-    bun scripts/cli.ts precommit
+    @# Not currently used
 
 # Bump versions and publish all packages to npm (excludes demo); extra args pass through
-publish-all *ARGS='':
+publish-all *ARGS='': test
     bun scripts/cli.ts publish --bump --all --exclude demo {{ARGS}}
 
 # Bump and publish only changed packages; extra args pass through to slimr CLI
-publish-dirty *ARGS='':
+publish-dirty *ARGS='': test-dirty
     bun scripts/cli.ts publish --bump --dirty --exclude demo {{ARGS}}
 
 # Deploy the demo app
@@ -55,13 +55,12 @@ start:
     npm run -w @slimr/demo start
 
 # Run tests once (CI-style, no watch); extra args pass through to vitest
-test *ARGS='':
-    ./node_modules/.bin/vitest --run {{ARGS}}
-    ./node_modules/.bin/playwright test --config packages/dbsync/playwright.config.ts
+test *ARGS='--all':
+    bun scripts/cli.ts test --exclude demo {{ARGS}}
 
 # Run tests only for dirty workspaces; extra args pass through to slimr CLI
 test-dirty *ARGS='':
-    bun scripts/cli.ts test --dirty --exclude demo {{ARGS}}
+    @just test --dirty {{ARGS}}
 
 # Check for newer versions of dependencies
 update:

@@ -95,7 +95,12 @@ export async function getWorkspaces(
 
 /** Workspace metadata plus dependency-closure bookkeeping for repo scripts. */
 export interface Workspace {
-	config: { version: string; private: boolean; dependencies: Record<string, string> }
+	config: {
+		version: string
+		private: boolean
+		dependencies: Record<string, string>
+		scripts: Record<string, string>
+	}
 	dirty: boolean
 	name: string
 	path: string

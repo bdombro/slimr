@@ -3,7 +3,6 @@ import { type CliCommand, CliOptionKind } from "argsbarg"
 import { buildWorkspaces } from "../tasks/build.ts"
 import { buildLib } from "../tasks/build-lib.ts"
 import { checkWorkspaces } from "../tasks/check.ts"
-import { precommit } from "../tasks/precommit.ts"
 import { publishWorkspaces } from "../tasks/publish.ts"
 import { testWorkspaces } from "../tasks/test.ts"
 import {
@@ -67,7 +66,7 @@ export const slimrCli: CliCommand = {
 		},
 		{
 			key: "test",
-			description: "Run workspace test and test:e2e scripts.",
+			description: "Run workspace checks, tests.",
 			options: workspaceSelectionOptions,
 			handler: async (ctx) => {
 				const selection = workspaceSelectionFromContext(ctx)
@@ -94,13 +93,6 @@ export const slimrCli: CliCommand = {
 					...selection,
 					bump: ctx.hasFlag("bump") || process.argv.includes("--bump"),
 				})
-			},
-		},
-		{
-			key: "precommit",
-			description: "Run pre-commit checks (check, build, and test dirty workspaces).",
-			handler: async () => {
-				await precommit()
 			},
 		},
 	],

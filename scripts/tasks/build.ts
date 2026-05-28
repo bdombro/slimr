@@ -24,9 +24,7 @@ export async function buildWorkspaces(selection: WorkspaceTaskSelection = {}) {
 
 	await runWorkspaceTaskPhases("BUILD", toBuild, async (workspace) => {
 		console.log(`[BUILD]: ${workspace.name}@${workspace.config.version}...`)
-		console.log(await execPromise("npm run build", { cwd: workspace.path }))
-		await $`find esm -name '*.test.*' -type f -delete`.cwd(workspace.path)
-		await $`find cjs -name '*.test.*' -type f -delete`.cwd(workspace.path)
+		console.log(await execPromise("bun run build", { cwd: workspace.path }))
 	})
 
 	console.log("BUILD:end")

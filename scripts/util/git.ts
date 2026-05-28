@@ -1,4 +1,4 @@
-/** Thin git helpers used by workspace discovery and precommit checks. */
+/** Thin git helpers used by workspace discovery and dirty-workspace checks. */
 import { execPromise } from "./process.ts"
 
 export const git = {

@@ -3,15 +3,19 @@
  */
 import fs from "node:fs"
 import path from "node:path"
-import { $ } from "bun"
+import { execPromise } from "../util/process.ts"
 
 /** Build the ESM and CommonJS artifacts for a package and normalize CJS output. */
 export async function buildLib(packageDir = ".") {
 	const packageRoot = path.resolve(packageDir)
 	fs.rmSync(path.join(packageRoot, "esm"), { force: true, recursive: true })
 	fs.rmSync(path.join(packageRoot, "cjs"), { force: true, recursive: true })
-	await $`tsc -d --outDir esm --noEmit false`.cwd(packageRoot)
-	await $`tsc -d -m node16 --moduleResolution node16 --outDir cjs --noEmit false`.cwd(packageRoot)
+	await execPromise("bun tsc -d --outDir esm --noEmit false", { cwd: packageRoot })
+	await execPromise("bun tsc -d -m node16 --moduleResolution node16 --outDir cjs --noEmit false", {
+		cwd: packageRoot,
+	})
+	await execPromise("find esm -name '*.test.*' -type f -delete", { cwd: packageRoot })
+	await execPromise("find cjs -name '*.test.*' -type f -delete", { cwd: packageRoot })
 	await normalizeCommonJsExtensions(path.join(packageRoot, "cjs"))
 }
 

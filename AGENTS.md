@@ -22,7 +22,7 @@ Guidance for AI agents working in this repo.
 - [packages/swr/](packages/swr/) — stale-while-refresh data-fetching hook
 - [packages/util/](packages/util/) — framework-agnostic JS polyfills
 - [packages/demo/](packages/demo/) — demo app (not published)
-- [scripts/](scripts/) — `cli.ts` (argsbarg CLI: `build`, `build-lib`, `check`, `test`, `publish`, `precommit`), task modules in `tasks/`, and shared utilities in `util/` (`workspaces.ts`, `workspace-task.ts`, `process.ts`)
+- [scripts/](scripts/) — `cli.ts` (argsbarg CLI: `build`, `build-lib`, `check`, `test`, `publish`), task modules in `tasks/`, and shared utilities in `util/` (`workspaces.ts`, `workspace-task.ts`, `process.ts`)
 
 Cross-package deps exist (e.g. `styled` → `css`, `react` re-exports others). When changing a lib, check and bump dependents.
 
@@ -45,7 +45,7 @@ When working inside a package, inspect that package's `package.json` first and u
 - `just test` — vitest + Playwright for the repo's tests
 - `just publish-dirty` — bump + publish changed packages (and their dependents), and insert a new released-version heading in each published package's CHANGELOG.md
 - `just publish-demo` — deploy demo
-- `just precommit` — build dirty workspaces, lint, and test dirty workspaces (wired as a git pre-commit hook via `preinstall`)
+- `just precommit` — check, build, and test dirty workspaces
 
 ## Conventions
 
@@ -63,4 +63,4 @@ When working inside a package, inspect that package's `package.json` first and u
 3. If it affects dependents (e.g. changing `css` affects `styled`), verify and bump them.
 4. Update the root [README.md](README.md) if the package list or top-level story changes.
 5. **Update this AGENTS.md** if: a package is added/removed/renamed, scripts change, tooling changes, or conventions shift.
-6. Run `npm run precommit` before declaring done.
+6. Run `just check --dirty`, `just build-dirty`, and `just test-dirty` before declaring done.
