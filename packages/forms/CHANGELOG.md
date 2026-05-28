@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+## 5.0.54
+
+### Added
+
+- `useSFormContext` now exposes `errors` — a record of field errors keyed by field name, populated when a `SFormError` is thrown during submit. Cleared on re-submit, accept, and reset.
+
 ## 5.0.53
 
 ### Changed

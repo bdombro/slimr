@@ -58,7 +58,11 @@ export const SForm = memo(
 				}
 				form.dispatchEvent(new Event("accepted"))
 			} catch (error: unknown) {
-				form.dispatchEvent(new Event("rejected"))
+				form.dispatchEvent(
+					new CustomEvent("rejected", {
+						detail: error instanceof SFormError ? error.errorSet : undefined,
+					}),
+				)
 				if (error instanceof SFormError) {
 					for (const e of formElements) {
 						const fieldError = error.errorSet[e.name]
@@ -86,6 +90,7 @@ export const SForm = memo(
 
 const formDefaultState: FormState = {
 	accepted: false,
+	errors: {},
 	rejected: false,
 	submitted: false,
 	submitting: false,
@@ -108,21 +113,29 @@ function FormContextProvider({ children }: { children: React.ReactNode }) {
 		const unsubscribes: (() => void)[] = []
 
 		const onSubmitting = () => {
-			setState((last) => ({ ...last, accepted: false, submitting: true }))
+			setState((last) => ({ ...last, accepted: false, errors: {}, submitting: true }))
 		}
 		form.addEventListener("submitting", onSubmitting)
 		unsubscribes.push(() => form.removeEventListener("submitting", onSubmitting))
 
 		const onAccepted = () => {
-			setState((last) => ({ ...last, accepted: true, rejected: false, submitting: false }))
+			setState((last) => ({
+				...last,
+				accepted: true,
+				errors: {},
+				rejected: false,
+				submitting: false,
+			}))
 		}
 		form.addEventListener("accepted", onAccepted)
 		unsubscribes.push(() => form.removeEventListener("accepted", onAccepted))
 
-		const onRejected = () => {
+		const onRejected = (e: Event) => {
+			const detail = (e as CustomEvent<Partial<FormErrorFieldError> | undefined>).detail ?? {}
 			setState((last) => ({
 				...last,
 				accepted: false,
+				errors: detail,
 				rejected: true,
 				submitting: false,
 			}))
@@ -130,7 +143,14 @@ function FormContextProvider({ children }: { children: React.ReactNode }) {
 		form.addEventListener("rejected", onRejected)
 		unsubscribes.push(() => form.removeEventListener("rejected", onRejected))
 
-		const onInvalid = onRejected
+		const onInvalid = () => {
+			setState((last) => ({
+				...last,
+				accepted: false,
+				rejected: true,
+				submitting: false,
+			}))
+		}
 		for (const el of elements) {
 			el.addEventListener("invalid", onInvalid)
 			unsubscribes.push(() => el.removeEventListener("invalid", onInvalid))
@@ -193,6 +213,8 @@ type Fnc = (...args: OkAny[]) => OkAny
 interface FormState {
 	/** If the form has been submitted and processed by the handler without error */
 	accepted: boolean
+	/** Errors keyed by field name, set when a SFormError is thrown during submit */
+	errors: Partial<FormErrorFieldError>
 	/** If the form has been submitted and processed by the handler with error */
 	rejected: boolean
 	/** True if the onSubmit has started but not yet finished */

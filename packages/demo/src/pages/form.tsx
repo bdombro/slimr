@@ -79,11 +79,16 @@ function RenderCheck() {
 let renderCount = 0
 
 const FormFooter = () => {
-	const { submitting, accepted, rejected } = useSFormContext()
+	const { errors, submitting, accepted, rejected } = useSFormContext()
+
+	// Throw form-level errors like this:
+	// throw SFormError({ _form: e?.serverMessage || e.message })
 
 	return (
 		<>
-			<GenericError error={rejected && "Issues found. Please correct and retry."} />
+			<GenericError
+				error={rejected && (errors._form || "Issues found. Please correct and retry.")}
+			/>
 			<button className="left" type="submit">
 				{accepted ? "Success!" : submitting ? "Submitting..." : "Submit"}
 			</button>

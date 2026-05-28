@@ -91,4 +91,14 @@ throw new FormError({field1: 'This field is invalid'})
 
 ### useSFormContext
 
-A hook to get the current state of the form
+A hook to get the current state of the form. Returns:
+
+```typescript
+{
+  accepted: boolean   // form submitted and processed without error
+  errors: Record<string, string>  // field errors from SFormError, keyed by field name
+  rejected: boolean   // form submitted and processed with error
+  submitted: boolean  // onSubmit has started and finished
+  submitting: boolean // onSubmit has started but not yet finished
+}
+```
