@@ -37,7 +37,7 @@ export async function publishWorkspaces(selection: PublishTaskSelection = {}) {
 	console.log("[PUBLISH]:build\n")
 	await runWorkspaceTaskPhases("BUILD", toPublish, async (workspace) => {
 		console.log(`[BUILD]: ${workspace.name}@${workspace.config.version}...`)
-		console.log(await execPromise("bun build", { cwd: workspace.path }))
+		console.log(await execPromise("bun run build", { cwd: workspace.path }))
 	})
 
 	if (selection.bump) {
