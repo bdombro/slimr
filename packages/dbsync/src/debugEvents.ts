@@ -5,6 +5,7 @@ export type DbSyncDebugSyncState = "idle" | "syncing" | "offline" | "error"
 export type DbSyncDebugEvent =
 	| { type: "boot:start" }
 	| { type: "boot:done"; isLoggedIn: boolean; isReady: boolean }
+	| { type: "boot:failed"; error: unknown }
 	| { type: "session:start" }
 	| { type: "session:authenticated" }
 	| { type: "session:logout"; phase: "listeners" | "cleared" | "remote" }

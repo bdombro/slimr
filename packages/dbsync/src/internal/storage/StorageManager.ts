@@ -1,5 +1,5 @@
 import type { DbSyncConfig } from "../../DbSync.js"
-import { promiseWithResolvers } from "../../util/promises.js"
+import { promiseWithResolvers, sleep } from "../../util/promises.js"
 import { DbTransaction } from "../DbTransaction.js"
 import type { EventBus, RowChange } from "../EventBus.js"
 import { QueryEngine } from "../QueryEngine.js"
@@ -56,8 +56,21 @@ export class StorageManager {
 		})
 	}
 
-	/** Opens IndexedDB and creates the configured stores when needed. */
+	/** Opens IndexedDB and creates the configured stores when needed. Retries on transient failure. */
 	public async init() {
+		const maxAttempts = 3
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				await this.doInit()
+				return
+			} catch (err) {
+				if (attempt === maxAttempts) throw err
+				await sleep(attempt * 200)
+			}
+		}
+	}
+
+	private async doInit() {
 		const { promise, resolve, reject } = promiseWithResolvers<void>()
 
 		const upgradeFn = (e: IDBVersionChangeEvent) => {

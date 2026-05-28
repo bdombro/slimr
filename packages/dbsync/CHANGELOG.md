@@ -6,6 +6,16 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.58
+
+### Fixed
+
+- `runBoot()` no longer sets `isBooted = true` when `fireSessionStart()` (and thus `storage.init()`) fails. The `isBootedValue = true` assignment now lives inside the `try` block, so it only runs on success. A `boot:failed` debug event is emitted on failure.
+
+### Added
+
+- `StorageManager.init()` retries IndexedDB open up to 3 times with linear backoff (200ms per attempt) before giving up, handling transient WebKit contention and brief IDB unavailability. Added private `doInit()` helper to separate the open logic from the retry loop.
+
 ## 0.0.57
 
 ### Fixed

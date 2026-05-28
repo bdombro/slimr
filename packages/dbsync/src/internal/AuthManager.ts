@@ -148,14 +148,20 @@ export class AuthManager {
 			} else if (!this.requiresAuth) {
 				await this.fireSessionStart()
 			}
-		} finally {
 			this.isBootedValue = true
-			this.notifySessionChange()
 			emitDebug(this.onDebug, {
 				type: "boot:done",
 				isLoggedIn: this.isLoggedInValue,
 				isReady: this.getIsReady(),
 			})
+		} catch (err) {
+			emitDebug(this.onDebug, {
+				type: "boot:failed",
+				error: err,
+			})
+			throw err
+		} finally {
+			this.notifySessionChange()
 		}
 	}
 
