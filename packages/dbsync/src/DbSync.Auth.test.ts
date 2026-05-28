@@ -80,6 +80,29 @@ describe("DbSync auth integration", () => {
 		db2.dispose()
 	})
 
+	test("isLoggedIn$ subscribers can safely query the database after login", async () => {
+		const onAuthenticated = vi.fn()
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		wireAuth(db, { onAuthenticated })
+		await db.sync.start()
+
+		let querySucceeded = false
+		db.auth.isLoggedIn$.subscribe(async (loggedIn) => {
+			if (loggedIn) {
+				await db.find("posts")
+				querySucceeded = true
+			}
+		})
+
+		await db.auth.login("dev@local", "000")
+		await vi.waitFor(() => expect(querySucceeded).toBe(true))
+		expect(db.auth.isReady).toBe(true)
+		db.dispose()
+	})
+
 	test("data APIs throw when not logged in", async () => {
 		const db = new DbSync({
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),

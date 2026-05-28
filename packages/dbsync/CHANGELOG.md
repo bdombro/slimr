@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.59
+
+### Fixed
+
+- `runSessionStartCallbacks()` no longer fires `notifySessionChange()` before executing the session start callbacks. Previously, it called `notifySessionChange()` immediately after setting `isBootstrappingValue = true`, which triggered `SessionManager.publish()` and emitted `isLoggedIn$` before `storage.init()` (which runs inside the callbacks) had completed. This caused any `isLoggedIn$` subscriber querying the database to crash with `TypeError: undefined is not an object (evaluating 'this.getDb().transaction')` on Safari, and a silent unhandled rejection on Chrome/Firefox. The `finally` block already handles notification after callbacks complete.
+
 ## 0.0.58
 
 ### Fixed

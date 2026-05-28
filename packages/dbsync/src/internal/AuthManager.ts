@@ -327,7 +327,6 @@ export class AuthManager {
 
 		emitDebug(this.onDebug, { type: "session:start" })
 		this.isBootstrappingValue = true
-		this.notifySessionChange()
 		try {
 			const results = await runListenersSettled(this.sessionStartCallbacks)
 			throwListenerRejections(results)
