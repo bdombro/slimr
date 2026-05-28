@@ -12,6 +12,11 @@ npm install @slimr/observable
 # React: peer deps `react` + `react-dom`
 ```
 
+## Naming convention
+
+Observable instances are named with a `$` suffix (e.g. `count$`, `user$`).
+This signals reactive state at a glance and is consistent across all `@slimr` packages.
+
 ---
 
 ## Core (`Observable`)
@@ -23,12 +28,12 @@ Updates run through **`set`** (or `val = …`). Subscribers fire only when the n
 ```ts
 import { Observable } from "@slimr/observable"
 
-const count = new Observable("count", 0)
+const count$ = new Observable("count$", 0)
 
-const off = count.subscribe((n) => console.log(n))
-count.val = 1
-await count.set((n) => n + 1)
-off()
+const unsub = count$.subscribe((n) => console.log(n))
+count$.val = 1
+await count$.set((n) => n + 1)
+unsub()
 ```
 
 ### Subscribing to a slice (`select`)
@@ -36,15 +41,15 @@ off()
 For compound values, pass a **selector** as the second argument. The callback receives the slice and runs only when that slice changes (deep equality):
 
 ```ts
-const state = new Observable("state", { bar: 2, man: 3 })
+const state$ = new Observable("state$", { bar: 2, man: 3 })
 
-state.subscribe(
+state$.subscribe(
   (man) => console.log("man:", man),
   (s) => s.man,
 )
 
-await state.set((s) => ({ ...s, man: 4 }))   // logs 4
-await state.set((s) => ({ ...s, bar: 99 }))  // silent
+await state$.set((s) => ({ ...s, man: 4 }))   // logs 4
+await state$.set((s) => ({ ...s, bar: 99 }))  // silent
 ```
 
 **Prefer one observable per concern** when you can (`pending$`, `user$`). Use `select` when several fields must live in one atomic snapshot.
@@ -55,7 +60,7 @@ await state.set((s) => ({ ...s, bar: 99 }))  // silent
 
 ### `useObservable` — subscribe to a shared observable
 
-Use for singletons or library-owned instances (e.g. `@slimr/dbsync` `db.auth.*$`):
+Use for singletons or library-owned instances:
 
 ```tsx
 import type { Observable } from "@slimr/observable"
@@ -84,10 +89,10 @@ Subclass of `Observable` with `.use()` as sugar over `useObservable` (supports `
 ```tsx
 import { ObservableR } from "@slimr/observable/react"
 
-const gate = new ObservableR("gate", false)
+const gate$ = new ObservableR("gate$", false)
 
 function Gate() {
-  const pending = gate.use()
+  const pending = gate$.use()
   if (pending) return <div>Loading…</div>
   return <App />
 }
@@ -103,10 +108,10 @@ Not pub/sub. A mutable **`handle.value`** that triggers re-renders on assignment
 import { useLocalObservable } from "@slimr/observable/react"
 
 function Counter() {
-  const count = useLocalObservable(0)
+  const count$ = useLocalObservable(0)
   return (
-    <button type="button" onClick={() => count.value++}>
-      {count.value}
+    <button type="button" onClick={() => count$.value++}>
+      {count$.value}
     </button>
   )
 }
@@ -122,7 +127,7 @@ const pending = useObservable(syncPending$, {
 })
 
 // ObservableR
-const pending2 = gate.use({ getServerSnapshot: () => false })
+const pending2 = gate$.use({ getServerSnapshot: () => false })
 ```
 
 `getServerSnapshot` returns the **full** observable value; `select` is applied when reading the hook result.
@@ -133,10 +138,10 @@ const pending2 = gate.use({ getServerSnapshot: () => false })
 
 | Goal | API |
 |------|-----|
-| Shared mutable cell | `new Observable(name, initial)` |
-| Notify on change | `subscribe(cb)` |
-| Notify when one field changes | `subscribe(cb, select)` |
-| Read in React | `useObservable($)` or `observableR.use()` |
+| Shared mutable cell | `new Observable(name$, initial)` |
+| Notify on change | `$.subscribe(cb)` |
+| Notify when one field changes | `$.subscribe(cb, select)` |
+| Read in React | `useObservable($)` or `$.use()` |
 | Re-render on one field | `useObservable($, { select })` |
 | Local component state | `useLocalObservable(initial)` |
 | SSR-safe first paint | `{ getServerSnapshot: () => … }` |
