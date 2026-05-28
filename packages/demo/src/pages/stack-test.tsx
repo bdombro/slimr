@@ -6,7 +6,8 @@ import { Layout } from "~/comps/layout-default"
 /**
  * A demo of route in a route stack. Click "Inner Page" to go deeper down
  */
-export default function StackTest({ url }: { url: URL }) {
+export default function StackTest() {
+	const url = new URL(location.href)
 	const { title, description } = setPageMeta({
 		title: "Stack Test",
 		description:

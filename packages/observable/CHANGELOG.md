@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+## 0.0.3
+
+### Changed
+
+- `@slimr/router` now uses `ObservableR` internally for route state management.
+
 ## 0.0.2
 
 ### Added

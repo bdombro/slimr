@@ -2,6 +2,21 @@
 
 ## UNRELEASED
 
+## 3.0.1
+
+### Changed
+
+- **Breaking:** Removed `use()` method. Use `router.route$.use()` instead (returns `RouteMatch`, backed by `useSyncExternalStore`).
+- **Breaking:** Removed `subscribe()` and `unsubscribe()` methods. Use `router.route$.subscribe(cb)` instead (returns an unsubscribe function).
+- **Breaking:** `<Switch>` no longer passes `route` or `url` props to rendered components. Components get route data via `router.route$.use()` or `new URL(location.href)`.
+- **Breaking:** `goto()` and `replace()` now return `Promise<void>` (was `void`). No code awaits these today, so impact is minimal.
+- **Breaking:** Subscriber notification is now async (microtask) instead of synchronous. React consumers are unaffected due to batching. Vanilla JS subscribers that need to react synchronously should use the `locationchange` CustomEvent on `window`.
+- **Breaking:** RouteMatch objects from `route$.use()` and `route$.subscribe()` are shallow-frozen (`Object.freeze`). Direct mutation of route properties will silently fail in sloppy mode or throw in strict mode.
+- Added `@slimr/observable` as a dependency.
+- Added `route$` observable (`ObservableR<RouteMatch>`) — all route-level reactivity goes through this. Use `.use()` for React hooks, `.subscribe()` for imperative subscriptions, `.val` for the current value.
+- Added `searchParams$` observable (`ObservableR<URLSearchParams>`) — fires on every URL change (not just route changes). Use `.use()` for React hooks, `.subscribe()` for imperative subscriptions, `.val` for the current value.
+- Re-exported `useObservable` and `UseObservableOptions` from `@slimr/observable/react`.
+
 ## 2.1.101
 
 ### Added

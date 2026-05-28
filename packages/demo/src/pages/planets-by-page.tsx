@@ -1,4 +1,3 @@
-import type { RouteMatch } from "@slimr/router"
 import { useSWR } from "@slimr/swr"
 import { setPageMeta } from "@slimr/util"
 
@@ -9,7 +8,8 @@ import * as sw from "~/util/swapi"
 /**
  * A demo of a route stack and data fetching with swr
  */
-export default function PlanetsByPage({ route }: { route: RouteMatch }) {
+export default function PlanetsByPage() {
+	const route = router.route$.use()
 	const page = route.urlParams!.page
 
 	const { title, description } = setPageMeta({
@@ -39,7 +39,7 @@ export default function PlanetsByPage({ route }: { route: RouteMatch }) {
 					id="goto-prior-page"
 					disabled={page === "1"}
 					onClick={() => {
-						router.goto(route, { page: `${Number(page) - 1}` })
+						router.goto(router.routes.planetsByPage, { page: `${Number(page) - 1}` })
 					}}
 					type="button"
 				>
@@ -49,7 +49,7 @@ export default function PlanetsByPage({ route }: { route: RouteMatch }) {
 					className="right"
 					id="goto-next-page"
 					onClick={() => {
-						router.goto(route, { page: `${Number(page) + 1}` })
+						router.goto(router.routes.planetsByPage, { page: `${Number(page) + 1}` })
 					}}
 					type="button"
 				>

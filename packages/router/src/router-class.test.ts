@@ -1,5 +1,5 @@
 import type React from "react"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { Router } from "./router-class.js"
 
 function noop() {
@@ -24,20 +24,15 @@ const stackRoutes = {
 	notFound: { exact: false, path: "/", component: NotFound },
 } as any
 
-// Use a counter to generate unique paths per test, avoiding the
-// Router pushState interceptor's "same href" early-return that
-// would otherwise skip subscriber notification.
 let urlSeq = 0
 function uniquePath(base: string) {
-	return `${base}?_=${++urlSeq}`
+	const hasQuery = base.includes("?")
+	return `${base}${hasQuery ? "&" : "?"}_=${++urlSeq}`
 }
 
 const origPushState = Router.pushStateRaw
 const origReplaceState = Router.replaceStateRaw
 
-// Use the raw browser pushState to reset location.href between tests.
-// This prevents the pushState interceptor's "same href" early-return
-// and ensures historyBySeq entries store the correct from-route.
 function cleanupHistory() {
 	origPushState(null, "", "/")
 	history.pushState = origPushState
@@ -125,6 +120,27 @@ describe("Router construction", () => {
 		expect(root.stackHistory).toHaveLength(0)
 		expect(child.stack).toBe(root)
 	})
+	it("exposes route$ observable", () => {
+		const r = new Router(routes)
+		expect(r.route$).toBeDefined()
+		expect(typeof r.route$.use).toBe("function")
+		expect(typeof r.route$.subscribe).toBe("function")
+		expect(r.route$.val).toBeDefined()
+	})
+	it("exposes searchParams$ observable", () => {
+		const r = new Router(routes)
+		expect(r.searchParams$).toBeDefined()
+		expect(typeof r.searchParams$.use).toBe("function")
+		expect(typeof r.searchParams$.subscribe).toBe("function")
+	})
+	it("route$.val matches current.route", () => {
+		const r = new Router(routes)
+		expect(r.route$.val.key).toBe(r.current.route.key)
+	})
+	it("searchParams$.val matches current search", () => {
+		const r = new Router(routes)
+		expect(r.searchParams$.val.toString()).toBe(new URLSearchParams(location.search).toString())
+	})
 })
 
 // ── find() ─────────────────────────────────────────────────────────────────
@@ -153,90 +169,114 @@ describe("Router.find", () => {
 	})
 })
 
-// ── subscribe / unsubscribe ────────────────────────────────────────────────
+// ── subscribe / unsubscribe via route$ ──────────────────────────────────────
 
-describe("subscribe", () => {
-	it("notifies subscribers on navigation", () => {
+describe("route$.subscribe", () => {
+	it("notifies subscribers on navigation", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.goto(uniquePath("/about"))
-		expect(fn).toHaveBeenCalledTimes(1)
+		await vi.waitFor(() => expect(fn).toHaveBeenCalledTimes(1))
 		expect(fn.mock.calls[0][0].key).toBe("about")
 	})
-	it("unsubscribe removes the listener", () => {
+	it("unsubscribe removes the listener", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		const unsub = r.subscribe(fn)
+		const unsub = r.route$.subscribe(fn)
 		unsub()
 		r.goto("/about")
+		await vi.waitFor(() => {})
 		expect(fn).not.toHaveBeenCalled()
 	})
-	it("supports multiple subscribers", () => {
+	it("supports multiple subscribers", async () => {
 		const r = new Router(routes)
 		const a = vi.fn()
 		const b = vi.fn()
-		r.subscribe(a)
-		r.subscribe(b)
+		r.route$.subscribe(a)
+		r.route$.subscribe(b)
 		r.goto(uniquePath("/about"))
-		expect(a).toHaveBeenCalledTimes(1)
+		await vi.waitFor(() => expect(a).toHaveBeenCalledTimes(1))
 		expect(b).toHaveBeenCalledTimes(1)
+	})
+})
+
+// ── searchParams$.subscribe ─────────────────────────────────────────────────
+
+describe("searchParams$.subscribe", () => {
+	it("fires when query params change without route change", async () => {
+		const r = new Router(routes)
+		const fn = vi.fn()
+		r.searchParams$.subscribe(fn)
+		r.goto(uniquePath("/about?foo=bar"))
+		await vi.waitFor(() => expect(fn).toHaveBeenCalledTimes(1))
+		const sp = fn.mock.calls[0][0]
+		expect(sp.get("foo")).toBe("bar")
+	})
+	it("searchParams$.val updates after navigation", async () => {
+		const r = new Router(routes)
+		r.goto(uniquePath("/about?page=2"))
+		await vi.waitFor(() => {
+			expect(r.searchParams$.val.get("page")).toBe("2")
+		})
 	})
 })
 
 // ── goto / replace ─────────────────────────────────────────────────────────
 
 describe("goto", () => {
-	it("goto with route key navigates to that route", () => {
+	it("goto with route key navigates to that route", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.goto(uniquePath("/about"))
-		expect(fn.mock.calls[0][0].key).toBe("about")
+		await vi.waitFor(() => expect(fn.mock.calls[0][0].key).toBe("about"))
 	})
-	it("goto with a raw string path navigates directly", () => {
+	it("goto with a raw string path navigates directly", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.goto(uniquePath("/about"))
-		expect(fn.mock.calls[0][0].key).toBe("about")
+		await vi.waitFor(() => expect(fn.mock.calls[0][0].key).toBe("about"))
 	})
-	it("goto with a route object navigates to that route", () => {
+	it("goto with a route object navigates to that route", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.goto(r.routes["about" as any])
-		expect(fn.mock.calls[0][0].key).toBe("about")
+		await vi.waitFor(() => expect(fn.mock.calls[0][0].key).toBe("about"))
 	})
-	it("goto with urlParams resolves the path", () => {
+	it("goto with urlParams resolves the path", async () => {
 		const r = new Router({
 			user: { path: "/user/:id", component: User },
 			notFound: { exact: false, path: "/", component: NotFound },
 		} as any)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.goto("user", { id: "99" })
-		const matched = fn.mock.calls[0][0]
-		expect(matched.key).toBe("user")
-		expect(matched.urlParams?.id).toBe("99")
+		await vi.waitFor(() => {
+			const matched = fn.mock.calls[0][0]
+			expect(matched.key).toBe("user")
+			expect(matched.urlParams?.id).toBe("99")
+		})
 	})
 })
 
 describe("replace", () => {
-	it("replace calls replaceState and notifies subscribers", () => {
+	it("replace calls replaceState and notifies subscribers", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.replace(uniquePath("/about"))
-		expect(fn).toHaveBeenCalledTimes(1)
+		await vi.waitFor(() => expect(fn).toHaveBeenCalledTimes(1))
 		expect(fn.mock.calls[0][0].key).toBe("about")
 	})
-	it("replace with a raw path string", () => {
+	it("replace with a raw path string", async () => {
 		const r = new Router(routes)
 		const fn = vi.fn()
-		r.subscribe(fn)
+		r.route$.subscribe(fn)
 		r.replace(uniquePath("/about"))
-		expect(fn.mock.calls[0][0].key).toBe("about")
+		await vi.waitFor(() => expect(fn.mock.calls[0][0].key).toBe("about"))
 	})
 })
 
@@ -277,9 +317,7 @@ describe("stacks", () => {
 	it("stackHistory records navigation from a stack child", () => {
 		const r = new Router(stackRoutes)
 		const photos = r.routes["photos" as any]
-		// Navigate to stack root first
 		r.replace("/photos")
-		// Then navigate to stack child — this pushes the previous entry to stackHistory
 		r.goto("/photos/1")
 		expect(photos.stackHistory!.length).toBeGreaterThanOrEqual(1)
 	})

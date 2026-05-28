@@ -19,7 +19,7 @@ const routeInfo = document.getElementById("route-info")!
 
 // Use the routeMatch passed by subscribe (not router.current, which
 // reads location.href before pushStateRaw commits the new URL).
-router.subscribe((match) => {
+router.route$.subscribe((match) => {
 	content.textContent = `Route: ${match.key}`
 	routeInfo.textContent = JSON.stringify({
 		key: match.key,

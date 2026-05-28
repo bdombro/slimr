@@ -51,7 +51,7 @@ test.describe("Router E2E", () => {
 		await page.goto("/")
 
 		const key = await page.evaluate(() => {
-			;(window as any).router.subscribe(() => {})
+			;(window as any).router.route$.subscribe(() => {})
 			return (window as any).router.current.route.key
 		})
 		expect(key).toBe("home")
@@ -95,12 +95,12 @@ test.describe("Router E2E", () => {
 		const page = await browser.newPage({ baseURL: getFixtureBaseUrl() })
 		await page.goto("/")
 
-		const calls = await page.evaluate(() => {
+		const calls = await page.evaluate(async () => {
 			let count = 0
-			;(window as any).router.subscribe(() => {
+			;(window as any).router.route$.subscribe(() => {
 				count++
 			})
-			;(window as any).router.goto("about")
+			await (window as any).router.goto("about")
 			return count
 		})
 

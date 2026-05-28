@@ -1,6 +1,6 @@
 {
   "name": "@slimr/router",
-  "version": "2.1.101",
+  "version": "3.0.1",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -39,8 +39,13 @@
     "esm",
     "README.md"
   ],
+  "dependencies": {
+    "@slimr/observable": "^0.0.3"
+  },
   "peerDependencies": {
     "@types/react": "*",
-    "@types/react-dom": "*"
+    "@types/react-dom": "*",
+    "react": "*",
+    "react-dom": "*"
   }
 }
