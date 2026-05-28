@@ -18,10 +18,11 @@ process.env.PW_FIXTURE_BASE_URL = fixtureBaseUrl
 export default defineConfig({
 	testDir: resolve(packageRoot, "playwright"),
 	fullyParallel: true,
-	use: {
-		browserName: "chromium",
-		baseURL: fixtureBaseUrl,
-	},
+	projects: [
+		{ name: "chromium", use: { browserName: "chromium", baseURL: fixtureBaseUrl } },
+		{ name: "firefox", use: { browserName: "firefox", baseURL: fixtureBaseUrl } },
+		{ name: "webkit", use: { browserName: "webkit", baseURL: fixtureBaseUrl } },
+	],
 	webServer: {
 		command: `cd ${fixtureDir} && ${viteBin} --config vite.config.ts --host 127.0.0.1 --port ${fixturePort} --strictPort`,
 		url: fixtureBaseUrl,
