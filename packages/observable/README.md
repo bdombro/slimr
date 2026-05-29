@@ -58,9 +58,34 @@ await state$.set((s) => ({ ...s, bar: 99 }))  // silent
 
 ## React
 
+### `ObservableR` — Include `.use()` hooks
+
+Subclass of `Observable` with `.use()` as sugar over `useObservable` (supports `select` and `getServerSnapshot`):
+
+```tsx
+import { ObservableR } from "@slimr/observable/react"
+
+const gate$ = new ObservableR("gate$", false)
+
+function Gate() {
+  const pending = gate$.use()
+  if (pending) return <div>Loading…</div>
+  return <App />
+}
+```
+
+**Slice-only re-renders** — same `select` as `subscribe`:
+
+```tsx
+function ManOnly({ state$ }: { state$: ObservableR<{ bar: number; man: number }> }) {
+  const man = state$.use({ select: (s) => s.man })
+  return <span>{man}</span>
+}
+```
+
 ### `useObservable` — subscribe to a shared observable
 
-Use for singletons or library-owned instances:
+Use for generic (aka non-react) observables, or you need to pass the hook options dynamically:
 
 ```tsx
 import type { Observable } from "@slimr/observable"
@@ -82,23 +107,7 @@ function ManOnly({ state$ }: { state$: Observable<{ bar: number; man: number }> 
 }
 ```
 
-### `ObservableR` — app-owned singletons with `.use()`
-
-Subclass of `Observable` with `.use()` as sugar over `useObservable` (supports `select` and `getServerSnapshot`):
-
-```tsx
-import { ObservableR } from "@slimr/observable/react"
-
-const gate$ = new ObservableR("gate$", false)
-
-function Gate() {
-  const pending = gate$.use()
-  if (pending) return <div>Loading…</div>
-  return <App />
-}
-```
-
-For libraries publishing state, stick to base **`Observable`** + consumers call **`useObservable($)`**.
+For libraries publishing state, stick to base **`Observable`** + consumers call **`useObservable($)`** or **`new ObservableR(name, init)`** locally.
 
 ### `useLocalObservable` — component-local state
 
@@ -141,7 +150,7 @@ const pending2 = gate$.use({ getServerSnapshot: () => false })
 | Shared mutable cell | `new Observable(name$, initial)` |
 | Notify on change | `$.subscribe(cb)` |
 | Notify when one field changes | `$.subscribe(cb, select)` |
-| Read in React | `useObservable($)` or `$.use()` |
-| Re-render on one field | `useObservable($, { select })` |
+| Read in React | `$.use()` (preferred) or `useObservable($)` |
+| Re-render on one field | `$.use({ select })` (preferred) or `useObservable($, { select })` |
 | Local component state | `useLocalObservable(initial)` |
 | SSR-safe first paint | `{ getServerSnapshot: () => … }` |
