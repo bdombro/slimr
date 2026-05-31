@@ -15,7 +15,11 @@ export async function mockSessionApi(page: Page, stats: SessionApiStats) {
 	})
 	await page.route("**/api/session/login", async (route) => {
 		stats.loginCalls += 1
-		await route.fulfill({ status: 200, body: "" })
+		await route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({ userId: "mock-uuid" }),
+		})
 	})
 	await page.route("**/api/session", async (route) => {
 		if (route.request().method() !== "GET") {

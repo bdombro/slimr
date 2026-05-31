@@ -58,6 +58,10 @@ export class DbSyncAuth {
 		return this.observables.email$
 	}
 
+	get userId$() {
+		return this.observables.userId$
+	}
+
 	/** App shell phase (`logged-out` | `booting` | `initial-sync` | `ready`). */
 	get phase(): DbAuthPhase {
 		return this.phase$.val

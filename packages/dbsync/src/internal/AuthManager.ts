@@ -8,9 +8,11 @@ import {
 	readEmail,
 	readIsLoggedIn,
 	readPendingLogout,
+	readUserId,
 	writeEmail,
 	writeIsLoggedIn,
 	writePendingLogout,
+	writeUserId,
 } from "./authStorage.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
 import { emitDebug } from "./debug.js"
@@ -30,6 +32,7 @@ type SessionChangeListener = () => void
 export class AuthManager {
 	private isLoggedInValue = readIsLoggedIn()
 	private emailValue = readEmail()
+	private userIdValue = readUserId()
 	private sessionStartCallbacks = new Set<SessionListener>()
 	private authenticatedCallbacks = new Set<SessionListener>()
 	private logoutCallbacks = new Set<SessionListener>()
@@ -77,6 +80,11 @@ export class AuthManager {
 	/** The current logged-in user's email (hydrated from localStorage). */
 	public get email() {
 		return this.emailValue
+	}
+
+	/** The current logged-in user's ID (hydrated from localStorage). */
+	public get userId() {
+		return this.userIdValue
 	}
 
 	/** Whether a remote logout is deferred until online. */
@@ -210,9 +218,15 @@ export class AuthManager {
 				"dbsync: cannot login while remote logout is pending",
 			)
 		}
-		await this.adapter.login(email, code)
+		const result = await this.adapter.login(email, code)
+		let userId: string | null = null
+		if (result && typeof result === "object" && "userId" in result) {
+			userId = result.userId
+		}
 		writeEmail(email)
 		this.emailValue = email
+		writeUserId(userId)
+		this.userIdValue = userId
 		this.isLoggedInValue = true
 		writeIsLoggedIn(true)
 		clearSyncCursorKeys()
@@ -244,6 +258,7 @@ export class AuthManager {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
 		this.setEmail(null, { persist: true })
+		this.setUserId(null, { persist: true })
 		clearSyncCursorKeys()
 		const results = await runListenersSettled(this.logoutCallbacks)
 		this.notifySessionChange()
@@ -255,6 +270,7 @@ export class AuthManager {
 		this.isLoggedInValue = true
 		writeIsLoggedIn(true)
 		this.emailValue = readEmail()
+		this.userIdValue = readUserId()
 		await this.fireSessionStart()
 		this.notifySessionChange()
 		await this.fireAuthenticated()
@@ -268,6 +284,7 @@ export class AuthManager {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
 		this.setEmail(null, { persist: true })
+		this.setUserId(null, { persist: true })
 		if (options.broadcast) this.events.broadcastAuth("AUTH_LOGOUT")
 		emitDebug(this.onDebug, { type: "session:logout", phase: "listeners" })
 		const listenerResults = await runListenersSettled(this.logoutCallbacks)
@@ -327,6 +344,12 @@ export class AuthManager {
 	private setEmail(value: string | null, options?: { persist?: boolean }) {
 		this.emailValue = value
 		if (options?.persist !== false) writeEmail(value)
+		this.notifySessionChange()
+	}
+
+	private setUserId(value: string | null, options?: { persist?: boolean }) {
+		this.userIdValue = value
+		if (options?.persist !== false) writeUserId(value)
 		this.notifySessionChange()
 	}
 

@@ -19,9 +19,9 @@ export class LocalAdapter implements BackendAdapter {
 		return true
 	}
 
-	/** Always resolves true to mimic successful mock logins. */
-	async login(): Promise<boolean> {
-		return true
+	/** Always resolves to mimic successful mock logins. */
+	async login(): Promise<{ userId: string }> {
+		return { userId: "local-user" }
 	}
 
 	/** Does nothing natively. */

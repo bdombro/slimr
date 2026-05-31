@@ -19,6 +19,7 @@ const offAuth = db.auth.onAuthenticated(() => navigate("/app")) // optional
 | `onLogout` | `db.auth.logout()`, 401 / failed revalidation, cross-tab `AUTH_LOGOUT` — **not** refresh |
 | `onAuthenticated` | `db.auth.login()`, cross-tab `AUTH_LOGIN` — **not** refresh boot |
 | `db.auth.email$` | Observable of the logged-in user's email address (hydrated from `localStorage` on page refresh, cleared to `null` on logout) |
+| `db.auth.userId$` | Observable of the logged-in user's UUID string (hydrated from `localStorage` on page refresh, cleared to `null` on logout) |
 | `db.auth.*$` + `.use()` on `DbSyncR` | Granular session/sync UI — [React](./React.md) |
 
 Listeners return `{ close() }` to unsubscribe. Logout listeners run in parallel (`Promise.allSettled`); rejections throw after teardown completes.

@@ -50,13 +50,14 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | `phase$` | `phase` | `"logged-out"` \| `"booting"` \| `"initial-sync"` \| `"ready"` |
 | `isInitialSyncPending$` | `isInitialSyncPending` | Logged in, no successful sync since login (true during `booting` and `initial-sync`). Optional: one loader for both; primary shell uses `phase$` ([Integration guide](./Offline.md)) |
 | `canQuery$` | `canQuery` | `isReady` && auth gate — used by `useDbQuery` |
+| `email$` | - | User email address (saved on login or from localStorage, cleared on logout). Read raw value via `.val` |
 | `isLoggedIn$` | `isLoggedIn` | Hydrated client session |
 | `isReady$` | `isReady` | IndexedDB open |
 | `isBooted$` | `isBooted` | Boot pipeline finished |
 | `isBootstrapping$` | `isBootstrapping` | Session-start callbacks in flight |
 | `pendingLogout$` | `pendingLogout` | Remote logout queued until online |
 | `offline$` / `online$` | `offline` / `online` | Browser connectivity |
-| `email$` | - | User email address (saved on login or from localStorage, cleared on logout). Read raw value via `.val` |
+| `userId$` | - | User UUID string (saved on login or from localStorage, cleared on logout). Read raw value via `.val` |
 
 | Method | Returns | Notes |
 | --- | --- | --- |

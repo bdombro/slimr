@@ -85,6 +85,7 @@ export class SessionManager {
 			this.authObs.offline$.set(flags.offline),
 			this.authObs.online$.set(!flags.offline),
 			this.authObs.email$.set(this.auth.email),
+			this.authObs.userId$.set(this.auth.userId),
 			this.syncObs.isStarted$.set(sync.isStarted),
 			this.syncObs.isLive$.set(sync.isLive),
 		])

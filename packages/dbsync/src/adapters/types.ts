@@ -20,7 +20,7 @@ export interface BackendAdapter {
 	/** Checks whether the current session is authenticated. */
 	checkAuth(): Promise<boolean>
 	/** Logs the current user in against the backend. */
-	login(email: string, code: string): Promise<boolean>
+	login(email: string, code: string): Promise<boolean | { userId: string }>
 	/** Logs the current user out of the backend. */
 	logout(): Promise<void>
 	/** Sends a one-time login code to the given email address. */

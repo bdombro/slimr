@@ -311,7 +311,7 @@ describe("DbSync sync engine", () => {
 		fetchMock.mockClear()
 		fetchMock
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
-			.mockResolvedValueOnce(new Response("", { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify({ userId: "user-123" }), { status: 200 }))
 			.mockResolvedValueOnce(new Response("", { status: 200 }))
 
 		expect(await db.auth.revalidate()).toBe(true)

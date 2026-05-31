@@ -6,14 +6,17 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.62
+
 ## 0.0.61
 
 ### Added
 
 - Persistent email tracking via `db.auth.email$` observable. Upon successful `login()`, the email is saved to `localStorage` under `dbsync-email`.
-- Seamless hydration of `db.auth.email$` from `localStorage` on page refresh or boot.
-- Auto-clear of the stored email address on `logout()`, `invalidateSession()`, or cross-tab logout events.
-- Synchronization of the email across tabs on cross-tab passive login and logout.
+- Persistent user ID tracking via `db.auth.userId$` observable. Upon successful `login()`, the `userId` returned by the backend is saved to `localStorage` under `dbsync-userId`.
+- Seamless hydration of `db.auth.email$` and `db.auth.userId$` from `localStorage` on page refresh or boot.
+- Auto-clear of the stored email and user ID on `logout()`, `invalidateSession()`, or cross-tab logout events.
+- Synchronization of the email and user ID across tabs on cross-tab passive login and logout.
 
 ## 0.0.60
 

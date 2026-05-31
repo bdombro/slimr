@@ -75,7 +75,12 @@ export class RestAdapter implements BackendAdapter {
 			body: JSON.stringify({ email, code }),
 		})
 		await throwIfNotOk(res, "Login failed")
-		return true
+		try {
+			const data = await res.json()
+			return { userId: data.userId }
+		} catch {
+			return { userId: "" }
+		}
 	}
 
 	/** Logs the current user out of the remote session. */
