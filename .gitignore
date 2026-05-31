@@ -32,3 +32,5 @@ package-lock.json
 # *.js.map
 *.tsbuildinfo
 vpdocs
+
+.last-run.json

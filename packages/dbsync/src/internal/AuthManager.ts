@@ -5,8 +5,10 @@ import {
 	AUTH_IS_LOGGED_IN_KEY,
 	AUTH_PENDING_LOGOUT_KEY,
 	clearSyncCursorKeys,
+	readEmail,
 	readIsLoggedIn,
 	readPendingLogout,
+	writeEmail,
 	writeIsLoggedIn,
 	writePendingLogout,
 } from "./authStorage.js"
@@ -27,6 +29,7 @@ type SessionChangeListener = () => void
  */
 export class AuthManager {
 	private isLoggedInValue = readIsLoggedIn()
+	private emailValue = readEmail()
 	private sessionStartCallbacks = new Set<SessionListener>()
 	private authenticatedCallbacks = new Set<SessionListener>()
 	private logoutCallbacks = new Set<SessionListener>()
@@ -69,6 +72,11 @@ export class AuthManager {
 	/** Whether the app considers the user signed in (hydrated from localStorage). */
 	public get isLoggedIn() {
 		return this.isLoggedInValue
+	}
+
+	/** The current logged-in user's email (hydrated from localStorage). */
+	public get email() {
+		return this.emailValue
 	}
 
 	/** Whether a remote logout is deferred until online. */
@@ -203,6 +211,8 @@ export class AuthManager {
 			)
 		}
 		await this.adapter.login(email, code)
+		writeEmail(email)
+		this.emailValue = email
 		this.isLoggedInValue = true
 		writeIsLoggedIn(true)
 		clearSyncCursorKeys()
@@ -233,6 +243,7 @@ export class AuthManager {
 	public async handlePassiveLogout() {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
+		this.setEmail(null, { persist: true })
 		clearSyncCursorKeys()
 		const results = await runListenersSettled(this.logoutCallbacks)
 		this.notifySessionChange()
@@ -243,6 +254,7 @@ export class AuthManager {
 	public async handlePassiveLogin() {
 		this.isLoggedInValue = true
 		writeIsLoggedIn(true)
+		this.emailValue = readEmail()
 		await this.fireSessionStart()
 		this.notifySessionChange()
 		await this.fireAuthenticated()
@@ -255,6 +267,7 @@ export class AuthManager {
 	}) {
 		await this.stopSync()
 		this.setLoggedIn(false, { persist: true })
+		this.setEmail(null, { persist: true })
 		if (options.broadcast) this.events.broadcastAuth("AUTH_LOGOUT")
 		emitDebug(this.onDebug, { type: "session:logout", phase: "listeners" })
 		const listenerResults = await runListenersSettled(this.logoutCallbacks)
@@ -308,6 +321,12 @@ export class AuthManager {
 	private setLoggedIn(value: boolean, options?: { persist?: boolean }) {
 		this.isLoggedInValue = value
 		if (options?.persist !== false) writeIsLoggedIn(value)
+		this.notifySessionChange()
+	}
+
+	private setEmail(value: string | null, options?: { persist?: boolean }) {
+		this.emailValue = value
+		if (options?.persist !== false) writeEmail(value)
 		this.notifySessionChange()
 	}
 

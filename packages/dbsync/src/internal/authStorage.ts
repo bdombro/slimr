@@ -1,6 +1,20 @@
 export const AUTH_IS_LOGGED_IN_KEY = "dbsync-isLoggedIn"
 export const AUTH_PENDING_LOGOUT_KEY = "dbsync-pendingLogout"
 export const SYNC_LAST_SUCCESS_AT_KEY = "dbsync-lastSuccessAt"
+export const AUTH_EMAIL_KEY = "dbsync-email"
+
+/** Reads persisted email address (defaults to null). */
+export function readEmail(): string | null {
+	if (typeof localStorage === "undefined") return null
+	return localStorage.getItem(AUTH_EMAIL_KEY)
+}
+
+/** Persists email address or clears it on logout. */
+export function writeEmail(value: string | null) {
+	if (typeof localStorage === "undefined") return
+	if (value) localStorage.setItem(AUTH_EMAIL_KEY, value)
+	else localStorage.removeItem(AUTH_EMAIL_KEY)
+}
 
 /** Reads persisted login flag (defaults to false). */
 export function readIsLoggedIn(): boolean {

@@ -3,7 +3,12 @@ import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { RestAdapter } from "./adapters/RestAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { DbSyncHttpError } from "./errors.js"
-import { writeIsLoggedIn, writePendingLogout } from "./internal/authStorage.js"
+import {
+	readEmail,
+	writeEmail,
+	writeIsLoggedIn,
+	writePendingLogout,
+} from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 import { wireAuth } from "./test-support/wireAuth.js"
 
@@ -175,5 +180,81 @@ describe("DbSync auth integration", () => {
 			severity: 2,
 		})
 		db.dispose()
+	})
+
+	test("email and email$ are null by default, are populated on login, saved to localStorage, hydrated on boot, cleared on logout, and synchronized across tabs", async () => {
+		// 1. Null by default
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		wireAuth(db)
+		await db.sync.start()
+
+		expect(db.auth.email$.val).toBeNull()
+		expect(readEmail()).toBeNull()
+
+		// 2. Populated on login and saved to localStorage
+		await db.auth.login("test@example.com", "000")
+		expect(db.auth.email$.val).toBe("test@example.com")
+		expect(readEmail()).toBe("test@example.com")
+
+		// 3. Hydrated on boot (refresh simulation)
+		db.dispose()
+
+		// Simulate page refresh with persisted email
+		writeIsLoggedIn(true)
+		writeEmail("test@example.com")
+
+		const db2 = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		wireAuth(db2)
+		await db2.waitForBooted()
+
+		expect(db2.auth.email$.val).toBe("test@example.com")
+
+		// 4. Cleared on logout
+		await db2.auth.logout()
+		expect(db2.auth.email$.val).toBeNull()
+		expect(readEmail()).toBeNull()
+
+		db2.dispose()
+	})
+
+	test("email and email$ are synchronized on cross-tab passive login and logout", async () => {
+		const dbActive = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		wireAuth(dbActive)
+		await dbActive.sync.start()
+
+		const dbPassive = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+		})
+		wireAuth(dbPassive)
+		await dbPassive.waitForBooted()
+
+		expect(dbPassive.auth.email$.val).toBeNull()
+
+		// Simulate login on active tab causing passive login on second tab
+		await dbActive.auth.login("passive@example.com", "000")
+		expect(dbActive.auth.email$.val).toBe("passive@example.com")
+
+		// Wait for passive login to propagate
+		await vi.waitFor(() => expect(dbPassive.auth.email$.val).toBe("passive@example.com"))
+
+		// Simulate logout on active tab causing passive logout on second tab
+		await dbActive.auth.logout()
+		expect(dbActive.auth.email$.val).toBeNull()
+
+		// Wait for passive logout to propagate
+		await vi.waitFor(() => expect(dbPassive.auth.email$.val).toBeNull())
+
+		dbActive.dispose()
+		dbPassive.dispose()
 	})
 })

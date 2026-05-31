@@ -16,6 +16,7 @@ export class AuthObservables {
 	readonly pendingLogout$: Observable<boolean>
 	readonly offline$: Observable<boolean>
 	readonly online$: Observable<boolean>
+	readonly email$: Observable<string | null>
 
 	constructor(instanceId: string) {
 		const p = `dbsync-${instanceId}`
@@ -29,5 +30,6 @@ export class AuthObservables {
 		this.pendingLogout$ = new Observable(`${p}-pendingLogout`, false)
 		this.offline$ = new Observable(`${p}-offline`, false)
 		this.online$ = new Observable(`${p}-online`, true)
+		this.email$ = new Observable(`${p}-email`, null as string | null)
 	}
 }

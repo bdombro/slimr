@@ -56,6 +56,7 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | `isBootstrapping$` | `isBootstrapping` | Session-start callbacks in flight |
 | `pendingLogout$` | `pendingLogout` | Remote logout queued until online |
 | `offline$` / `online$` | `offline` / `online` | Browser connectivity |
+| `email$` | - | User email address (saved on login or from localStorage, cleared on logout). Read raw value via `.val` |
 
 | Method | Returns | Notes |
 | --- | --- | --- |
