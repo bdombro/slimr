@@ -8,6 +8,7 @@ export function execPromise(command: string, options: { cwd?: string } = {}): Pr
 	return new Promise((resolve, reject) => {
 		exec(command, { cwd: options.cwd }, (error, stdout, stderr) => {
 			if (error) {
+				console.error(stderr || error.message)
 				reject(stderr || error.message)
 			} else {
 				resolve(stdout)

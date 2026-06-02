@@ -2,6 +2,18 @@
 
 ## UNRELEASED
 
+## 0.0.5
+
+## 0.0.4
+
+### Added
+
+- `Observable.notify()` — renamed from internal `publish()`, documented as the manual notification API for forcing subscriber notification after in-place mutation, bypassing the deep-equality check.
+
+### Changed
+
+- **Breaking:** `Observable.publish()` renamed to `Observable.notify()`. `publish()` was undocumented and considered internal; rename makes the intent clear. All existing callers of `publish()` (none outside this package) should use `notify()` instead.
+
 ## 0.0.3
 
 ### Changed

@@ -10,7 +10,8 @@ A convenience meta-package that re-exports many `@slimr` libs in one install.
 
 - [`@slimr/forms`](../forms/README.md)
 - [`@slimr/markdown`](../markdown/README.md)
-- [`@slimr/react-util`](../react-util/README.md) — hooks and utilities (mergeRefs, Observable, useColorScheme, useObservable, useReRender, useSet, and more)
+- [`@slimr/observable`](../observable/README.md) — framework-agnostic pub/sub state (`Observable`, `ObservableR`, `useObservable`)
+- [`@slimr/react-util`](../react-util/README.md) — hooks and utilities (mergeRefs, useColorScheme, useReRender, useSet, and more)
 - [`@slimr/router`](../router/README.md)
 - [`@slimr/styled`](../styled/README.md)
 - [`@slimr/swr`](../swr/README.md)

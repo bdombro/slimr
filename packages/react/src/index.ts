@@ -1,5 +1,6 @@
 export * from "@slimr/forms"
 export * from "@slimr/markdown"
+export * from "@slimr/observable"
 export * from "@slimr/react-util"
 export * from "@slimr/router"
 export * from "@slimr/styled"

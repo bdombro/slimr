@@ -18,7 +18,7 @@ describe("Observable", () => {
 		expect(fn).toHaveBeenCalledWith(2)
 	})
 
-	test("skips publish when deep-equal value unchanged", async () => {
+	test("skips notification when deep-equal value unchanged", async () => {
 		const o = new Observable("t-deep", { a: 1 })
 		const fn = vi.fn()
 		o.subscribe(fn)
@@ -52,6 +52,24 @@ describe("Observable", () => {
 		fn.mockClear()
 		await o.set((s) => ({ ...s, bar: 99 }))
 		expect(fn).not.toHaveBeenCalled()
+	})
+
+	test("notify forces subscriber notification after nested mutation", async () => {
+		const o = new Observable("t-notify", { nested: { a: 1 } })
+		const fn = vi.fn()
+		o.subscribe(fn)
+		o.val.nested.a = 2
+		await o.notify()
+		expect(fn).toHaveBeenCalledOnce()
+		expect(fn).toHaveBeenCalledWith({ nested: { a: 2 } })
+	})
+
+	test("notify with unchanged value still notifies subscribers", async () => {
+		const o = new Observable("t-notify-dup", 1)
+		const fn = vi.fn()
+		o.subscribe(fn)
+		await o.notify()
+		expect(fn).toHaveBeenCalledOnce()
 	})
 
 	test("subscribe with select passes slice not full value", async () => {

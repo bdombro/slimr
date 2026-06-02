@@ -54,6 +54,19 @@ await state$.set((s) => ({ ...s, bar: 99 }))  // silent
 
 **Prefer one observable per concern** when you can (`pending$`, `user$`). Use `select` when several fields must live in one atomic snapshot.
 
+### Manual notification (`notify`)
+
+When you mutate internal state in place (e.g. a nested property on an object) and need to notify subscribers, call **`notify()`** to force-fire all subscribers with the current value, bypassing the deep-equality check:
+
+```ts
+const list$ = new Observable("list$", [1, 2, 3])
+list$.subscribe((v) => console.log(v.length))
+list$.val.push(4)      // push works despite shallow freeze on Array
+await list$.notify()   // logs 4
+```
+
+This is an escape hatch from the recommended pattern of replacing the root value. Prefer `set` when you can.
+
 ---
 
 ## React

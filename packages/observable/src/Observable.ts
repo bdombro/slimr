@@ -30,8 +30,20 @@ export class Observable<T> {
 		globalThis.observables[name] = this
 	}
 
-	async publish() {
-		return Promise.all([...this.subscribers].map((subscriber) => subscriber(this._value)))
+	/**
+	 * Manually notify all subscribers of the current value, bypassing the deep-equality check.
+	 *
+	 * Useful after in-place mutation of a nested object or array property on the observable's value:
+	 *
+	 * ```ts
+	 * const list$ = new Observable("list$", [1, 2, 3])
+	 * list$.subscribe((v) => console.log(v.length))
+	 * list$.val.push(4)
+	 * await list$.notify()  // logs 4
+	 * ```
+	 */
+	async notify(): Promise<void> {
+		await Promise.all([...this.subscribers].map((subscriber) => subscriber(this._value)))
 	}
 
 	/**
@@ -48,7 +60,7 @@ export class Observable<T> {
 				: newValueOrSetter
 		if (!areEqualDeep(this._value, newValue)) {
 			this._value = newValue
-			await this.publish()
+			await this.notify()
 		}
 	}
 
