@@ -6,6 +6,8 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.65
+
 ## 0.0.64
 
 ## 0.0.63

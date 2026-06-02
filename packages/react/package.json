@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "4.0.20",
+  "version": "4.0.21",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -40,9 +40,9 @@
   "dependencies": {
     "@slimr/forms": "^5.0.54",
     "@slimr/markdown": "^2.1.93",
-    "@slimr/observable": "^0.0.5",
+    "@slimr/observable": "^0.0.6",
     "@slimr/react-util": "^2.0.4",
-    "@slimr/router": "^3.0.4",
+    "@slimr/router": "^3.0.5",
     "@slimr/styled": "^2.1.100",
     "@slimr/swr": "^2.1.79"
   },

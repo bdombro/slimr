@@ -90,9 +90,7 @@ export class Observable<T> {
 	}
 
 	get val(): T {
-		// Freeze the value to avoid cases where the internal object may be mutated
-		// without triggering subscribers.
-		return Object.freeze(this._value)
+		return this._value
 	}
 	set val(newValue: T) {
 		this.set(newValue)

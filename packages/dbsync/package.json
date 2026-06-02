@@ -1,6 +1,6 @@
 {
   "name": "@slimr/dbsync",
-  "version": "0.0.64",
+  "version": "0.0.65",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -57,7 +57,7 @@
     "esm"
   ],
   "dependencies": {
-    "@slimr/observable": "^0.0.5",
+    "@slimr/observable": "^0.0.6",
     "@slimr/util": "^3.2.80"
   },
   "peerDependencies": {

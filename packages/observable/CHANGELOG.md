@@ -2,6 +2,13 @@
 
 ## UNRELEASED
 
+## 0.0.6
+
+
+### Changed
+
+- Remove freezing of observable values in favor of the consumer freezing values if needed. This allows for manual notify flow to work with nested objects and arrays 
+
 ## 0.0.5
 
 ## 0.0.4
