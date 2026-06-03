@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "./adapters/LocalAdapter.js"
 import { RestAdapter } from "./adapters/RestAdapter.js"
-import { DbSync } from "./DbSync.js"
+import { DbSync, type DbSyncDebugEvent } from "./DbSync.js"
 import { writeIsLoggedIn } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
 import { wireAuth } from "./test-support/wireAuth.js"
@@ -139,6 +139,50 @@ describe("DbSync lifecycle", () => {
 			adapter: new RestAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
+		db.dispose()
+	})
+
+	test("emits events to a wildcard callback function", async () => {
+		writeIsLoggedIn(true)
+		const events: DbSyncDebugEvent[] = []
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+			events: (e) => events.push(e),
+		})
+		wireAuth(db)
+		await db.waitForBooted()
+
+		// Verify we captured the main boot events and initial sync states
+		expect(events.map((e) => e.type)).toContain("boot:start")
+		expect(events.map((e) => e.type)).toContain("boot:done")
+		expect(events.map((e) => e.type)).toContain("sync:state")
+		db.dispose()
+	})
+
+	test("emits events to specific listeners in an events object", async () => {
+		writeIsLoggedIn(true)
+		const bootStart = vi.fn()
+		const bootDone = vi.fn()
+		const syncState = vi.fn()
+
+		const db = new DbSync({
+			adapter: new LocalAdapter(),
+			tables: { posts: {} },
+			events: {
+				"boot:start": bootStart,
+				"boot:done": bootDone,
+				"sync:state": syncState,
+			},
+		})
+		wireAuth(db)
+		await db.waitForBooted()
+
+		expect(bootStart).toHaveBeenCalled()
+		expect(bootDone).toHaveBeenCalledWith(
+			expect.objectContaining({ type: "boot:done", isLoggedIn: true }),
+		)
+		expect(syncState).toHaveBeenCalled()
 		db.dispose()
 	})
 })

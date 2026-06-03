@@ -116,7 +116,7 @@ export class SyncEngine {
 		}
 		if (this.connectivity.offline) {
 			this.setSyncState("offline")
-			emitDebug(this.config.onDebug, {
+			emitDebug(this.config.events, {
 				type: "sync:cycle",
 				phase: "skipped",
 				reason: "offline",
@@ -124,23 +124,23 @@ export class SyncEngine {
 			return
 		}
 		if (!this.auth.canSync()) {
-			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "skipped", reason: "auth" })
+			emitDebug(this.config.events, { type: "sync:cycle", phase: "skipped", reason: "auth" })
 			return
 		}
 
-		emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "start" })
+		emitDebug(this.config.events, { type: "sync:cycle", phase: "start" })
 		this.setSyncState("syncing")
 		try {
 			const pullCount = await this.syncPull()
-			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "pull", pullCount })
+			emitDebug(this.config.events, { type: "sync:cycle", phase: "pull", pullCount })
 			const pushCount = await this.syncPush()
-			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "push", pushCount })
+			emitDebug(this.config.events, { type: "sync:cycle", phase: "push", pushCount })
 			this.setSyncState("idle")
 			writeLastSuccessAt(new Date().toISOString())
 			this.auth.notifySessionChange()
-			emitDebug(this.config.onDebug, { type: "sync:cycle", phase: "done" })
+			emitDebug(this.config.events, { type: "sync:cycle", phase: "done" })
 		} catch (err: any) {
-			emitDebug(this.config.onDebug, { type: "sync:error", error: err })
+			emitDebug(this.config.events, { type: "sync:error", error: err })
 			if (err instanceof DbSyncHttpError && err.status === 401) {
 				await this.auth.invalidateSession("401")
 				this.stop()
@@ -151,7 +151,7 @@ export class SyncEngine {
 
 	private setSyncState(state: SyncState) {
 		this.events.setState(state)
-		emitDebug(this.config.onDebug, { type: "sync:state", state })
+		emitDebug(this.config.events, { type: "sync:state", state })
 	}
 
 	/** Computes the local schema signature used for version handshakes. */
@@ -214,7 +214,7 @@ export class SyncEngine {
 					}
 					const storeName = post.variant
 					if (pendingLocal.has(this.pendingLocalKey(storeName, post.id))) {
-						emitDebug(this.config.onDebug, {
+						emitDebug(this.config.events, {
 							type: "sync:pull",
 							skipped: "pending-local",
 							table: storeName,
@@ -245,7 +245,7 @@ export class SyncEngine {
 				}
 				const nextCursor = pullCursorFromUpdatedAt(data.items[data.items.length - 1].updatedAt)
 				if (data.hasMore && nextCursor === cursor) {
-					emitDebug(this.config.onDebug, { type: "sync:pull", stuck: true, cursor })
+					emitDebug(this.config.events, { type: "sync:pull", stuck: true, cursor })
 					hasMore = false
 				} else {
 					localStorage.setItem("dbsync-pullSyncedUpTo", nextCursor)

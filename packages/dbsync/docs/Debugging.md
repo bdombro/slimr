@@ -2,18 +2,34 @@
 
 [Documentation index](./README.md) · [API reference](./API.md)
 
-`@slimr/dbsync` stays silent in production by default. For structured tracing, pass **`onDebug`** on `DbSyncConfig` (or call `db.emitDebug` from app code).
+`@slimr/dbsync` stays silent in production by default. For structured tracing and event handling, pass **`events`** on `DbSyncConfig` (or call `db.emitDebug` from app code).
 
-## Wire `onDebug` in development
+## Wire `events` in development
 
 ```typescript
 import type { DbSyncDebugEvent } from "@slimr/dbsync"
 
 export const db = new AppDb({
   adapter,
-  onDebug: import.meta.env.DEV
+  events: import.meta.env.DEV
     ? (event: DbSyncDebugEvent) => console.debug("[dbsync]", event)
     : undefined,
+})
+```
+
+Or target specific events with type-safety:
+
+```typescript
+export const db = new AppDb({
+  adapter,
+  events: {
+    "sync:error": ({ error }) => {
+      console.error("Sync failed:", error)
+    },
+    "boot:done": ({ isLoggedIn }) => {
+      console.log("DbSync booted. Logged in:", isLoggedIn)
+    }
+  }
 })
 ```
 
@@ -63,7 +79,7 @@ See [Testing](./Testing.md#playwright-e2e).
 
 ## See also
 
-- [API reference](./API.md) — `onDebug`, `emitDebug`
+- [API reference](./API.md) — `events`, `emitDebug`
 - [Sync engine](./Sync.md)
 - [Auth listeners](./Auth.md)
 - [Testing](./Testing.md)

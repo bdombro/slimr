@@ -1,5 +1,5 @@
 import type { BackendAdapter } from "../adapters/types.js"
-import type { DbSyncDebugListener } from "../debugEvents.js"
+import type { DbSyncDebugListener, DbSyncDebugListeners } from "../debugEvents.js"
 import { DbSyncHttpError, DbSyncNotAuthenticatedError, DbSyncOfflineError } from "../errors.js"
 import {
 	AUTH_IS_LOGGED_IN_KEY,
@@ -58,7 +58,7 @@ export class AuthManager {
 		private events: EventBus,
 		private connectivity: ConnectivityTracker,
 		private stopSync: () => void | Promise<void>,
-		private onDebug: DbSyncDebugListener | undefined,
+		private onDebug: DbSyncDebugListener | DbSyncDebugListeners | undefined,
 		private getIsReady: () => boolean,
 	) {
 		this.setupCrossTab()

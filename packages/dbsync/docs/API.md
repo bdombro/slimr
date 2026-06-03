@@ -12,7 +12,7 @@ Lookup for public `@slimr/dbsync` surface area. For narratives and examples, use
 | `tables` | `Record<string, DbSyncTableConfig>` | Optional inline schema |
 | `lifecycle` | `{ manual?: boolean }` | Default automatic boot + `sync.start()` |
 | `version` | `number` | Optional explicit schema version (overrides signature) |
-| `onDebug` | `(event: DbSyncDebugEvent) => void` | Optional structured tracing — [Debugging](./Debugging.md) |
+| `events` | `DbSyncDebugListener \| DbSyncDebugListeners` | Optional structured event listeners — [Debugging](./Debugging.md) |
 
 `DbSyncTableConfig`: `indexes?`, `defaultSetter?`, `migrations?`.
 
@@ -113,7 +113,7 @@ Throws `DbSyncNotAuthenticatedError` when `requiresAuth` and `!db.auth.isLoggedI
 
 | Method | Notes |
 | --- | --- |
-| `emitDebug(event)` | Forwards to `config.onDebug` when set |
+| `emitDebug(event)` | Forwards to `config.events` when set |
 | `dispose()` | Stops sync, tears down listeners and storage (tests / teardown) |
 
 ## `DbTable` / `db.posts` (repository)
@@ -176,7 +176,7 @@ API migrations and breaking changes: [CHANGELOG UNRELEASED](../CHANGELOG.md) · 
 | Export | Kind |
 | --- | --- |
 | `DbSync`, `DbTable`, `DbSyncAuth`, `DbSyncSync` | Classes |
-| `DbSyncConfig`, `DbSyncDebugEvent`, `DbSyncDebugListener`, `Migration` | Types |
+| `DbSyncConfig`, `DbSyncDebugEvent`, `DbSyncDebugListener`, `DbSyncDebugListeners`, `Migration` | Types |
 | `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange` | Types |
 | `DbSyncOfflineError`, `DbSyncNotAuthenticatedError`, `DbSyncHttpError` | Errors — [Errors](./Errors.md) |
 | `@slimr/dbsync/adapters` | `RestAdapter`, `LocalAdapter`, `BackendAdapter` |

@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.66
+
+### Changed
+
+- **Breaking:** Removed `onDebug` configuration property and replaced it with `events`, which supports both a catch-all listener callback `(event: DbSyncDebugEvent) => void` and a mapped, type-safe listener object `DbSyncDebugListeners` for cleaner event handling (e.g. `events: { "sync:error": ({ error }) => { ... } }`).
+
 ## 0.0.65
 
 ## 0.0.64

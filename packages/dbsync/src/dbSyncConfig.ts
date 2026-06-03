@@ -1,8 +1,13 @@
 import type { BackendAdapter } from "./adapters/types.js"
-import type { DbSyncDebugListener } from "./debugEvents.js"
+import type { DbSyncDebugListener, DbSyncDebugListeners } from "./debugEvents.js"
 import type { Migration } from "./internal/MigrationManager.js"
 
-export type { DbSyncDebugEvent, DbSyncDebugListener, DbSyncDebugSyncState } from "./debugEvents.js"
+export type {
+	DbSyncDebugEvent,
+	DbSyncDebugListener,
+	DbSyncDebugListeners,
+	DbSyncDebugSyncState,
+} from "./debugEvents.js"
 
 export interface DbSyncTableConfig {
 	indexes?: string[]
@@ -18,6 +23,6 @@ export interface DbSyncConfig {
 	}
 	version?: number
 	tables?: Record<string, DbSyncTableConfig>
-	/** Optional structured tracing (e.g. wire to `console.debug` in dev). */
-	onDebug?: DbSyncDebugListener
+	/** Optional structured event listeners. Can be a catch-all callback or a type-safe listeners object. */
+	events?: DbSyncDebugListener | DbSyncDebugListeners
 }

@@ -7,6 +7,7 @@ export type {
 	DbSyncConfig,
 	DbSyncDebugEvent,
 	DbSyncDebugListener,
+	DbSyncDebugListeners,
 	DbSyncTableConfig,
 } from "./dbSyncConfig.js"
 
@@ -112,7 +113,7 @@ export class DbSync {
 			() => {
 				this.sync.stop()
 			},
-			config.onDebug,
+			config.events,
 			() => this.storage.initted,
 		)
 		this.syncEngine = new SyncEngine(
@@ -401,14 +402,14 @@ export class DbSync {
 		})
 	}
 
-	/** Emits a debug event when `config.onDebug` is set. */
+	/** Emits a debug event when `config.events` is set. */
 	public emitDebug(event: DbSyncDebugEvent) {
-		emitDebug(this.config.onDebug, event)
+		emitDebug(this.config.events, event)
 	}
 
 	/** Responds to schema changes by disposing state and reloading the page. */
 	protected onSchemaChangeDetected() {
-		emitDebug(this.config.onDebug, { type: "schema:reload" })
+		emitDebug(this.config.events, { type: "schema:reload" })
 		this.storage.dispose()
 		this.sync.stop()
 		if (typeof window !== "undefined") {

@@ -25,3 +25,7 @@ export type DbSyncDebugEvent =
 	| { type: "query:error"; tables: string[]; error: unknown }
 
 export type DbSyncDebugListener = (event: DbSyncDebugEvent) => void
+
+export type DbSyncDebugListeners = {
+	[K in DbSyncDebugEvent["type"]]?: (event: Extract<DbSyncDebugEvent, { type: K }>) => void
+}

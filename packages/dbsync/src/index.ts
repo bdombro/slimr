@@ -3,6 +3,7 @@ export type {
 	DbSyncConfig,
 	DbSyncDebugEvent,
 	DbSyncDebugListener,
+	DbSyncDebugListeners,
 	DbUpdatesPayload,
 	RowChange,
 } from "./DbSync.js"

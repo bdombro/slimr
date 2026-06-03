@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "../adapters/LocalAdapter.js"
 import type { BackendAdapter } from "../adapters/types.js"
-import type { DbSyncDebugEvent, DbSyncDebugListener } from "../debugEvents.js"
+import type { DbSyncDebugEvent, DbSyncDebugListener, DbSyncDebugListeners } from "../debugEvents.js"
 import { installIndexedDbTestShim } from "../test-support/indexeddb.js"
 import { AuthManager } from "./AuthManager.js"
 import {
@@ -40,8 +40,8 @@ const createAuthManager = (
 	bus: EventBus,
 	conn: ConnectivityTracker,
 	stopSync: () => void | Promise<void> = () => {},
-	onDebug?: DbSyncDebugListener,
-) => new AuthManager(adapter, store, bus, conn, stopSync, onDebug, () => store.initted)
+	events?: DbSyncDebugListener | DbSyncDebugListeners,
+) => new AuthManager(adapter, store, bus, conn, stopSync, events, () => store.initted)
 
 describe("AuthManager", () => {
 	let storage: StorageManager
@@ -71,7 +71,7 @@ describe("AuthManager", () => {
 		vi.restoreAllMocks()
 	})
 
-	test("onDebug receives boot events", async () => {
+	test("events receives boot events via callback function", async () => {
 		const debugEvents: DbSyncDebugEvent[] = []
 		const manager = createAuthManager(
 			createAdapter(),
@@ -84,6 +84,21 @@ describe("AuthManager", () => {
 		await manager.boot()
 		expect(debugEvents.map((e) => e.type)).toEqual(["boot:start", "boot:done"])
 		expect(debugEvents[1]).toMatchObject({ type: "boot:done", isLoggedIn: false })
+	})
+
+	test("events receives boot events via listeners object", async () => {
+		const bootStart = vi.fn()
+		const bootDone = vi.fn()
+		const manager = createAuthManager(createAdapter(), storage, events, connectivity, () => {}, {
+			"boot:start": bootStart,
+			"boot:done": bootDone,
+		})
+		await manager.boot()
+		expect(bootStart).toHaveBeenCalledTimes(1)
+		expect(bootDone).toHaveBeenCalledTimes(1)
+		expect(bootDone).toHaveBeenCalledWith(
+			expect.objectContaining({ type: "boot:done", isLoggedIn: false }),
+		)
 	})
 
 	test("hydrates isLoggedIn from localStorage", () => {
