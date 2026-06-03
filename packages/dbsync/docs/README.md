@@ -53,7 +53,7 @@ Package overview: [README.md](../README.md).
 | Doc | Topics |
 | --- | --- |
 | [Testing](./Testing.md) | IndexedDB polyfill, mocks, Playwright |
-| [Debugging](./Debugging.md) | `onDebug`, sync/auth hooks |
+| [Debugging](./Debugging.md) | `events`, sync/auth hooks |
 | [SSR & Next.js](./SSR.md) | Hydration and null `db` |
 
 ## Archive

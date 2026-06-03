@@ -167,7 +167,7 @@ Used by `find` / `stream` (on `db` or repository).
 
 Session UI: **`db.auth.<field>$.use()`** — see [React](./React.md).
 
-Types exported from `@slimr/dbsync`: `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange`.
+Types exported from `@slimr/dbsync`: `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange`, `DbSyncError`, `DbSyncErrorCode`, `ErrorSeverity`.
 
 API migrations and breaking changes: [CHANGELOG UNRELEASED](../CHANGELOG.md) · [Migrating (archived)](./archive/Migrating-pre-0.0.43.md).
 
@@ -177,7 +177,7 @@ API migrations and breaking changes: [CHANGELOG UNRELEASED](../CHANGELOG.md) · 
 | --- | --- |
 | `DbSync`, `DbTable`, `DbSyncAuth`, `DbSyncSync` | Classes |
 | `DbSyncConfig`, `DbSyncDebugEvent`, `DbSyncDebugListener`, `DbSyncDebugListeners`, `Migration` | Types |
-| `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange` | Types |
+| `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange`, `DbSyncError`, `DbSyncErrorCode`, `ErrorSeverity` | Types |
 | `DbSyncOfflineError`, `DbSyncNotAuthenticatedError`, `DbSyncHttpError` | Errors — [Errors](./Errors.md) |
 | `@slimr/dbsync/adapters` | `RestAdapter`, `LocalAdapter`, `BackendAdapter` |
 

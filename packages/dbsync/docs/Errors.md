@@ -53,7 +53,33 @@ HTTP adapter failures and blocked login. Properties:
 
 `RestAdapter` sets `serverMessage` from swift-crud `{ message }` JSON when present, and `status` / `serverCode` from the response.
 
+## `DbSyncError` Interface
+
+For unified error handling (such as in debug event listeners), `@slimr/dbsync` defines the `DbSyncError` interface. All errors thrown or emitted by `@slimr/dbsync` satisfy this interface:
+
+```typescript
+import type { DbSyncError, ErrorSeverity, DbSyncErrorCode } from "@slimr/dbsync"
+
+export interface DbSyncError extends Error {
+  readonly severity: ErrorSeverity // 0 | 1 | 2
+  readonly code?: DbSyncErrorCode
+}
+```
+
+Any unknown runtime or network errors caught internally are normalized to this shape via an internal helper, ensuring they always have a `severity` property (defaulting to `1` for unrecognized errors).
+
+### Severity Levels (`ErrorSeverity`)
+
+The `severity` field classifies errors to simplify handling and filter noise (such as transient network drops vs. authentication failures):
+
+| Severity | Meaning | Example Errors / Codes | Typical Action |
+| --- | --- | --- | --- |
+| `0` | **Transient / Expected** | `DbSyncOfflineError` (offline), network fetch drops (`server` code) | Ignore, or show a subtle offline indicator |
+| `1` | **Unexpected but Non-critical** | `server_error`, `not_found`, `conflict`, generic runtime errors | Log to telemetry / console, optionally toast |
+| `2` | **Action Required** | `DbSyncNotAuthenticatedError` (not_authenticated), auth invalidation (`unauthorized`, `forbidden`) | Prompt user to log in again / redirect to login page |
+
 ## See also
 
 - [Auth listeners](./Auth.md) — callbacks
 - [RestAdapter](./RestAdapter.md) — endpoint errors
+

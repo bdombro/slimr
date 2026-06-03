@@ -5,7 +5,7 @@ import { promiseWithResolvers } from "../util/promises.js"
 import type { AuthManager } from "./AuthManager.js"
 import { readLastSuccessAt, writeLastSuccessAt } from "./authStorage.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
-import { emitDebug } from "./debug.js"
+import { emitDebug, toError } from "./debug.js"
 import type { EventBus, SyncState } from "./EventBus.js"
 import type { StorageManager } from "./storage/index.js"
 import { getSchemaSignature } from "./storage/index.js"
@@ -140,7 +140,7 @@ export class SyncEngine {
 			this.auth.notifySessionChange()
 			emitDebug(this.config.events, { type: "sync:cycle", phase: "done" })
 		} catch (err: any) {
-			emitDebug(this.config.events, { type: "sync:error", error: err })
+			emitDebug(this.config.events, { type: "sync:error", error: toError(err) })
 			if (err instanceof DbSyncHttpError && err.status === 401) {
 				await this.auth.invalidateSession("401")
 				this.stop()

@@ -131,7 +131,7 @@ When the hook receives a table update but the filter returns `false`, it does no
 
 ### Errors
 
-Query failures emit `query:error` on `config.onDebug` when set — see [Debugging](./Debugging.md). The hook leaves the last successful `value` and sets `loading: false`.
+Query failures emit `query:error` on `config.events` when set — see [Debugging](./Debugging.md). The hook leaves the last successful `value` and sets `loading: false`.
 
 ## Exports
 

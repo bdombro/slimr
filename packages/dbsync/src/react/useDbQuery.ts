@@ -1,6 +1,7 @@
 import { areEqualDeep } from "@slimr/util"
 import { useEffect, useState } from "react"
 import type { DbSyncQueryHost } from "../dbSyncLikeType.js"
+import { toError } from "../internal/debug.js"
 import type { DbUpdatesPayload, RowChange } from "../internal/EventBus.js"
 
 type DbQueryState<T> = {
@@ -63,7 +64,7 @@ export function useDbQuery<T>(
 					})
 				}
 			} catch (err) {
-				db.emitDebug({ type: "query:error", tables: tableArray, error: err })
+				db.emitDebug({ type: "query:error", tables: tableArray, error: toError(err) })
 				if (isMounted) {
 					setState((current) => ({ ...current, loading: false }))
 				}

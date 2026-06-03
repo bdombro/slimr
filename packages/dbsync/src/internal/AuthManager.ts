@@ -15,7 +15,7 @@ import {
 	writeUserId,
 } from "./authStorage.js"
 import type { ConnectivityTracker } from "./ConnectivityTracker.js"
-import { emitDebug } from "./debug.js"
+import { emitDebug, toError } from "./debug.js"
 import type { EventBus } from "./EventBus.js"
 import {
 	runListenersSettled,
@@ -173,7 +173,7 @@ export class AuthManager {
 		} catch (err) {
 			emitDebug(this.onDebug, {
 				type: "boot:failed",
-				error: err,
+				error: toError(err),
 			})
 			throw err
 		} finally {

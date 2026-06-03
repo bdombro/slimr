@@ -72,3 +72,9 @@ export class DbSyncHttpError extends Error {
 		this.serverMessage = options?.serverMessage
 	}
 }
+
+/** Common shape for dbsync errors, guaranteeing severity level. */
+export interface DbSyncError extends Error {
+	readonly severity: ErrorSeverity
+	readonly code?: DbSyncErrorCode
+}

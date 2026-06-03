@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.67
+
+### Changed
+
+- **Breaking:** Changed the type of `error` in `DbSyncDebugEvent` (for `boot:failed`, `sync:error`, and `query:error` events) from `unknown` to `DbSyncError`. All caught errors (including generic network/fetch failures) are normalized to this interface, guaranteeing a `.severity` property (0 for transient network errors, 1 or 2 for other errors) and making it easy to filter out network noise.
+
 ## 0.0.66
 
 ### Changed

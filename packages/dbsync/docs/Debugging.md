@@ -17,14 +17,22 @@ export const db = new AppDb({
 })
 ```
 
-Or target specific events with type-safety:
+Or target specific events with type-safety and leverage `DbSyncError` severity to handle errors cleanly:
 
 ```typescript
+import { toast } from "~/foundation/toasts" // App code example
+
 export const db = new AppDb({
   adapter,
   events: {
     "sync:error": ({ error }) => {
-      console.error("Sync failed:", error)
+      // Quietly ignore transient offline/network errors (severity 0)
+      if (error.severity === 0) return
+
+      toast({
+        message: error.message || "Sync failed",
+        variant: "error",
+      })
     },
     "boot:done": ({ isLoggedIn }) => {
       console.log("DbSync booted. Logged in:", isLoggedIn)
@@ -33,22 +41,27 @@ export const db = new AppDb({
 })
 ```
 
+See [Errors](./Errors.md) for details on the error severity scale.
+
 ## Event types
 
-| `type` | When |
-| --- | --- |
-| `boot:start` / `boot:done` | Automatic or manual boot pipeline |
-| `session:start` | Internal `start()` callbacks (session replay / login) |
-| `session:authenticated` | `onAuthenticated` listener phase |
-| `session:logout` | `phase`: `listeners` → `cleared` → `remote` |
-| `sync:cycle` | `phase`: `start`, `pull`, `push`, `done`, or `skipped` (`reason`: `offline` \| `auth`) |
-| `sync:state` | Sync timer state (`idle`, `syncing`, `offline`, `error`) |
-| `sync:error` | Pull/push failure (non-401) |
-| `auth:invalidate` | `reason`: `401` \| `revalidate` |
-| `schema:reload` | Local schema upgrade triggered page reload |
-| `query:error` | `useDbQuery` query failure |
+| `type` | Payload / Context | When |
+| --- | --- | --- |
+| `boot:start` | | Automatic or manual boot pipeline |
+| `boot:done` | `isLoggedIn: boolean`, `isReady: boolean` | Boot pipeline finished successfully |
+| `boot:failed` | `error: DbSyncError` | Boot pipeline failed |
+| `session:start` | | Internal `start()` callbacks (session replay / login) |
+| `session:authenticated` | | `onAuthenticated` listener phase |
+| `session:logout` | `phase: "listeners" \| "cleared" \| "remote"` | Logout teardown steps |
+| `sync:cycle` | `phase: "start" \| "pull" \| "push" \| "done" \| "skipped"`, `reason?`, `pullCount?`, `pushCount?` | Pull/push cycle progress |
+| `sync:state` | `state: DbSyncDebugSyncState` | Sync timer state change (`idle`, `syncing`, `offline`, `error`) |
+| `sync:pull` | | Skipping or stuck cursor logs |
+| `sync:error` | `error: DbSyncError` | Pull/push failure (non-401) |
+| `auth:invalidate` | `reason: "401" \| "revalidate"` | Session invalidation trigger |
+| `schema:reload` | | Local schema upgrade triggered page reload |
+| `query:error` | `tables: string[]`, `error: DbSyncError` | `useDbQuery` query failure |
 
-## Without `onDebug`
+## Alternative: Subscribing to Observables
 
 Subscribe to existing hooks:
 
