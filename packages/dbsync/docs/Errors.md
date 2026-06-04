@@ -14,7 +14,7 @@ import {
 
 ## `DbSyncOfflineError`
 
-Thrown when a network-backed auth action runs while offline and the adapter has `requiresAuth: true` (default for `RestAdapter`):
+Thrown when a network-backed auth action runs while offline and the adapter has `requiresAuth: true` (default for `RestCookieAdapter` / `RestBearerAdapter`):
 
 - `db.auth.sendCode()`
 - `db.auth.login()`
@@ -51,7 +51,7 @@ HTTP adapter failures and blocked login. Properties:
 | `pending_logout` | `login()` while `pendingLogout` is set |
 | `server` | `sendCode` / `login` / `pull` / `push` HTTP failure |
 
-`RestAdapter` sets `serverMessage` from swift-crud `{ message }` JSON when present, and `status` / `serverCode` from the response.
+`RestCookieAdapter` and `RestBearerAdapter` set `serverMessage` from swift-crud `{ message }` JSON when present, and `status` / `serverCode` from the response.
 
 ## `DbSyncError` Interface
 
@@ -81,5 +81,5 @@ The `severity` field classifies errors to simplify handling and filter noise (su
 ## See also
 
 - [Auth listeners](./Auth.md) — callbacks
-- [RestAdapter](./RestAdapter.md) — endpoint errors
+- [RestCookieAdapter](./RestCookieAdapter.md) / [RestBearerAdapter](./RestBearerAdapter.md) — endpoint errors
 

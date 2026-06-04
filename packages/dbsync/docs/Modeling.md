@@ -6,7 +6,7 @@ Because `@slimr/dbsync` uses IndexedDB under the hood, it is a **NoSQL Document 
 
 Here are common strategies for modeling relations in an offline-first NoSQL database.
 
-Examples that read or write assume `await db.waitForBooted()` has already run (and `db.auth.isLoggedIn` when using `RestAdapter`).
+Examples that read or write assume `await db.waitForBooted()` has already run (and `db.auth.isLoggedIn` when using `RestCookieAdapter` or `RestBearerAdapter`).
 
 ## 1:1 and 1:N (One-to-Many)
 

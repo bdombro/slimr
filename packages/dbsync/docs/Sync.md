@@ -1,6 +1,6 @@
 # Sync engine
 
-[Documentation index](./README.md) · [Auth listeners](./Auth.md) · [Adapters](./Adapters.md) · [RestAdapter](./RestAdapter.md)
+[Documentation index](./README.md) · [Auth listeners](./Auth.md) · [Adapters](./Adapters.md) · [RestCookieAdapter](./RestCookieAdapter.md) / [RestBearerAdapter](./RestBearerAdapter.md)
 
 How `@slimr/dbsync` moves data between IndexedDB and your backend after the app is booted and (when required) logged in.
 
@@ -50,7 +50,7 @@ await db.sync.trigger()
 
 ## Pull / push shape
 
-Your adapter receives and returns records in the REST envelope (see [RestAdapter](./RestAdapter.md)):
+Your adapter receives and returns records in the REST envelope (see [RestCookieAdapter](./RestCookieAdapter.md) or [RestBearerAdapter](./RestBearerAdapter.md)):
 
 - `variant` — table name, or `__dbsync_system` for schema version records.
 - `content` — JSON string of the row body.

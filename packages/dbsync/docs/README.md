@@ -7,7 +7,7 @@ Package overview: [README.md](../README.md).
 | I want to… | Read |
 | --- | --- |
 | Set up dbsync in a new app | [Getting started](./GettingStarted.md) → [Integration guide](./Offline.md) → [React](./React.md) |
-| Build login, refresh, offline logout | [Integration guide](./Offline.md) → [Auth listeners](./Auth.md) → [RestAdapter](./RestAdapter.md) |
+| Build login, refresh, offline logout | [Integration guide](./Offline.md) → [Auth listeners](./Auth.md) → [RestCookieAdapter](./RestCookieAdapter.md) / [RestBearerAdapter](./RestBearerAdapter.md) |
 | Build the app shell UI | [Integration guide](./Offline.md) (rules) → [React](./React.md) (`AppShell`, `useDbQuery`) |
 | Understand sync and multi-tab | [Sync engine](./Sync.md) → [Adapters](./Adapters.md) |
 | Look up a method or getter | [API reference](./API.md) |
@@ -38,7 +38,8 @@ Package overview: [README.md](../README.md).
 | --- | --- |
 | [Sync engine](./Sync.md) | Dirty queue, pull/push, leader tab, readiness |
 | [Adapters](./Adapters.md) | `BackendAdapter`, `LocalAdapter`, `requiresAuth` |
-| [RestAdapter](./RestAdapter.md) | REST + swift-crud endpoints |
+| [RestCookieAdapter](./RestCookieAdapter.md) | REST cookie-based endpoints |
+| [RestBearerAdapter](./RestBearerAdapter.md) | REST Bearer-token endpoints |
 
 ## Reference
 

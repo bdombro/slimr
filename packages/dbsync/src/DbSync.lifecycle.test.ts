@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "./adapters/LocalAdapter.js"
-import { RestAdapter } from "./adapters/RestAdapter.js"
+import { RestCookieAdapter } from "./adapters/RestCookieAdapter.js"
 import { DbSync, type DbSyncDebugEvent } from "./DbSync.js"
 import { writeIsLoggedIn } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
@@ -91,7 +91,7 @@ describe("DbSync lifecycle", () => {
 
 	test("waitForBooted leaves isLoggedIn false when logged out", async () => {
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db)
@@ -134,9 +134,9 @@ describe("DbSync lifecycle", () => {
 		db.dispose()
 	})
 
-	test("RestAdapter constructs without auth listeners", () => {
+	test("RestCookieAdapter constructs without auth listeners", () => {
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		db.dispose()

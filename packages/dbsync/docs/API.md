@@ -179,7 +179,7 @@ API migrations and breaking changes: [CHANGELOG UNRELEASED](../CHANGELOG.md) · 
 | `DbSyncConfig`, `DbSyncDebugEvent`, `DbSyncDebugListener`, `DbSyncDebugListeners`, `Migration` | Types |
 | `DbAuthPhase`, `SyncState`, `DbUpdatesPayload`, `RowChange`, `DbSyncError`, `DbSyncErrorCode`, `ErrorSeverity` | Types |
 | `DbSyncOfflineError`, `DbSyncNotAuthenticatedError`, `DbSyncHttpError` | Errors — [Errors](./Errors.md) |
-| `@slimr/dbsync/adapters` | `RestAdapter`, `LocalAdapter`, `BackendAdapter` |
+| `@slimr/dbsync/adapters` | `RestCookieAdapter`, `RestBearerAdapter`, `LocalAdapter`, `BackendAdapter` |
 
 ## See also
 

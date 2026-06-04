@@ -7,7 +7,7 @@ export type SessionApiStats = {
 	checkAuthCalls: number
 }
 
-/** Mocks RestAdapter session and sync endpoints for auth e2e tests. */
+/** Mocks REST adapter session and sync endpoints for auth e2e tests. */
 export async function mockSessionApi(page: Page, stats: SessionApiStats) {
 	await page.route("**/api/session/logout", async (route) => {
 		stats.logoutCalls += 1

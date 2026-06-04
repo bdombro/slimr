@@ -143,5 +143,5 @@ Session routes must not be served from cache while offline — stale `GET /api/s
 - [React](./React.md) — `DbSyncR`, `.use()`, `useDbQuery`
 - [Auth listeners](./Auth.md) — callback matrix
 - [Sync engine](./Sync.md) — dirty queue, leader tab
-- [RestAdapter](./RestAdapter.md) — API endpoints
+- [RestCookieAdapter](./RestCookieAdapter.md) / [RestBearerAdapter](./RestBearerAdapter.md) — API endpoints
 - [Migrating (archived)](./archive/Migrating-pre-0.0.43.md) — pre-0.0.43 API moves

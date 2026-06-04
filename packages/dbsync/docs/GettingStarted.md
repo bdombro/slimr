@@ -21,7 +21,7 @@ Bring your own TypeScript interfaces (hand-written or generated from your backen
 ```typescript
 import { DbTable } from "@slimr/dbsync"
 import { DbSyncR } from "@slimr/dbsync/react"
-import { RestAdapter } from "@slimr/dbsync/adapters"
+import { RestCookieAdapter } from "@slimr/dbsync/adapters"
 
 interface Post {
     id: string
@@ -52,7 +52,7 @@ class AppDb extends DbSyncR {
 }
 
 export const db = new AppDb({
-    adapter: new RestAdapter({ url: "https://api.myapp.com" }),
+    adapter: new RestCookieAdapter({ url: "https://api.myapp.com" }),
 })
 
 db.auth.onLogout(() => navigate("/login"))
@@ -72,7 +72,7 @@ Typical files: `db.ts`, `AppShell.tsx`, feature components (`PostList.tsx`, …)
 
 ## Lifecycle (automatic by default)
 
-- **Session-backed** (`RestAdapter`): microtask boot — hydrated session replay + internal `sync.start()` when logged in.
+- **Session-backed** (`RestCookieAdapter` / `RestBearerAdapter`): microtask boot — hydrated session replay + internal `sync.start()` when logged in.
 - **Local-only** (`LocalAdapter`): opens IndexedDB automatically when not manual.
 
 ### Headless / scripts
@@ -101,7 +101,7 @@ if (db.auth.isLoggedIn) {
 const adapter =
     import.meta.env.VITE_LOCAL_BACKEND === "true"
         ? new LocalAdapter()
-        : new RestAdapter({ url: import.meta.env.VITE_API_URL })
+        : new RestCookieAdapter({ url: import.meta.env.VITE_API_URL })
 
 export const db = new AppDb({ adapter })
 db.auth.onLogout(() => navigate("/login"))

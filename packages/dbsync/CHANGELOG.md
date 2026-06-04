@@ -6,6 +6,17 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.68
+
+### Added
+
+- Introduced `RestBearerAdapter` which uses `Authorization: Bearer <token>` HTTP headers and persists the session token in `localStorage`.
+
+### Changed
+
+- **Breaking:** Renamed `RestAdapter` to `RestCookieAdapter` for cookie-based REST authentication.
+- **Fix:** `RestBearerAdapter.login()` now throws when the server returns a successful `200` response but omits the `token` field, rather than silently succeeding with no token stored.
+
 ## 0.0.67
 
 ### Changed

@@ -1,24 +1,22 @@
-# RestAdapter
+# RestCookieAdapter
 
 [Documentation index](./README.md) · [Sync engine](./Sync.md) · [Auth listeners](./Auth.md)
 
-The `RestAdapter` is the default backend adapter shipped with `@slimr/dbsync`.
+The `RestCookieAdapter` is a cookie-backed REST implementation of the backend adapter contract.
 
-It maps the offline-first IndexedDB synchronizer to a very specific set of REST JSON endpoints. The easiest way to satisfy these expectations on your server is to use the officially supported backend, [swift-crud](https://github.com/bdombro/swift-crud) — a ready-made Go + SQLite API built specifically for this architecture.
-
-You can instantiate `RestAdapter` by providing your API's base URL:
+You can instantiate `RestCookieAdapter` by providing your API's base URL:
 
 ```typescript
-import { RestAdapter } from "@slimr/dbsync/adapters";
+import { RestCookieAdapter } from "@slimr/dbsync/adapters";
 
-const adapter = new RestAdapter({ url: "https://api.myapp.com" });
+const adapter = new RestCookieAdapter({ url: "https://api.myapp.com" });
 ```
 
 ---
 
 ## API Expectations
 
-If you are building your own backend instead of using `swift-crud`, your server must implement the following endpoints and JSON shapes for `RestAdapter` to function without throwing errors.
+Your server must implement the following endpoints and JSON shapes for `RestCookieAdapter` to function without throwing errors.
 
 ### 1. Data Pull: `GET /api/posts`
 
@@ -67,13 +65,11 @@ An array of mutated records stringified exactly like the Pull response:
 The session endpoints expect basic HTTP Cookie-based authentication mechanisms.
 
 - **Check Auth:** `GET /api/session` (Returns 200 OK if the browser cookie is an authenticated session, 4xx otherwise)
-- **Send Code:** `POST /api/session/send-code` (Expects JSON body `{ "email": "..." }` and emails a one-time login code). On failure, swift-crud returns `{ "message": "..." }`; `RestAdapter` throws `DbSyncHttpError` with `serverMessage`, `status`, and `serverCode`.
+- **Send Code:** `POST /api/session/send-code` (Expects JSON body `{ "email": "..." }` and emails a one-time login code). On failure, returns `{ "message": "..." }`; `RestCookieAdapter` throws `DbSyncHttpError` with `serverMessage`, `status`, and `serverCode`.
 - **Login:** `POST /api/session/login` (Expects JSON body `{ "email": "...", "code": "..." }` and should set the auth cookie here). On failure, same `{ "message" }` error shape.
-- **Pull:** `GET /api/posts` — on failure, `RestAdapter` throws `DbSyncHttpError` with the response status and server body.
-- **Push:** `POST /api/posts/upsert-many` — on failure, `RestAdapter` throws `DbSyncHttpError` with the response status and server body.
 - **Logout:** `POST /api/session/logout` (Destroys the session cookie)
 
-`RestAdapter` uses the default **`requiresAuth: true`**. Subscribe `db.auth.onLogout` after construction; automatic boot opens IndexedDB when logged in. See [Offline.md](./Offline.md).
+`RestCookieAdapter` uses the default **`requiresAuth: true`**. Subscribe `db.auth.onLogout` after construction; automatic boot opens IndexedDB when logged in. See [Offline.md](./Offline.md).
 
 ### Session endpoints and offline behavior
 
@@ -84,5 +80,3 @@ The session endpoints expect basic HTTP Cookie-based authentication mechanisms.
 | `db.auth.revalidate()` (optional) | Throws `DbSyncOfflineError` when offline. Automatic revalidation on `online`. |
 | `db.auth.logout()` | Clears local IndexedDB immediately; **defers** `POST /api/session/logout` until online (`dbsync-pendingLogout`). |
 | Browser `online` + logged in | dbsync calls `GET /api/session`; if 4xx, runs `onLogout` listeners. Also flushes pending logout. |
-
-**Service workers:** See [Integration guide — Service workers](./Offline.md#service-workers-pwas).

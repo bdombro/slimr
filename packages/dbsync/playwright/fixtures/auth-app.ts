@@ -1,4 +1,4 @@
-import { RestAdapter } from "../../src/adapters/RestAdapter.js"
+import { RestCookieAdapter } from "../../src/adapters/RestCookieAdapter.js"
 import { DbSync, DbTable } from "../../src/index.js"
 import { writeIsLoggedIn } from "../../src/internal/authStorage.js"
 
@@ -29,7 +29,7 @@ const log = (message: string) => {
 }
 
 const db = new AuthFixtureDb({
-	adapter: new RestAdapter({ url: window.location.origin }),
+	adapter: new RestCookieAdapter({ url: window.location.origin }),
 })
 
 db.auth.onAuthenticated(async () => {

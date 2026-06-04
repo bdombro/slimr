@@ -34,7 +34,7 @@ npm install @slimr/dbsync
 
 ```typescript
 import { DbSync, DbTable } from "@slimr/dbsync"
-import { RestAdapter } from "@slimr/dbsync/adapters"
+import { RestCookieAdapter } from "@slimr/dbsync/adapters"
 
 interface Post {
     id: string
@@ -52,7 +52,7 @@ class AppDb extends DbSync {
     posts = new PostTable(this) // DbTable subclass — see Getting started
 }
 
-const db = new AppDb({ adapter: new RestAdapter({ url: "https://api.myapp.com" }) })
+const db = new AppDb({ adapter: new RestCookieAdapter({ url: "https://api.myapp.com" }) })
 db.auth.onLogout(() => {/* route to login */})
 
 await db.waitForBooted()

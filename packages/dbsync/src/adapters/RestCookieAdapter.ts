@@ -1,43 +1,18 @@
-import { DbSyncHttpError } from "../errors.js"
+import { throwIfNotOk } from "./throwIfNotOk.js"
 import type { BackendAdapter, SyncPullResult } from "./types.js"
 
 /**
- * Throws `DbSyncHttpError` using the swift-crud `{ message }` body when present.
+ * Configuration for the built-in REST cookie adapter.
  */
-async function throwIfNotOk(res: Response, fallback: string): Promise<void> {
-	if (res.ok) return
-	let message = fallback
-	let serverCode: string | undefined
-	try {
-		const body = await res.json()
-		if (typeof body?.message === "string" && body.message.length > 0) {
-			message = body.message
-		}
-		if (typeof body?.code === "string") {
-			serverCode = body.code
-		}
-	} catch {
-		// Non-JSON or empty body — use fallback.
-	}
-	throw new DbSyncHttpError("server", message, {
-		status: res.status,
-		serverCode,
-		serverMessage: message,
-	})
-}
-
-/**
- * Configuration for the built-in REST adapter.
- */
-export interface RestAdapterConfig {
+export interface RestCookieAdapterConfig {
 	/** The base URL of the remote API. */
 	url: string
 }
 
 /**
- * A REST-backed implementation of the backend adapter contract.
+ * A REST-backed implementation of the backend adapter contract using cookies.
  */
-export class RestAdapter implements BackendAdapter {
+export class RestCookieAdapter implements BackendAdapter {
 	/** REST apps require login before data APIs and sync. */
 	public readonly requiresAuth = true as const
 
@@ -46,7 +21,7 @@ export class RestAdapter implements BackendAdapter {
 	 *
 	 * @param config The REST adapter configuration.
 	 */
-	constructor(private config: RestAdapterConfig) {}
+	constructor(private config: RestCookieAdapterConfig) {}
 
 	/** Checks whether the server session cookie is currently authenticated. */
 	public async checkAuth() {

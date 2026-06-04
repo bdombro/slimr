@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { LocalAdapter } from "./adapters/LocalAdapter.js"
-import { RestAdapter } from "./adapters/RestAdapter.js"
+import { RestCookieAdapter } from "./adapters/RestCookieAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { DbSyncHttpError } from "./errors.js"
 import {
@@ -47,7 +47,7 @@ describe("DbSync auth integration", () => {
 
 		const onAuthenticated = vi.fn()
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db, { onAuthenticated })
@@ -112,7 +112,7 @@ describe("DbSync auth integration", () => {
 
 	test("data APIs throw when not logged in", async () => {
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db)
@@ -127,7 +127,7 @@ describe("DbSync auth integration", () => {
 	test("sendCode throws when offline", async () => {
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db)
@@ -144,7 +144,7 @@ describe("DbSync auth integration", () => {
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
 		fetchMock.mockResolvedValue(new Response("", { status: 200 }))
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db)
@@ -155,7 +155,7 @@ describe("DbSync auth integration", () => {
 	test("login throws when offline", async () => {
 		Object.defineProperty(navigator, "onLine", { value: false, configurable: true })
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db)
@@ -172,7 +172,7 @@ describe("DbSync auth integration", () => {
 		writeIsLoggedIn(true)
 		writePendingLogout(true)
 		const db = new DbSync({
-			adapter: new RestAdapter({ url: "http://localhost:3000" }),
+			adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 			tables: { posts: {} },
 		})
 		wireAuth(db)

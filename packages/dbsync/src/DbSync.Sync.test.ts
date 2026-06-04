@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
-import { RestAdapter } from "./adapters/RestAdapter.js"
+import { RestCookieAdapter } from "./adapters/RestCookieAdapter.js"
 import { DbSync } from "./DbSync.js"
 import { writeIsLoggedIn } from "./internal/authStorage.js"
 import { installIndexedDbTestShim } from "./test-support/indexeddb.js"
@@ -19,7 +19,7 @@ const resetDatabase = async () => {
 const createDb = async (fetchMock: ReturnType<typeof vi.fn>) => {
 	writeIsLoggedIn(true)
 	const db = new DbSync({
-		adapter: new RestAdapter({ url: "http://localhost:3000" }),
+		adapter: new RestCookieAdapter({ url: "http://localhost:3000" }),
 		version: 1,
 		tables: {
 			posts: {},

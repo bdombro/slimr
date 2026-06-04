@@ -1,6 +1,6 @@
 # Backend Adapters
 
-`@slimr/dbsync` relies on a modular `BackendAdapter` architecture to handle remote synchronization. By default, it expects you to use `RestAdapter`, but the interface is designed to let you plug your local IndexedDB database into any backend (like Firebase, GraphQL, or websockets).
+`@slimr/dbsync` relies on a modular `BackendAdapter` architecture to handle remote synchronization. By default, it expects you to use one of the built-in REST adapters (`RestCookieAdapter` or `RestBearerAdapter`), but the interface is designed to let you plug your local IndexedDB database into any backend (like Firebase, GraphQL, or websockets).
 
 For offline-first session flows, see [Offline.md](./Offline.md). Package docs: [docs/README.md](./README.md).
 
@@ -104,8 +104,9 @@ await db.posts.add({ userId: "1", content: "Hello" })
 
 Without session listeners, IndexedDB still opens automatically on construction. React apps can skip `waitForBooted()` in components — [React](./React.md).
 
-For production session-backed sync, use [RestAdapter](./RestAdapter.md) and [Integration guide](./Offline.md).
+For production session-backed sync, use [RestCookieAdapter](./RestCookieAdapter.md) or [RestBearerAdapter](./RestBearerAdapter.md) and [Integration guide](./Offline.md).
 
-## RestAdapter
+## REST Adapters
 
-- [RestAdapter](./RestAdapter.md) — `requiresAuth: true` (default); pairs with `swift-crud`.
+- [RestCookieAdapter](./RestCookieAdapter.md) — `requiresAuth: true` (default); session cookie based.
+- [RestBearerAdapter](./RestBearerAdapter.md) — `requiresAuth: true` (default); Bearer token based (stored in localStorage); pairs with modern REST backends (e.g. `swift-crud`).

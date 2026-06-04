@@ -15,7 +15,7 @@ Ensure that your instance is only created on the client:
 ```typescript
 // db.ts
 import { DbSyncR } from "@slimr/dbsync/react"
-import { RestAdapter } from "@slimr/dbsync/adapters"
+import { RestCookieAdapter } from "@slimr/dbsync/adapters"
 
 class AppDb extends DbSyncR {
   posts = new PostTable(this)
@@ -24,7 +24,7 @@ class AppDb extends DbSyncR {
 export let db: AppDb | null = null
 
 if (typeof window !== "undefined") {
-    db = new AppDb({ adapter: new RestAdapter({ url: "/api" }) })
+    db = new AppDb({ adapter: new RestCookieAdapter({ url: "/api" }) })
     db.auth.onLogout(() => (window.location.href = "/login"))
 }
 ```
