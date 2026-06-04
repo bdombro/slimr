@@ -1,46 +1,99 @@
 import { ObservableR } from "@slimr/observable/react"
 
+/**
+ * Special hash fragments used as navigation instructions to control history
+ * updates (e.g., replacing the history entry, clearing nested stack history,
+ * or initiating back navigation).
+ */
 const SPECIAL_HASHES = ["#replace", "#clear", "#back"]
 
+/**
+ * A read-only representation of an Observable containing a state value.
+ */
 type ReadonlyObs<T> = Pick<ObservableR<T>, "name" | "use" | "subscribe"> & {
+	/** The current value of the observable. */
 	readonly val: T
 }
 
+/**
+ * Configuration options for the Router instance.
+ */
 export interface RouterOptions {
+	/** Optional CSS selector for the scrollable element to restore scroll positions on. */
 	scrollElSelector?: string
 }
 
+/**
+ * A basic definition for a route.
+ */
 export interface RouteDef {
+	/** Whether the path should be matched exactly. */
 	exact?: boolean
+	/** The React component to render when the route matches. */
 	component: React.FC<any>
+	/** Optional metadata associated with the route. */
 	meta?: Record<string, any>
+	/** The path mask pattern to match against (e.g. '/user/:id'). */
 	path: string
+	/** Whether the route operates as a stack (preserving stack page history). */
 	isStack?: boolean
 }
 
+/**
+ * The specialized route definition used for the fallback page when no routes match.
+ */
 export interface NotFoundRouterDef {
+	/** The fallback route is never matched exactly. */
 	exact: false
+	/** The React component to render for the not-found view. */
 	component: React.FC<any>
+	/** Fallback routes cannot have custom metadata. */
 	meta?: never
+	/** The path for the fallback route is always '/'. */
 	path: "/"
+	/** Fallback routes cannot be stack routes. */
 	isStack?: never
 }
 
+/**
+ * Represents a parsed and compiled route.
+ */
 export interface Route extends RouteDef {
+	/** Evaluates if a given path matches this route, returning path parameters if it matches. */
 	isMatch: (path: string) => false | Record<string, string>
+	/** The unique key identifying this route in the routing table. */
 	key: string
+	/** Resolves the route path using the provided parameters. */
 	toPath: (urlParams?: Record<string, string>) => string
+	/** The parent stack route if this route is nested under one. */
 	stack?: Route
+	/** The history stack containing URLs and scroll positions for back-navigation. */
 	stackHistory?: { href: string; scrollTop: number }[]
 }
 
+/**
+ * Maps a set of route definitions to their compiled Route counterparts.
+ */
 type RoutesVal<T extends Record<string, RouteDef>> = {
 	[key in keyof T]: Route
 }
 
-export type RouteMatch = Route & { urlParams?: Record<string, string> }
+/**
+ * A Route representation that has successfully matched the current URL, including extracted URL parameters.
+ */
+export type RouteMatch = Route & {
+	/** Extracted path and query parameters from the matched URL. */
+	urlParams?: Record<string, string>
+}
 
+/**
+ * The type of the Router class constructor.
+ */
 export type RouterClass = typeof Router
+
+/**
+ * The type of a Router class instance.
+ */
 export type RouterInstance = InstanceType<RouterClass>
 
 export class Router<
@@ -49,22 +102,34 @@ export class Router<
 		notFound: NotFoundRouterDef
 	},
 > {
+	/** The compiled routes map for the router. */
 	routes: RoutesVal<T> = {} as any
 
+	/** The CSS selector for the scrollable container. */
 	private scrollElSelector?: string
 
+	/**
+	 * Returns all compiled route objects as an array.
+	 */
 	get routeArray() {
 		return Object.values(this.routes)
 	}
 
+	/** Map storing history state details (route, URL, and scrollTop) by sequence number. */
 	historyBySeq: Map<number, { route: Route; url: string; scrollTop: number }> = new Map()
 
+	/** Internal sequence counter for history navigation entries. */
 	private _seq = 0
 
+	/** The sequence number of the current active history entry. */
 	private currentSeq = -1
 
+	/** The maximum number of entries to keep in historyBySeq before pruning. */
 	private maxHistoryEntries = 50
 
+	/**
+	 * Returns the current router state including active route, URL, path, query params, and scroll position.
+	 */
 	get current() {
 		return {
 			route: this.find(new URL(location.href)),
@@ -78,21 +143,42 @@ export class Router<
 		}
 	}
 
+	/** The scroll position to apply next, usually when a page load completes. */
 	private scrollNext = 0
 
+	/** Pending setTimeout IDs for scroll restoration triggers. */
 	private loadTimeouts: ReturnType<typeof setTimeout>[] = []
 
+	/** The private reactive observable storing the current matched route. */
 	private _route$: ObservableR<RouteMatch>
+
+	/** The private reactive observable storing the current URLSearchParams. */
 	private _searchParams$: ObservableR<URLSearchParams>
 
+	/**
+	 * Returns the read-only observable stream for the active matched route.
+	 */
 	get route$(): ReadonlyObs<RouteMatch> {
 		return this._route$
 	}
 
+	/**
+	 * Returns the read-only observable stream for the active query parameters.
+	 */
 	get searchParams$(): ReadonlyObs<URLSearchParams> {
 		return this._searchParams$
 	}
 
+	/**
+	 * Initializes the Router instance.
+	 *
+	 * This compiles the provided route definitions (attaching matching logic, parameter extraction,
+	 * and nested stack associations), sets up initial reactive state from the current window location,
+	 * and hooks history APIs and DOM link clicks to manage navigation dynamically.
+	 *
+	 * @param routes - The routes configuration mapping keys to RouteDefs.
+	 * @param options - Additional options for router behavior (e.g. scroll container configuration).
+	 */
 	constructor(routes: T, options: RouterOptions = {}) {
 		Object.entries(routes).forEach(([k, routeDef]) => {
 			this.routes[k as keyof T] = {
@@ -127,6 +213,13 @@ export class Router<
 		this.hookHistory()
 	}
 
+	/**
+	 * Finds the matching route definitions and parsed parameters for a given URL.
+	 *
+	 * @param url - The URL to match against the route definitions.
+	 * @returns The matched route with merged route parameters.
+	 * @throws Error if no matching route is found.
+	 */
 	public find = (url: URL): RouteMatch => {
 		for (const route of this.routeArray) {
 			const urlParams = route.isMatch(url.pathname)
@@ -140,22 +233,28 @@ export class Router<
 		)
 	}
 
+	/**
+	 * Navigates to a route, a route key, or a URL path.
+	 *
+	 * @param routeOrKeyOrPath - A Route object, a registered route key, or a URL/path string.
+	 * @param urlParams - Optional parameters to interpolate into the path or append as a query string.
+	 */
 	public goto = (routeOrKeyOrPath: Route | string, urlParams: Record<string, string> = {}) => {
 		let gotoPath = ""
-		if (
-			typeof routeOrKeyOrPath === "string" &&
-			(routeOrKeyOrPath.startsWith("http") || routeOrKeyOrPath.startsWith("/"))
-		) {
+		if (typeof routeOrKeyOrPath !== "string") {
+			gotoPath = routeOrKeyOrPath.toPath(urlParams)
+		} else if (isUrlOrPath(routeOrKeyOrPath)) {
 			gotoPath = routeOrKeyOrPath
 		} else {
-			const route =
-				typeof routeOrKeyOrPath === "string" ? this.routes[routeOrKeyOrPath] : routeOrKeyOrPath
-			gotoPath = route.toPath(urlParams)
+			gotoPath = this.routes[routeOrKeyOrPath].toPath(urlParams)
 		}
 		console.debug(`Router.goto: ${gotoPath}`)
 		history.pushState(Date.now(), "", gotoPath)
 	}
 
+	/**
+	 * Restores the target scroll position after a navigation event.
+	 */
 	public onLoad = () => {
 		if (navigator.userAgent.includes("jsdom")) return
 		this.loadTimeouts.forEach(clearTimeout)
@@ -167,28 +266,40 @@ export class Router<
 		this.loadTimeouts.push(setTimeout(scrollToNext, 300))
 	}
 
+	/** The original raw history.pushState method bound to the global history. */
 	public static pushStateRaw = globalThis.history?.pushState.bind(
 		globalThis.history,
 	) as typeof history.pushState
 
+	/**
+	 * Replaces the current history entry with a new route, route key, or URL path.
+	 *
+	 * @param routeOrKey - A Route object, a registered route key, or a URL/path string.
+	 * @param urlParams - Optional parameters to interpolate into the path or append as a query string.
+	 */
 	public replace = (routeOrKey: Route | string, urlParams: Record<string, string> = {}) => {
 		let replacePath = ""
-		if (
-			typeof routeOrKey === "string" &&
-			(routeOrKey.startsWith("http") || routeOrKey.startsWith("/"))
-		) {
+		if (typeof routeOrKey !== "string") {
+			replacePath = routeOrKey.toPath(urlParams)
+		} else if (isUrlOrPath(routeOrKey)) {
 			replacePath = routeOrKey
 		} else {
-			const route = typeof routeOrKey === "string" ? this.routes[routeOrKey] : routeOrKey
-			replacePath = route.toPath(urlParams)
+			replacePath = this.routes[routeOrKey].toPath(urlParams)
 		}
 		history.replaceState(Date.now(), "", replacePath)
 	}
 
+	/** The original raw history.replaceState method bound to the global history. */
 	public static replaceStateRaw = globalThis.history?.replaceState.bind(
 		globalThis.history,
 	) as typeof history.replaceState
 
+	/**
+	 * Scrolls to the given scroll options, targeting the configured scroll element if specified,
+	 * otherwise the window.
+	 *
+	 * @param options - Standard scroll options specifying scroll behavior and destination.
+	 */
 	public scrollTo(options: ScrollToOptions) {
 		if (this.scrollElSelector) {
 			const scrollEl = document.querySelector(this.scrollElSelector)
@@ -201,6 +312,9 @@ export class Router<
 		}
 	}
 
+	/**
+	 * Intercepts history manipulation, navigation events, and anchor clicks to enable single-page routing.
+	 */
 	private hookHistory = () => {
 		history.pushState = (date, unused, url) => {
 			let urlObj = toUrlObj(url as any)
@@ -380,6 +494,14 @@ export class Router<
 		})
 	}
 
+	/**
+	 * Checks if a path matches a given path mask, optionally requiring an exact match.
+	 *
+	 * @param path - The pathname to test.
+	 * @param pathMask - The route path mask (e.g. '/user/:id').
+	 * @param exact - Whether the match must be exact.
+	 * @returns An object of route parameters if matched, otherwise false.
+	 */
 	static isMatch = (path: string, pathMask: string, exact = true) => {
 		const argRx = /:([^/]*)/g
 		const urlRx = `^${escapeRegExp(pathMask).replace(argRx, "([^/]*)")}${exact ? "$" : ""}`
@@ -394,19 +516,59 @@ export class Router<
 	}
 }
 
+/**
+ * Escapes special regex characters in a string.
+ *
+ * @param str - The string to escape.
+ * @returns The escaped string.
+ */
 const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
+/**
+ * Recursively traverses up the DOM tree from a node to find the nearest anchor element.
+ *
+ * @param node - The starting HTML element.
+ * @returns The nearest ancestor anchor element, or undefined if none exists.
+ */
 function findLinkTagInParents(node: HTMLElement): any {
 	if (node?.nodeName === "A") return node
 	if (node?.parentNode) return findLinkTagInParents(node.parentElement!)
 }
 
+/**
+ * Checks if a string contains an absolute URL or external protocol scheme.
+ *
+ * @param str - The string to check.
+ * @returns True if the string represents an absolute URL or external scheme.
+ */
+function isUrl(str: string): boolean {
+	return /^[a-z][a-z0-9+.-]*:/i.test(str)
+}
+
+/**
+ * Checks if a string is an absolute URL, external protocol scheme, or an absolute path.
+ *
+ * @param str - The string to check.
+ * @returns True if the string is a URL, external scheme, or starts with a forward slash.
+ */
+function isUrlOrPath(str: string): boolean {
+	return isUrl(str) || str.startsWith("/")
+}
+
+/**
+ * Normalizes a path or URL string (or URL object) into a standard URL object, resolving
+ * relative paths against the current origin.
+ *
+ * @param urlOrPath - The path, URL string, or URL object.
+ * @returns A standardized URL object.
+ */
 function toUrlObj(urlOrPath: string | URL) {
 	if (urlOrPath instanceof URL) return urlOrPath
 	if (urlOrPath.startsWith("//")) {
 		urlOrPath = location.protocol + urlOrPath
 	}
-	if (!urlOrPath.startsWith("http")) {
+	// normalize the url to a full URL and not just a path
+	if (!isUrl(urlOrPath)) {
 		if (urlOrPath[0] !== "/") urlOrPath = `/${urlOrPath}`
 		urlOrPath = location.origin + urlOrPath
 	}
