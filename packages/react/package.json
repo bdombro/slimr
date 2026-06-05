@@ -1,6 +1,6 @@
 {
   "name": "@slimr/react",
-  "version": "4.0.23",
+  "version": "4.0.24",
   "author": "Brian Dombrowski",
   "license": "ISC",
   "private": false,
@@ -43,7 +43,7 @@
     "@slimr/observable": "^0.0.6",
     "@slimr/react-util": "^2.0.4",
     "@slimr/router": "^3.0.7",
-    "@slimr/styled": "^2.1.100",
+    "@slimr/styled": "^2.1.101",
     "@slimr/swr": "^2.1.79"
   },
   "peerDependencies": {

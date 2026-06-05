@@ -80,7 +80,7 @@ export function expandShorthands(css: string) {
 	// Handle 'mx', 'my', 'px', 'py'
 	css = css
 		.replace(/([mp])x:([^;]*)/g, "$1l:$2;\n$1r:$2")
-		.replace(/([mp])y:([^;]*);/g, "$1t:$2;\n$1b:$2")
+		.replace(/([mp])y:([^;]*)/g, "$1t:$2;\n$1b:$2")
 	Object.entries(shorthandPropsMap).forEach(([k, v]) => {
 		css = css.replace(new RegExp(`([ \n\t;])${k}:`, "g"), `$1${v}:`)
 	})

@@ -2,6 +2,13 @@
 
 ## UNRELEASED
 
+## 2.1.97
+
+### Fixed
+
+- Fix `my` and `py` shorthand expansion in `expandShorthands` when not followed by a semicolon (e.g. at the end of a block/declaration).
+
+
 ## 2.1.96
 
 ### Changed
