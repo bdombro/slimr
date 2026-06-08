@@ -123,6 +123,7 @@ export class WriteEngine {
 		// gather everything into memory synchronously before opening the main readwrite transaction.
 		const patchOperations = operations.filter((op) => op.type === "patch")
 		const patchRecords: Record<string, any> = {}
+		const skippedPatchKeys = new Set<string>()
 
 		if (patchOperations.length > 0) {
 			const preTx = db.transaction(storeNames, "readonly")
@@ -135,9 +136,9 @@ export class WriteEngine {
 				const existingRecord = await p
 
 				if (!existingRecord) {
-					throw new Error(
-						`[dbsync]: Cannot patch record ${recordId} in ${op.storeName} because it doesn't exist`,
-					)
+					console.warn(`[dbsync]: Skipping patch for deleted record ${recordId} in ${op.storeName}`)
+					skippedPatchKeys.add(`${op.storeName}-${recordId}`)
+					return
 				}
 				patchRecords[`${op.storeName}-${recordId}`] = existingRecord
 			})
@@ -174,6 +175,10 @@ export class WriteEngine {
 			let payloadToWrite = op.value
 			let recordId: string | undefined = op.key ?? op.value?.id
 			const changeKind = toRowChangeKind(op.type)
+
+			if (op.type === "patch" && skippedPatchKeys.has(`${op.storeName}-${recordId}`)) {
+				return
+			}
 
 			if (op.type === "put" || op.type === "add" || op.type === "patch") {
 				if (op.type === "put" || op.type === "add") {

@@ -6,6 +6,12 @@ While in pre-release, assume that any change is a breaking change until v1.0.0 i
 
 ## UNRELEASED
 
+## 0.0.69
+
+### Changed
+
+- **Fix:** `WriteEngine` now skips patch operations for records that no longer exist in IndexedDB instead of throwing an error. This prevents unhandled promise rejections when a debounced patch races against an immediate delete (e.g. editing a todo title then pressing ⌘Backspace within the debounce window).
+
 ## 0.0.68
 
 ### Added
