@@ -102,13 +102,14 @@ Every `<a>` tag pointing to the same origin is automatically intercepted — no 
 
 External links and `target="_blank"` links are left alone. Browser back/forward and `popstate` are handled too.
 
-### Scroll restoration
+### Page transitions and Scroll restoration
 
-After a route change, the router restores the scroll position when navigating back. Works with a custom scroll container:
+After a route change, the router (1) applies opacity:1 to the new main and/or restores the scroll position when navigating back. Works with a custom scroll container:
 
 ```tsx
 const router = new Router(routes, {
-  scrollElSelector: "main"   // document.querySelector("main") instead of window
+  pageElSelector: ".page",    // document.querySelector(".page") gets opacity: 1 after navigation
+  scrollElSelector: "main",   // document.querySelector("main") instead of window
 })
 ```
 
@@ -142,6 +143,7 @@ Create a router instance.
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `scrollElSelector` | `string` | `undefined` | CSS selector for the scroll container. If set, scroll restoration targets this element instead of `window`. |
+| `pageElSelector` | `string` | `undefined` | CSS selector for the page element. If set, its `opacity` is set to `1` after each navigation. Decoupled from scroll restoration. |
 
 ### `router.route$`
 
