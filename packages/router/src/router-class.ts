@@ -21,8 +21,6 @@ type ReadonlyObs<T> = Pick<ObservableR<T>, "name" | "use" | "subscribe"> & {
 export interface RouterOptions {
 	/** Optional CSS selector for the scrollable element to restore scroll positions on. */
 	scrollElSelector?: string
-	/** Optional CSS selector for the page element whose opacity is reset after navigation. */
-	pageElSelector?: string
 }
 
 /**
@@ -109,9 +107,6 @@ export class Router<
 
 	/** The CSS selector for the scrollable container. */
 	private scrollElSelector?: string
-
-	/** The CSS selector for the page element whose opacity is reset after navigation. */
-	private pageElSelector?: string
 
 	/**
 	 * Returns all compiled route objects as an array.
@@ -213,7 +208,6 @@ export class Router<
 				this.routeArray.filter((r2) => r2.path.startsWith(r.path)).forEach((r2) => (r2.stack = r))
 			})
 		this.scrollElSelector = options.scrollElSelector
-		this.pageElSelector = options.pageElSelector
 		this._route$ = new ObservableR("route$", this.find(new URL(location.href)))
 		this._searchParams$ = new ObservableR("searchParams$", new URLSearchParams(location.search))
 		this.hookHistory()
@@ -314,10 +308,6 @@ export class Router<
 			}
 		} else {
 			scrollTo(options)
-		}
-		if (this.pageElSelector) {
-			const pageEl = document.querySelector(this.pageElSelector)
-			if (pageEl) (pageEl as HTMLElement).style.setProperty("opacity", "1")
 		}
 	}
 

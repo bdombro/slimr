@@ -46,7 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				</Nav>
 			</Header>
 
-			<Main _flex={1} _opacity={0} _overflowY="auto" _transition="opacity .05s">
+			<Main className="router-scrollable fade-in" _flex={1} _overflowY="auto">
 				{children}
 			</Main>
 		</Div>

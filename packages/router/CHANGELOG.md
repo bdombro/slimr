@@ -2,9 +2,7 @@
 
 ## UNRELEASED
 
-## 3.0.8
-
-- Added `pageElSelector` option to decouple page opacity transition from scroll container. Previously `scrollElSelector` was used for both scrolling and opacity; now each concern has its own selector.
+## 3.0.9
 
 ## 3.0.7
 

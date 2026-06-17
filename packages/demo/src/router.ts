@@ -44,7 +44,6 @@ export const router = new Router(
 		},
 	},
 	{
-		scrollElSelector: "main",
-		pageElSelector: "main",
+		scrollElSelector: ".router-scrollable",
 	},
 )

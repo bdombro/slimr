@@ -108,7 +108,6 @@ After a route change, the router (1) applies opacity:1 to the new main and/or re
 
 ```tsx
 const router = new Router(routes, {
-  pageElSelector: ".page",    // document.querySelector(".page") gets opacity: 1 after navigation
   scrollElSelector: "main",   // document.querySelector("main") instead of window
 })
 ```
@@ -143,7 +142,6 @@ Create a router instance.
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `scrollElSelector` | `string` | `undefined` | CSS selector for the scroll container. If set, scroll restoration targets this element instead of `window`. |
-| `pageElSelector` | `string` | `undefined` | CSS selector for the page element. If set, its `opacity` is set to `1` after each navigation. Decoupled from scroll restoration. |
 
 ### `router.route$`
 

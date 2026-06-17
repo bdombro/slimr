@@ -228,6 +228,24 @@ p,
   border: 3px solid var(--scrollbarBg);
 }
 
+.router-scrollable {
+	overscroll-behavior: contain;
+	overflow-x: hidden;
+	overflow-y: auto;
+	position: relative;
+}
+
+/* Page transition */
+
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.15s;
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
 /* Component styles */
 
 * {
