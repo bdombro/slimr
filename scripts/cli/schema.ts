@@ -1,5 +1,5 @@
 /** ArgsBarg command tree for the slimr monorepo CLI. */
-import { type CliCommand, CliOptionKind } from "argsbarg"
+import { type CliProgram, CliOptionKind } from "argsbarg"
 import { buildWorkspaces } from "../tasks/build.ts"
 import { buildLib } from "../tasks/build-lib.ts"
 import { checkWorkspaces } from "../tasks/check.ts"
@@ -12,7 +12,7 @@ import {
 } from "./workspace-options.ts"
 
 /** Root CLI schema: `bun scripts/cli.ts <command> [options]`. */
-export const slimrCli: CliCommand = {
+export const slimrCli = {
 	key: "slimr",
 	description: "Monorepo tooling for @slimr packages.",
 	notes: "Workspace tasks support --all, --dirty, --include, and --exclude (repeatable).",
@@ -96,4 +96,4 @@ export const slimrCli: CliCommand = {
 			},
 		},
 	],
-}
+} satisfies CliProgram
