@@ -22,7 +22,7 @@ check-dirty *ARGS='':
 
 # Remove build artifacts from all workspaces
 clean:
-    npm run -ws clean
+    bun run --filter '*' clean
 
 alias fmt := format
 # Format code with Biome
@@ -31,7 +31,7 @@ format:
 
 # Install dependencies and set up git hooks (run once after cloning)
 install:
-    npm install
+    bun install
     @# echo 'just precommit' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 # Precommit check: build dirty workspaces, lint, and run dirty tests
@@ -52,13 +52,13 @@ publish-demo:
 
 # Start the demo app dev server
 start:
-    npm run -w @slimr/demo start
+    bun run --filter @slimr/demo start
 
-# Run tests once (CI-style, no watch); extra args pass through to vitest
+# Run tsc, biome --write, tests; extra args pass through to vitest
 test *ARGS='--all':
     bun scripts/cli.ts test --exclude demo {{ARGS}}
 
-# Run tests only for dirty workspaces; extra args pass through to slimr CLI
+# Run tsc, biome --write, tests for dirty workspaces; extra args pass through to slimr CLI
 test-dirty *ARGS='':
     @just test --dirty {{ARGS}}
 

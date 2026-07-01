@@ -31,8 +31,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "typecheck": "tsc -b",
-    "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
+    "typecheck": "tsc -b"
   },
   "files": [
     "cjs",

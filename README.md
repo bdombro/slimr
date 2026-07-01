@@ -18,7 +18,7 @@
 
 ## Demo
 
-`npm run build && npm start`
+`just start`
 
 See [packages/demo/README.md](packages/demo/README.md)
 
@@ -26,4 +26,4 @@ See [packages/demo/README.md](packages/demo/README.md)
 
 - `npm publish` is usually done manually and per package.
 
-- There is a convenience script, `npm run publish:changed`, which will detect all changes and bump impacted workspaces. For example, if one changed `@slimr/css`, both that and `@slimr/styled` need be bumped because `@slimr/styled` depends on `@slimr/css`. Note that build must be ran first.
+- There is a convenience task, `just publish-dirty`, which will detect all changes and bump/publish impacted workspaces. For example, if one changed `@slimr/css`, both that and `@slimr/styled` need be bumped because `@slimr/styled` depends on `@slimr/css`. Note that build must be run first.

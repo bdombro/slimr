@@ -31,8 +31,7 @@
   "scripts": {
     "build": "bun ../../scripts/cli.ts build-lib --pkg .",
     "clean": "rm -rf esm cjs",
-    "typecheck": "tsc -b",
-    "start": "nodemon -w src -e '*' -x 'npm run build && cd ../demo && npm start'"
+    "typecheck": "tsc -b"
   },
   "files": [
     "cjs",

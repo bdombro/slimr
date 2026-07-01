@@ -82,5 +82,12 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.json"],
+      "formatter": { "enabled": false },
+      "linter": { "enabled": false }
+    }
+  ]
 }

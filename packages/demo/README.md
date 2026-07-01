@@ -10,5 +10,5 @@ A React Vitejs demo of many @slimr libraries. Checkout the scripts in package.js
 
 ## Running
 
-- To run in dev-mode, all monorepo packages need be installed and built first (`cd ../../; npm i; npm run build`). Then just run `npm start`
-- To run the 'demo' git branch, simply `npm i` the `npm start`
+- To run in dev-mode, all monorepo packages need be installed and built first (`cd ../../; bun install; just build`). Then run `just start` (or `bun run --filter @slimr/demo start`)
+- To run the 'demo' git branch, simply `bun install` then `bun start`

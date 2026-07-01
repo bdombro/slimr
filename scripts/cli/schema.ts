@@ -1,5 +1,5 @@
 /** ArgsBarg command tree for the slimr monorepo CLI. */
-import { type CliProgram, CliOptionKind } from "argsbarg"
+import { CliOptionKind, type CliProgram } from "argsbarg"
 import pkg from "../../package.json" with { type: "json" }
 import { buildWorkspaces } from "../tasks/build.ts"
 import { buildLib } from "../tasks/build-lib.ts"
