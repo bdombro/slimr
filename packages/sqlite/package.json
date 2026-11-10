@@ -1,6 +1,6 @@
 {
   "name": "@slimr/sqlite",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Slim async node:sqlite wrapper over a shared worker_threads worker with statement caching, WAL defaults, and queued transactions",
   "author": "Brian Dombrowski",
   "license": "ISC",

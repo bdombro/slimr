@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+## 0.3.1
+
+### Changed
+
+- Improved `README.md` with motivation, `SqliteOptions` configuration reference, and API summary.
+
 ## 0.3.0
 
 ### Changed
