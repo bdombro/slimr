@@ -2,15 +2,41 @@ import { Worker } from "node:worker_threads"
 
 export type SQLInputValue = null | number | bigint | string | Uint8Array
 
+export type SqliteParams = SQLInputValue[] | Record<string, SQLInputValue>
+
 export interface RunResult {
 	changes: number | bigint
 	lastInsertRowid: number | bigint
 }
 
+export type SqliteFunctionHandler = (...args: SQLInputValue[]) => SQLInputValue
+
+export interface SqliteFunctionDef {
+	fn: SqliteFunctionHandler | string
+	deterministic?: boolean
+	varargs?: boolean
+	directOnly?: boolean
+	useBigIntArguments?: boolean
+}
+
+export interface SerializedFunctionDef {
+	fnSource: string
+	deterministic: boolean
+	varargs: boolean
+	directOnly: boolean
+	useBigIntArguments: boolean
+}
+
+export type TransactionMode = "IMMEDIATE" | "DEFERRED" | "EXCLUSIVE"
+
+export interface TransactionOptions {
+	mode?: TransactionMode
+}
+
 export interface BatchItem {
 	sql: string
-	params?: SQLInputValue[]
-	mode?: "all" | "get" | "run" | "exec"
+	params?: SqliteParams
+	mode?: "all" | "get" | "run" | "exec" | "pluck" | "pluckAll"
 	readBigInts?: boolean
 }
 
@@ -23,12 +49,14 @@ export interface SqliteOptions {
 	init?: (tx: SqliteTx) => Promise<void> | void
 	dedicated?: boolean
 	idleTimeoutMs?: number
+	functions?: Record<string, SqliteFunctionDef | SqliteFunctionHandler>
 }
 
 export interface IterateOptions {
 	limit?: number
 	readBigInts?: boolean
 	readOnlyConnection?: boolean
+	setupSql?: string
 }
 
 export interface QueryOptions {
@@ -42,18 +70,49 @@ export interface BatchOptions {
 export interface SqliteQueryable {
 	get<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: QueryOptions,
 	): Promise<T | undefined>
 	all<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: QueryOptions,
 	): Promise<T[]>
-	run(sql: string, params?: SQLInputValue[], options?: QueryOptions): Promise<RunResult>
+	run(sql: string, params?: SqliteParams, options?: QueryOptions): Promise<RunResult>
+	pluck<T = SQLInputValue>(
+		sql: string,
+		params?: SqliteParams,
+		options?: QueryOptions,
+	): Promise<T | undefined>
+	pluckAll<T = SQLInputValue>(
+		sql: string,
+		params?: SqliteParams,
+		options?: QueryOptions,
+	): Promise<T[]>
 	exec(sql: string): Promise<void>
 	batch(items: BatchItem[], options?: BatchOptions): Promise<unknown[]>
-	transaction<T>(fn: (tx: SqliteTx) => Promise<T> | T): Promise<T>
+	transaction<T>(fn: (tx: SqliteTx) => Promise<T> | T, options?: TransactionOptions): Promise<T>
+}
+
+function serializeFunction(
+	entry: SqliteFunctionDef | SqliteFunctionHandler,
+): SerializedFunctionDef {
+	if (typeof entry === "function") {
+		return {
+			fnSource: entry.toString(),
+			deterministic: true,
+			varargs: false,
+			directOnly: false,
+			useBigIntArguments: false,
+		}
+	}
+	return {
+		fnSource: typeof entry.fn === "function" ? entry.fn.toString() : entry.fn,
+		deterministic: entry.deterministic ?? true,
+		varargs: Boolean(entry.varargs),
+		directOnly: Boolean(entry.directOnly),
+		useBigIntArguments: Boolean(entry.useBigIntArguments),
+	}
 }
 
 const SUPPRESS_SQLITE_WARNING_SYMBOL = Symbol.for("@slimr/sqlite.warning_filter")
@@ -109,6 +168,42 @@ const sqlite = getBuiltin("node:sqlite");
 
 const dbs = new Map();
 
+function isNamedParams(params) {
+	return Boolean(
+		params &&
+			typeof params === "object" &&
+			!Array.isArray(params) &&
+			!(params instanceof Uint8Array)
+	);
+}
+
+function execStmt(stmt, method, params) {
+	if (isNamedParams(params)) {
+		return stmt[method](params);
+	}
+	return stmt[method](...(params || []));
+}
+
+function registerFunctionsOnDb(targetDb, serializedFunctions) {
+	if (!targetDb || !serializedFunctions || typeof serializedFunctions !== "object") {
+		return;
+	}
+	for (const [name, def] of Object.entries(serializedFunctions)) {
+		if (!def || !def.fnSource) continue;
+		const fn = (0, eval)("(" + def.fnSource + ")");
+		targetDb.function(
+			name,
+			{
+				deterministic: Boolean(def.deterministic),
+				varargs: Boolean(def.varargs),
+				directOnly: Boolean(def.directOnly),
+				useBigIntArguments: Boolean(def.useBigIntArguments),
+			},
+			fn
+		);
+	}
+}
+
 function ensureOpen(entry) {
 	if (!entry.db) {
 		if (entry.path !== ":memory:" && !entry.options.readOnly) {
@@ -146,19 +241,27 @@ function ensureOpen(entry) {
 		} else if (typeof entry.options.pragmas === "string") {
 			entry.db.exec(entry.options.pragmas);
 		}
+
+		if (entry.options && entry.options.functions) {
+			registerFunctionsOnDb(entry.db, entry.options.functions);
+		}
 	}
 }
 
-function prepareStmt(entry, sql, readBigInts) {
+function prepareStmt(entry, sql, readBigInts, allowBareNamed) {
 	const effectiveBigInts = readBigInts !== undefined
 		? Boolean(readBigInts)
 		: Boolean(entry.options && entry.options.readBigInts);
-	const key = (effectiveBigInts ? "1:" : "0:") + sql;
+	const bareFlag = Boolean(allowBareNamed);
+	const key = (effectiveBigInts ? "1:" : "0:") + (bareFlag ? "N:" : "P:") + sql;
 	let stmt = entry.stmts.get(key);
 	if (!stmt) {
 		stmt = entry.db.prepare(sql);
 		if (effectiveBigInts) {
 			stmt.setReadBigInts(true);
+		}
+		if (bareFlag && typeof stmt.setAllowBareNamedParameters === "function") {
+			stmt.setAllowBareNamedParameters(true);
 		}
 		entry.stmts.set(key, stmt);
 	}
@@ -196,23 +299,61 @@ async function handleAction(action, entry, payload, dbId) {
 			ensureOpen(current);
 			return;
 		}
+		case "registerFunction": {
+			ensureOpen(entry);
+			if (!entry.options) {
+				entry.options = {};
+			}
+			if (!entry.options.functions) {
+				entry.options.functions = {};
+			}
+			entry.options.functions[payload.name] = payload.def;
+			registerFunctionsOnDb(entry.db, { [payload.name]: payload.def });
+			clearStmts(entry);
+			return;
+		}
 		case "get": {
 			ensureOpen(entry);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts);
-			const row = s.get(...(payload.params || []));
+			const named = isNamedParams(payload.params);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const row = execStmt(s, "get", payload.params);
 			return row ? { ...row } : undefined;
 		}
 		case "all": {
 			ensureOpen(entry);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts);
-			const rows = s.all(...(payload.params || []));
+			const named = isNamedParams(payload.params);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const rows = execStmt(s, "all", payload.params);
 			return rows.map((r) => ({ ...r }));
 		}
 		case "run": {
 			ensureOpen(entry);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts);
-			const r = s.run(...(payload.params || []));
+			const named = isNamedParams(payload.params);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const r = execStmt(s, "run", payload.params);
 			return { changes: r.changes, lastInsertRowid: r.lastInsertRowid };
+		}
+		case "pluck": {
+			ensureOpen(entry);
+			const named = isNamedParams(payload.params);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const row = execStmt(s, "get", payload.params);
+			if (!row) {
+				return undefined;
+			}
+			const keys = Object.keys(row);
+			return keys.length > 0 ? row[keys[0]] : undefined;
+		}
+		case "pluckAll": {
+			ensureOpen(entry);
+			const named = isNamedParams(payload.params);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const rows = execStmt(s, "all", payload.params);
+			if (!rows || rows.length === 0) {
+				return [];
+			}
+			const k = Object.keys(rows[0])[0];
+			return rows.map((r) => r[k]);
 		}
 		case "exec": {
 			ensureOpen(entry);
@@ -231,18 +372,37 @@ async function handleAction(action, entry, payload, dbId) {
 			try {
 				for (const item of items) {
 					const mode = item.mode || "run";
+					const named = isNamedParams(item.params);
 					if (mode === "run") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts);
-						const r = s.run(...(item.params || []));
+						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const r = execStmt(s, "run", item.params);
 						results.push({ changes: r.changes, lastInsertRowid: r.lastInsertRowid });
 					} else if (mode === "get") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts);
-						const r = s.get(...(item.params || []));
+						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const r = execStmt(s, "get", item.params);
 						results.push(r ? { ...r } : undefined);
 					} else if (mode === "all") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts);
-						const r = s.all(...(item.params || []));
+						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const r = execStmt(s, "all", item.params);
 						results.push(r.map((x) => ({ ...x })));
+					} else if (mode === "pluck") {
+						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const r = execStmt(s, "get", item.params);
+						if (!r) {
+							results.push(undefined);
+						} else {
+							const keys = Object.keys(r);
+							results.push(keys.length > 0 ? r[keys[0]] : undefined);
+						}
+					} else if (mode === "pluckAll") {
+						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const r = execStmt(s, "all", item.params);
+						if (!r || r.length === 0) {
+							results.push([]);
+						} else {
+							const k = Object.keys(r[0])[0];
+							results.push(r.map((row) => row[k]));
+						}
 					} else if (mode === "exec") {
 						clearStmts(entry);
 						entry.db.exec(item.sql);
@@ -266,14 +426,22 @@ async function handleAction(action, entry, payload, dbId) {
 		}
 		case "iterateLimited": {
 			ensureOpen(entry);
-			const { sql, params, limit, readBigInts, readOnlyConnection } = payload;
+			const { sql, params, limit, readBigInts, readOnlyConnection, setupSql } = payload;
 			let targetDb = entry.db;
 			let tempDb = null;
 			if (readOnlyConnection && entry.path !== ":memory:") {
 				tempDb = new sqlite.DatabaseSync(entry.path, { readOnly: true });
 				tempDb.exec("PRAGMA busy_timeout = 5000;");
+				registerFunctionsOnDb(tempDb, entry.options && entry.options.functions);
+				if (typeof setupSql === "string" && setupSql.trim().length > 0) {
+					tempDb.exec(setupSql);
+					tempDb.exec("PRAGMA query_only = ON;");
+				}
 				targetDb = tempDb;
+			} else if (typeof setupSql === "string" && setupSql.trim().length > 0) {
+				targetDb.exec(setupSql);
 			}
+
 			let stmt = null;
 			try {
 				stmt = targetDb.prepare(sql);
@@ -283,10 +451,15 @@ async function handleAction(action, entry, payload, dbId) {
 				if (effectiveBigInts) {
 					stmt.setReadBigInts(true);
 				}
+				const named = isNamedParams(params);
+				if (named && typeof stmt.setAllowBareNamedParameters === "function") {
+					stmt.setAllowBareNamedParameters(true);
+				}
 				const maxLimit = typeof limit === "number" ? limit : Number.POSITIVE_INFINITY;
 				const rows = [];
 				let truncated = false;
-				for (const row of stmt.iterate(...(params || []))) {
+				const iterator = named ? stmt.iterate(params) : stmt.iterate(...(params || []));
+				for (const row of iterator) {
 					if (rows.length < maxLimit) {
 						rows.push({ ...row });
 					} else {
@@ -294,7 +467,10 @@ async function handleAction(action, entry, payload, dbId) {
 						break;
 					}
 				}
-				return { rows, truncated };
+				const columns = typeof stmt.columns === "function"
+					? stmt.columns().map((c) => c.name)
+					: (rows[0] ? Object.keys(rows[0]) : []);
+				return { columns, rows, truncated };
 			} finally {
 				if (stmt && typeof stmt.close === "function") {
 					try { stmt.close(); } catch (_) {}
@@ -325,7 +501,8 @@ async function handleAction(action, entry, payload, dbId) {
 		}
 		case "txBegin": {
 			ensureOpen(entry);
-			entry.db.exec("BEGIN IMMEDIATE");
+			const mode = payload.mode || "IMMEDIATE";
+			entry.db.exec("BEGIN " + mode);
 			entry.txDepth = 1;
 			return;
 		}
@@ -402,6 +579,7 @@ interface PendingRequest {
 interface RegisteredDb {
 	path: string
 	options: SqliteOptions
+	serializedFunctions: Record<string, SerializedFunctionDef>
 	migrated: boolean
 	isOpenedInWorker: boolean
 }
@@ -426,12 +604,26 @@ export class WorkerManager {
 	}
 
 	registerDb(dbId: string, path: string, options: SqliteOptions): void {
+		const serializedFunctions: Record<string, SerializedFunctionDef> = {}
+		if (options.functions) {
+			for (const [name, def] of Object.entries(options.functions)) {
+				serializedFunctions[name] = serializeFunction(def)
+			}
+		}
 		this.registeredDbs.set(dbId, {
 			path,
 			options,
+			serializedFunctions,
 			migrated: false,
 			isOpenedInWorker: false,
 		})
+	}
+
+	registerFunction(dbId: string, name: string, def: SerializedFunctionDef): void {
+		const entry = this.registeredDbs.get(dbId)
+		if (entry) {
+			entry.serializedFunctions[name] = def
+		}
 	}
 
 	private async getWorker(): Promise<Worker> {
@@ -545,11 +737,12 @@ export class WorkerManager {
 		if (!openPromise) {
 			openPromise = (async () => {
 				await this.getWorker()
-				const { init: _init, ...workerOptions } = entry.options
+				const { init: _init, functions: _functions, ...workerOptions } = entry.options
 				await this.sendRaw(dbId, "open", {
 					path: entry.path,
 					options: {
 						...workerOptions,
+						functions: entry.serializedFunctions,
 						migrated: entry.migrated,
 					},
 				})
@@ -685,7 +878,7 @@ export class SqliteTx implements SqliteQueryable {
 
 	async get<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: QueryOptions,
 	): Promise<T | undefined> {
 		return await this.db._internalSendQuery<T | undefined>("get", {
@@ -697,7 +890,7 @@ export class SqliteTx implements SqliteQueryable {
 
 	async all<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: QueryOptions,
 	): Promise<T[]> {
 		return await this.db._internalSendQuery<T[]>("all", {
@@ -707,8 +900,32 @@ export class SqliteTx implements SqliteQueryable {
 		})
 	}
 
-	async run(sql: string, params?: SQLInputValue[], options?: QueryOptions): Promise<RunResult> {
+	async run(sql: string, params?: SqliteParams, options?: QueryOptions): Promise<RunResult> {
 		return await this.db._internalSendQuery<RunResult>("run", {
+			sql,
+			params,
+			readBigInts: options?.readBigInts,
+		})
+	}
+
+	async pluck<T = SQLInputValue>(
+		sql: string,
+		params?: SqliteParams,
+		options?: QueryOptions,
+	): Promise<T | undefined> {
+		return await this.db._internalSendQuery<T | undefined>("pluck", {
+			sql,
+			params,
+			readBigInts: options?.readBigInts,
+		})
+	}
+
+	async pluckAll<T = SQLInputValue>(
+		sql: string,
+		params?: SqliteParams,
+		options?: QueryOptions,
+	): Promise<T[]> {
+		return await this.db._internalSendQuery<T[]>("pluckAll", {
 			sql,
 			params,
 			readBigInts: options?.readBigInts,
@@ -728,19 +945,26 @@ export class SqliteTx implements SqliteQueryable {
 
 	async iterateLimited<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: IterateOptions,
-	): Promise<{ rows: T[]; truncated: boolean }> {
-		return await this.db._internalSendQuery<{ rows: T[]; truncated: boolean }>("iterateLimited", {
-			sql,
-			params,
-			limit: options?.limit,
-			readBigInts: options?.readBigInts,
-			readOnlyConnection: options?.readOnlyConnection,
-		})
+	): Promise<{ columns: string[]; rows: T[]; truncated: boolean }> {
+		return await this.db._internalSendQuery<{ columns: string[]; rows: T[]; truncated: boolean }>(
+			"iterateLimited",
+			{
+				sql,
+				params,
+				limit: options?.limit,
+				readBigInts: options?.readBigInts,
+				readOnlyConnection: options?.readOnlyConnection,
+				setupSql: options?.setupSql,
+			},
+		)
 	}
 
-	async transaction<T>(fn: (tx: SqliteTx) => Promise<T> | T): Promise<T> {
+	async transaction<T>(
+		fn: (tx: SqliteTx) => Promise<T> | T,
+		_options?: TransactionOptions,
+	): Promise<T> {
 		const nextDepth = this.depth + 1
 		await this.db._internalSendAction("txSavepoint", { depth: nextDepth })
 		const nestedTx = new SqliteTx(this.db, nextDepth)
@@ -819,7 +1043,7 @@ export class SqliteDb implements SqliteQueryable {
 				if (this.options.init) {
 					this.manager.incrementTx()
 					try {
-						await this.manager.sendAction(this.dbId, "txBegin")
+						await this.manager.sendAction(this.dbId, "txBegin", { mode: "IMMEDIATE" })
 						const tx = new SqliteTx(this, 1)
 						try {
 							await this.options.init(tx)
@@ -858,7 +1082,7 @@ export class SqliteDb implements SqliteQueryable {
 
 	async get<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: QueryOptions,
 	): Promise<T | undefined> {
 		return await this.withLock(async () => {
@@ -873,7 +1097,7 @@ export class SqliteDb implements SqliteQueryable {
 
 	async all<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: QueryOptions,
 	): Promise<T[]> {
 		return await this.withLock(async () => {
@@ -886,10 +1110,40 @@ export class SqliteDb implements SqliteQueryable {
 		})
 	}
 
-	async run(sql: string, params?: SQLInputValue[], options?: QueryOptions): Promise<RunResult> {
+	async run(sql: string, params?: SqliteParams, options?: QueryOptions): Promise<RunResult> {
 		return await this.withLock(async () => {
 			await this.ensureInitialized()
 			return await this.manager.sendAction<RunResult>(this.dbId, "run", {
+				sql,
+				params,
+				readBigInts: options?.readBigInts,
+			})
+		})
+	}
+
+	async pluck<T = SQLInputValue>(
+		sql: string,
+		params?: SqliteParams,
+		options?: QueryOptions,
+	): Promise<T | undefined> {
+		return await this.withLock(async () => {
+			await this.ensureInitialized()
+			return await this.manager.sendAction<T | undefined>(this.dbId, "pluck", {
+				sql,
+				params,
+				readBigInts: options?.readBigInts,
+			})
+		})
+	}
+
+	async pluckAll<T = SQLInputValue>(
+		sql: string,
+		params?: SqliteParams,
+		options?: QueryOptions,
+	): Promise<T[]> {
+		return await this.withLock(async () => {
+			await this.ensureInitialized()
+			return await this.manager.sendAction<T[]>(this.dbId, "pluckAll", {
 				sql,
 				params,
 				readBigInts: options?.readBigInts,
@@ -916,12 +1170,12 @@ export class SqliteDb implements SqliteQueryable {
 
 	async iterateLimited<T = Record<string, unknown>>(
 		sql: string,
-		params?: SQLInputValue[],
+		params?: SqliteParams,
 		options?: IterateOptions,
-	): Promise<{ rows: T[]; truncated: boolean }> {
+	): Promise<{ columns: string[]; rows: T[]; truncated: boolean }> {
 		return await this.withLock(async () => {
 			await this.ensureInitialized()
-			return await this.manager.sendAction<{ rows: T[]; truncated: boolean }>(
+			return await this.manager.sendAction<{ columns: string[]; rows: T[]; truncated: boolean }>(
 				this.dbId,
 				"iterateLimited",
 				{
@@ -930,17 +1184,40 @@ export class SqliteDb implements SqliteQueryable {
 					limit: options?.limit,
 					readBigInts: options?.readBigInts,
 					readOnlyConnection: options?.readOnlyConnection,
+					setupSql: options?.setupSql,
 				},
 			)
 		})
 	}
 
-	async transaction<T>(fn: (tx: SqliteTx) => Promise<T> | T): Promise<T> {
+	async registerFunction(
+		name: string,
+		fn: SqliteFunctionHandler | string,
+		options?: Omit<SqliteFunctionDef, "fn">,
+	): Promise<void> {
+		await this.withLock(async () => {
+			await this.ensureInitialized()
+			const def: SqliteFunctionDef = { fn, ...options }
+			const serialized = serializeFunction(def)
+			this.manager.registerFunction(this.dbId, name, serialized)
+			await this.manager.sendAction<void>(this.dbId, "registerFunction", {
+				name,
+				def: serialized,
+			})
+		})
+	}
+
+	async transaction<T>(
+		fn: (tx: SqliteTx) => Promise<T> | T,
+		options?: TransactionOptions,
+	): Promise<T> {
 		return await this.withLock(async () => {
 			await this.ensureInitialized()
 			this.manager.incrementTx()
 			try {
-				await this.manager.sendAction(this.dbId, "txBegin")
+				await this.manager.sendAction(this.dbId, "txBegin", {
+					mode: options?.mode || "IMMEDIATE",
+				})
 				const tx = new SqliteTx(this, 1)
 				try {
 					const result = await fn(tx)

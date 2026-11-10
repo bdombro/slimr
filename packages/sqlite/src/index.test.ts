@@ -263,6 +263,7 @@ describe("@slimr/sqlite", () => {
 				[],
 				{ limit: 5 },
 			)
+			expect(limited.columns).toEqual(["n"])
 			expect(limited.rows).toHaveLength(5)
 			expect(limited.truncated).toBe(true)
 			expect(limited.rows.map((r) => r.n)).toEqual([1, 2, 3, 4, 5])
@@ -272,8 +273,52 @@ describe("@slimr/sqlite", () => {
 				[],
 				{ limit: 20 },
 			)
+			expect(unlimited.columns).toEqual(["n"])
 			expect(unlimited.rows).toHaveLength(10)
 			expect(unlimited.truncated).toBe(false)
+		})
+
+		it("returns columns even when 0 rows match", async () => {
+			const db = trackDb(openSqlite(":memory:"))
+			await db.exec("CREATE TABLE users (id INT, email TEXT, role TEXT);")
+
+			const res = await db.iterateLimited<{ id: number; email: string; role: string }>(
+				"SELECT id, email, role FROM users WHERE 1 = 0;",
+			)
+			expect(res.columns).toEqual(["id", "email", "role"])
+			expect(res.rows).toEqual([])
+			expect(res.truncated).toBe(false)
+		})
+
+		it("runs setupSql and enforces PRAGMA query_only on readOnlyConnection", async () => {
+			const dbPath = path.join(TEST_DIR, "setup_view.db")
+			const db = trackDb(openSqlite(dbPath))
+			await db.exec(
+				"CREATE TABLE employees (id INT, name TEXT, salary INT); INSERT INTO employees VALUES (1, 'Alice', 100), (2, 'Bob', 200);",
+			)
+
+			// setupSql creates a TEMP VIEW on read-only connection
+			const res = await db.iterateLimited<{ id: number; name: string }>(
+				"SELECT * FROM high_earners ORDER BY id ASC;",
+				[],
+				{
+					readOnlyConnection: true,
+					setupSql:
+						"CREATE TEMP VIEW high_earners AS SELECT id, name FROM employees WHERE salary >= 150;",
+				},
+			)
+
+			expect(res.columns).toEqual(["id", "name"])
+			expect(res.rows).toEqual([{ id: 2, name: "Bob" }])
+			expect(res.truncated).toBe(false)
+
+			// Mutation attempt after query_only throws error
+			await expect(
+				db.iterateLimited("INSERT INTO employees VALUES (3, 'Charlie', 300);", [], {
+					readOnlyConnection: true,
+					setupSql: "CREATE TEMP VIEW dummy AS SELECT 1;",
+				}),
+			).rejects.toThrow(/readonly/i)
 		})
 
 		it("enforces read-only connection on file databases", async () => {
@@ -405,6 +450,214 @@ describe("@slimr/sqlite", () => {
 			)
 			// Alice's balance should be 90 (inner update to 50 rolled back)
 			expect(alice?.balance).toBe(90)
+		})
+	})
+
+	describe("custom functions", () => {
+		it("registers functions via options.functions and db.registerFunction", async () => {
+			const db = trackDb(
+				openSqlite(":memory:", {
+					functions: {
+						add_tax: (amount) => Number(amount) * 1.1,
+						greet: {
+							fn: (name) => `Hello, ${String(name)}!`,
+							deterministic: true,
+						},
+					},
+				}),
+			)
+
+			const tax = await db.pluck<number>("SELECT add_tax(100);")
+			expect(tax).toBeCloseTo(110)
+
+			const greeting = await db.pluck<string>("SELECT greet('World');")
+			expect(greeting).toBe("Hello, World!")
+
+			// Register dynamically with function and string source
+			await db.registerFunction("double_it", (x) => Number(x) * 2)
+			const doubled = await db.pluck<number>("SELECT double_it(21);")
+			expect(doubled).toBe(42)
+
+			await db.registerFunction("var_sum", "(...args) => args.reduce((a, b) => a + Number(b), 0)", {
+				varargs: true,
+			})
+			const sum = await db.pluck<number>("SELECT var_sum(1, 2, 3, 4, 5);")
+			expect(sum).toBe(15)
+		})
+
+		it("preserves custom functions across idleTimeoutMs worker respawns", async () => {
+			const dbPath = path.join(TEST_DIR, "fn_respawn.db")
+			const db = trackDb(
+				openSqlite(dbPath, {
+					dedicated: true,
+					idleTimeoutMs: 50,
+					functions: {
+						cube: (x) => Number(x) ** 3,
+					},
+				}),
+			)
+
+			await db.registerFunction("quad", (x) => Number(x) ** 4)
+
+			expect(await db.pluck<number>("SELECT cube(3);")).toBe(27)
+			expect(await db.pluck<number>("SELECT quad(2);")).toBe(16)
+			expect(db.isWorkerAlive).toBe(true)
+
+			// Wait for idle worker termination
+			await new Promise((r) => setTimeout(r, 120))
+			expect(db.isWorkerAlive).toBe(false)
+
+			// Both initial and registered functions work on transparent respawn
+			expect(await db.pluck<number>("SELECT cube(4);")).toBe(64)
+			expect(await db.pluck<number>("SELECT quad(3);")).toBe(81)
+			expect(db.isWorkerAlive).toBe(true)
+		})
+
+		it("provides custom functions on readOnlyConnection iterateLimited", async () => {
+			const dbPath = path.join(TEST_DIR, "fn_ro.db")
+			const db = trackDb(
+				openSqlite(dbPath, {
+					functions: {
+						to_upper: (s) => String(s).toUpperCase(),
+					},
+				}),
+			)
+
+			await db.exec("CREATE TABLE words (w TEXT); INSERT INTO words VALUES ('apple'), ('banana');")
+
+			const res = await db.iterateLimited<{ upper_w: string }>(
+				"SELECT to_upper(w) AS upper_w FROM words ORDER BY w ASC;",
+				[],
+				{ readOnlyConnection: true },
+			)
+			expect(res.rows).toEqual([{ upper_w: "APPLE" }, { upper_w: "BANANA" }])
+		})
+	})
+
+	describe("named parameters", () => {
+		it("supports bare, colon, and dollar named parameters", async () => {
+			const db = trackDb(openSqlite(":memory:"))
+			await db.exec(
+				"CREATE TABLE users (id INT PRIMARY KEY, name TEXT, age INT); INSERT INTO users VALUES (1, 'Alice', 30), (2, 'Bob', 25);",
+			)
+
+			// Bare parameters: { id: 1 }
+			const user1 = await db.get<{ name: string }>("SELECT name FROM users WHERE id = :id;", {
+				id: 1,
+			})
+			expect(user1?.name).toBe("Alice")
+
+			// Colon parameters: { ":name": "Bob" }
+			const user2 = await db.get<{ age: number }>("SELECT age FROM users WHERE name = :name;", {
+				":name": "Bob",
+			})
+			expect(user2?.age).toBe(25)
+
+			// Dollar parameters: { "$minAge": 28 }
+			const older = await db.all<{ name: string }>(
+				"SELECT name FROM users WHERE age >= $minAge ORDER BY id ASC;",
+				{ $minAge: 28 },
+			)
+			expect(older).toEqual([{ name: "Alice" }])
+
+			// Run with bare parameters
+			const updateRes = await db.run("UPDATE users SET age = :age WHERE id = :id;", {
+				age: 31,
+				id: 1,
+			})
+			expect(updateRes.changes).toBe(1)
+			expect(await db.pluck<number>("SELECT age FROM users WHERE id = 1;")).toBe(31)
+
+			// Iterate with named parameters
+			const iterRes = await db.iterateLimited<{ name: string }>(
+				"SELECT name FROM users WHERE age >= :minAge ORDER BY id ASC;",
+				{ minAge: 20 },
+			)
+			expect(iterRes.rows).toHaveLength(2)
+
+			// Batch with named parameters
+			const batchRes = await db.batch([
+				{
+					sql: "INSERT INTO users VALUES (:id, :name, :age);",
+					params: { id: 3, name: "Charlie", age: 40 },
+					mode: "run",
+				},
+				{
+					sql: "SELECT name FROM users WHERE id = :id;",
+					params: { id: 3 },
+					mode: "pluck",
+				},
+			])
+			expect(batchRes[1]).toBe("Charlie")
+		})
+	})
+
+	describe("pluck and pluckAll", () => {
+		it("retrieves scalar values with pluck and pluckAll", async () => {
+			const db = trackDb(openSqlite(":memory:"))
+			await db.exec(
+				"CREATE TABLE scores (player TEXT, score INT); INSERT INTO scores VALUES ('A', 10), ('B', 20), ('C', 30);",
+			)
+
+			// pluck single value
+			const count = await db.pluck<number>("SELECT count(*) FROM scores;")
+			expect(count).toBe(3)
+
+			const topPlayer = await db.pluck<string>("SELECT player FROM scores ORDER BY score DESC;")
+			expect(topPlayer).toBe("C")
+
+			// pluck on missing row returns undefined
+			const missing = await db.pluck<string>("SELECT player FROM scores WHERE score > 100;")
+			expect(missing).toBeUndefined()
+
+			// pluckAll returns array of values
+			const players = await db.pluckAll<string>("SELECT player FROM scores ORDER BY score ASC;")
+			expect(players).toEqual(["A", "B", "C"])
+
+			// pluckAll on empty result returns empty array
+			const empty = await db.pluckAll<string>("SELECT player FROM scores WHERE 1 = 0;")
+			expect(empty).toEqual([])
+
+			// Inside transaction
+			await db.transaction(async (tx) => {
+				const txCount = await tx.pluck<number>("SELECT count(*) FROM scores;")
+				expect(txCount).toBe(3)
+
+				const txScores = await tx.pluckAll<number>("SELECT score FROM scores ORDER BY score ASC;")
+				expect(txScores).toEqual([10, 20, 30])
+			})
+
+			// In batch
+			const batchRes = await db.batch([
+				{ sql: "SELECT score FROM scores WHERE player = 'B';", mode: "pluck" },
+				{ sql: "SELECT score FROM scores ORDER BY score DESC;", mode: "pluckAll" },
+			])
+			expect(batchRes[0]).toBe(20)
+			expect(batchRes[1]).toEqual([30, 20, 10])
+		})
+	})
+
+	describe("transaction mode option", () => {
+		it("supports DEFERRED and EXCLUSIVE transaction modes", async () => {
+			const db = trackDb(openSqlite(":memory:"))
+			await db.exec("CREATE TABLE ledger (entry TEXT);")
+
+			await db.transaction(
+				async (tx) => {
+					await tx.run("INSERT INTO ledger VALUES ('deferred entry');")
+				},
+				{ mode: "DEFERRED" },
+			)
+
+			await db.transaction(
+				async (tx) => {
+					await tx.run("INSERT INTO ledger VALUES ('exclusive entry');")
+				},
+				{ mode: "EXCLUSIVE" },
+			)
+
+			const entries = await db.pluckAll<string>("SELECT entry FROM ledger ORDER BY rowid ASC;")
+			expect(entries).toEqual(["deferred entry", "exclusive entry"])
 		})
 	})
 
