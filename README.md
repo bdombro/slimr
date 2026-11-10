@@ -12,6 +12,7 @@
   several other @slimr libs for convenience
 - [@slimr/react-util](https://www.npmjs.com/package/@slimr/react-util) - React hooks and utilities (mergeRefs, useColorScheme, useReRender, useSet, and more). Re-exported by `@slimr/react`
 - [@slimr/router](https://www.npmjs.com/package/@slimr/router) - A novel React-web router that supports stack routing
+- [@slimr/sqlite](https://www.npmjs.com/package/@slimr/sqlite) - A slim async `node:sqlite` wrapper over a shared worker thread with statement caching, WAL defaults, and queued transactions
 - [@slimr/styled](https://www.npmjs.com/package/@slimr/styled) - css-in-js features inspired by the popular styled-components and Chakra-UI libs
 - [@slimr/swr](https://www.npmjs.com/package/@slimr/swr) - A React hook for fetching data that supports stale-while-refresh eager rendering
 - [@slimr/util](https://www.npmjs.com/package/@slimr/util) - Framework agnostic Javascript polyfills

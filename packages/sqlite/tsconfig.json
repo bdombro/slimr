@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "types": ["vitest/globals", "@types/bun"]
+  },
+  "include": ["src"]
+}

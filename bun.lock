@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@slimr/monorepo",
@@ -173,6 +172,10 @@
         "react-dom": "*",
       },
     },
+    "packages/sqlite": {
+      "name": "@slimr/sqlite",
+      "version": "0.1.0",
+    },
     "packages/styled": {
       "name": "@slimr/styled",
       "version": "2.1.101",
@@ -212,9 +215,6 @@
         "nanoid": "4.0.1",
       },
     },
-  },
-  "catalog": {
-    "vite": "^8.0.10",
   },
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
@@ -396,6 +396,8 @@
     "@slimr/react-util": ["@slimr/react-util@workspace:packages/react-util"],
 
     "@slimr/router": ["@slimr/router@workspace:packages/router"],
+
+    "@slimr/sqlite": ["@slimr/sqlite@workspace:packages/sqlite"],
 
     "@slimr/styled": ["@slimr/styled@workspace:packages/styled"],
 

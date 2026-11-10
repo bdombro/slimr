@@ -1,0 +1,31 @@
+{
+  "name": "@slimr/sqlite",
+  "version": "0.1.1",
+  "description": "Slim async node:sqlite wrapper over a shared worker_threads worker with statement caching, WAL defaults, and queued transactions",
+  "author": "Brian Dombrowski",
+  "license": "ISC",
+  "private": false,
+  "sideEffects": false,
+  "type": "module",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
+  "types": "esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
+    }
+  },
+  "files": [
+    "cjs",
+    "esm",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun ../../scripts/cli.ts build-lib --pkg .",
+    "clean": "rm -rf esm cjs",
+    "typecheck": "tsc -b",
+    "test": "vitest run"
+  }
+}
