@@ -107,47 +107,112 @@ describe("@slimr/sqlite", () => {
 	})
 
 	describe("migrations and pragmas", () => {
-		it("runs migrateSql with userVersion checking", async () => {
+		it("runs array migrations incrementally with user_version tracking", async () => {
 			const dbPath = path.join(TEST_DIR, "migrated.db")
 
 			// Initial migration to v1
 			const db1 = trackDb(
 				openSqlite(dbPath, {
 					dedicated: true,
-					userVersion: 1,
-					migrateSql: "CREATE TABLE items (id INT, val TEXT); INSERT INTO items VALUES (1, 'v1');",
+					migrations: [
+						"CREATE TABLE items (id INT, val TEXT); INSERT INTO items VALUES (1, 'v1');",
+					],
 				}),
 			)
 			const row1 = await db1.get<{ val: string }>("SELECT val FROM items WHERE id = 1;")
 			expect(row1?.val).toBe("v1")
-			const uv1 = await db1.get<{ user_version: number }>("PRAGMA user_version;")
-			expect(uv1?.user_version).toBe(1)
+			expect(await db1.pluck<number>("PRAGMA user_version;")).toBe(1)
 			await db1.close()
 
-			// Reopen with same userVersion: migrateSql must NOT run
+			// Reopen with same v1: migration 1 must NOT re-run
 			const db2 = trackDb(
 				openSqlite(dbPath, {
 					dedicated: true,
-					userVersion: 1,
-					migrateSql: "INSERT INTO items VALUES (2, 'should not run');",
+					migrations: ["INSERT INTO items VALUES (2, 'should not run');"],
 				}),
 			)
-			const count2 = await db2.get<{ cnt: number }>("SELECT COUNT(*) as cnt FROM items;")
-			expect(count2?.cnt).toBe(1)
+			expect(await db2.pluck<number>("SELECT COUNT(*) FROM items;")).toBe(1)
 			await db2.close()
 
-			// Upgrade to userVersion: 2: migrateSql runs
+			// Upgrade with v2 added: only migration 2 runs
 			const db3 = trackDb(
 				openSqlite(dbPath, {
 					dedicated: true,
-					userVersion: 2,
-					migrateSql: "INSERT INTO items VALUES (2, 'v2');",
+					migrations: [
+						"INSERT INTO items VALUES (99, 'should not run');",
+						"INSERT INTO items VALUES (2, 'v2');",
+					],
 				}),
 			)
-			const count3 = await db3.get<{ cnt: number }>("SELECT COUNT(*) as cnt FROM items;")
-			expect(count3?.cnt).toBe(2)
-			const uv2 = await db3.get<{ user_version: number }>("PRAGMA user_version;")
-			expect(uv2?.user_version).toBe(2)
+			expect(await db3.pluck<number>("SELECT COUNT(*) FROM items;")).toBe(2)
+			expect(await db3.pluck<number>("PRAGMA user_version;")).toBe(2)
+		})
+
+		it("supports consolidated/squashed record migrations and rejects stale intermediate DBs", async () => {
+			const freshPath = path.join(TEST_DIR, "squashed_fresh.db")
+
+			// Fresh DB (user_version = 0) with squashed baseline at key 3 + incremental 4
+			const freshDb = trackDb(
+				openSqlite(freshPath, {
+					dedicated: true,
+					migrations: {
+						3: "CREATE TABLE items (id INT, val TEXT, tag TEXT); INSERT INTO items VALUES (1, 'base', 'v3');",
+						4: "INSERT INTO items VALUES (2, 'next', 'v4');",
+					},
+				}),
+			)
+			expect(await freshDb.pluck<number>("PRAGMA user_version;")).toBe(4)
+			expect(await freshDb.pluck<number>("SELECT COUNT(*) FROM items;")).toBe(2)
+			await freshDb.close()
+
+			// Existing DB at version 3 upgrading to version 4 skips key 3 and runs key 4
+			const v3Path = path.join(TEST_DIR, "squashed_v3.db")
+			const v3Db = trackDb(
+				openSqlite(v3Path, {
+					dedicated: true,
+					migrations: {
+						3: "CREATE TABLE items (id INT, val TEXT); INSERT INTO items VALUES (1, 'v3');",
+					},
+				}),
+			)
+			expect(await v3Db.pluck<number>("PRAGMA user_version;")).toBe(3)
+			await v3Db.close()
+
+			const upgradedDb = trackDb(
+				openSqlite(v3Path, {
+					dedicated: true,
+					migrations: {
+						3: "INSERT INTO items VALUES (99, 'must not run');",
+						4: "INSERT INTO items VALUES (2, 'v4');",
+					},
+				}),
+			)
+			expect(await upgradedDb.pluck<number>("PRAGMA user_version;")).toBe(4)
+			expect(await upgradedDb.pluckAll<number>("SELECT id FROM items ORDER BY id;")).toEqual([1, 2])
+			await upgradedDb.close()
+
+			// Stale DB at version 1 fails when minimum migration key is 3
+			const stalePath = path.join(TEST_DIR, "stale_v1.db")
+			const staleInit = trackDb(
+				openSqlite(stalePath, {
+					dedicated: true,
+					migrations: ["CREATE TABLE items (id INT);"],
+				}),
+			)
+			expect(await staleInit.pluck<number>("PRAGMA user_version;")).toBe(1)
+			await staleInit.close()
+
+			const staleReopen = trackDb(
+				openSqlite(stalePath, {
+					dedicated: true,
+					migrations: {
+						3: "CREATE TABLE items (id INT, extra TEXT);",
+					},
+				}),
+			)
+			await expect(staleReopen.get("SELECT 1;")).rejects.toThrow(
+				/user_version \(1\) is older than minimum migration version \(3\)/,
+			)
 		})
 
 		it("supports custom pragmas", async () => {

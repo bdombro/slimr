@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+## 0.3.0
+
+### Changed
+
+- **Unified `migrations` option**: Replaced `userVersion` and `migrateSql` with `migrations?: Record<number, string> | readonly string[]`. Runs pending migrations (`version > PRAGMA user_version`) atomically on open, supports squashed baseline schemas via version-keyed objects, and throws if an existing database has a `user_version` older than the minimum migration key.
+
 ## 0.2.0
 
 ### Added

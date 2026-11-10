@@ -110,17 +110,27 @@ Registered functions survive worker hibernation and transparent respawn, and are
 
 ### Migrations on Open
 
+Pass `migrations` as an ordered array (`version = index + 1`) or a version-keyed record (`Record<number, string>`). `@slimr/sqlite` checks `PRAGMA user_version` and runs any pending migrations (`version > user_version`) inside a transaction:
+
 ```ts
+// Ordered array (versions 1, 2, ...)
 const db = openSqlite("./data/app.db", {
-  userVersion: 2,
-  migrateSql: `
-    CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, title TEXT);
-    ALTER TABLE items ADD COLUMN priority INTEGER DEFAULT 0;
-  `,
+  migrations: [
+    `CREATE TABLE items (id INTEGER PRIMARY KEY, title TEXT);`,
+    `ALTER TABLE items ADD COLUMN priority INTEGER DEFAULT 0;`,
+  ],
+});
+
+// Version-keyed record (supports squashing/consolidating older migrations into a baseline key)
+const squashedDb = openSqlite("./data/app.db", {
+  migrations: {
+    3: `CREATE TABLE items (id INTEGER PRIMARY KEY, title TEXT, priority INTEGER DEFAULT 0, tags TEXT);`,
+    4: `CREATE INDEX idx_items_priority ON items(priority);`,
+  },
 });
 ```
 
-When `userVersion` is specified with `migrateSql`, `PRAGMA user_version` is inspected. `migrateSql` and version updates only execute if the current database version is less than `userVersion`.
+If an existing database on disk has a non-zero `user_version` older than the lowest key in `migrations` (e.g. `user_version = 1` when migrations start at `3`), opening fails with an explicit error rather than running the baseline over existing tables.
 
 ### Transactions & Savepoints
 
