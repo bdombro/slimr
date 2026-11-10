@@ -274,29 +274,58 @@ function ensureOpen(entry) {
 	}
 }
 
-function prepareStmt(entry, sql, readBigInts, allowBareNamed) {
+const MAX_CACHED_STMTS = 256;
+
+function prepareStmt(entry, sql, readBigInts, returnArrays) {
 	const effectiveBigInts = readBigInts !== undefined
 		? Boolean(readBigInts)
 		: Boolean(entry.options && entry.options.readBigInts);
-	const bareFlag = Boolean(allowBareNamed);
-	const key = (effectiveBigInts ? "1:" : "0:") + (bareFlag ? "N:" : "P:") + sql;
-	let stmt = entry.stmts.get(key);
-	if (!stmt) {
-		stmt = entry.db.prepare(sql);
+	const effectiveArrays = Boolean(returnArrays);
+	let cached = entry.stmts.get(sql);
+	if (!cached) {
+		const stmt = entry.db.prepare(sql);
+		if (typeof stmt.setAllowBareNamedParameters === "function") {
+			stmt.setAllowBareNamedParameters(true);
+		}
 		if (effectiveBigInts) {
 			stmt.setReadBigInts(true);
 		}
-		if (bareFlag && typeof stmt.setAllowBareNamedParameters === "function") {
-			stmt.setAllowBareNamedParameters(true);
+		if (effectiveArrays && typeof stmt.setReturnArrays === "function") {
+			stmt.setReturnArrays(true);
 		}
-		entry.stmts.set(key, stmt);
+		cached = { stmt, bigInts: effectiveBigInts, arrays: effectiveArrays };
+		if (entry.stmts.size >= MAX_CACHED_STMTS) {
+			const oldestKey = entry.stmts.keys().next().value;
+			const oldest = entry.stmts.get(oldestKey);
+			entry.stmts.delete(oldestKey);
+			if (oldest && oldest.stmt && typeof oldest.stmt.close === "function") {
+				try { oldest.stmt.close(); } catch (_) {}
+			}
+		}
+		entry.stmts.set(sql, cached);
+	} else {
+		// Refresh LRU order
+		entry.stmts.delete(sql);
+		entry.stmts.set(sql, cached);
+		if (cached.bigInts !== effectiveBigInts) {
+			cached.stmt.setReadBigInts(effectiveBigInts);
+			cached.bigInts = effectiveBigInts;
+		}
+		if (cached.arrays !== effectiveArrays && typeof cached.stmt.setReturnArrays === "function") {
+			cached.stmt.setReturnArrays(effectiveArrays);
+			cached.arrays = effectiveArrays;
+		}
 	}
-	return stmt;
+	return cached.stmt;
 }
 
 function clearStmts(entry) {
-	for (const stmt of entry.stmts.values()) {
-		try { stmt.close(); } catch (_) {}
+	for (const cached of entry.stmts.values()) {
+		try {
+			if (cached && cached.stmt && typeof cached.stmt.close === "function") {
+				cached.stmt.close();
+			}
+		} catch (_) {}
 	}
 	entry.stmts.clear();
 }
@@ -340,46 +369,31 @@ async function handleAction(action, entry, payload, dbId) {
 		}
 		case "get": {
 			ensureOpen(entry);
-			const named = isNamedParams(payload.params);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
-			const row = execStmt(s, "get", payload.params);
-			return row ? { ...row } : undefined;
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, false);
+			return execStmt(s, "get", payload.params);
 		}
 		case "all": {
 			ensureOpen(entry);
-			const named = isNamedParams(payload.params);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
-			const rows = execStmt(s, "all", payload.params);
-			return rows.map((r) => ({ ...r }));
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, false);
+			return execStmt(s, "all", payload.params);
 		}
 		case "run": {
 			ensureOpen(entry);
-			const named = isNamedParams(payload.params);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, false);
 			const r = execStmt(s, "run", payload.params);
 			return { changes: r.changes, lastInsertRowid: r.lastInsertRowid };
 		}
 		case "pluck": {
 			ensureOpen(entry);
-			const named = isNamedParams(payload.params);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, true);
 			const row = execStmt(s, "get", payload.params);
-			if (!row) {
-				return undefined;
-			}
-			const keys = Object.keys(row);
-			return keys.length > 0 ? row[keys[0]] : undefined;
+			return row ? row[0] : undefined;
 		}
 		case "pluckAll": {
 			ensureOpen(entry);
-			const named = isNamedParams(payload.params);
-			const s = prepareStmt(entry, payload.sql, payload.readBigInts, named);
+			const s = prepareStmt(entry, payload.sql, payload.readBigInts, true);
 			const rows = execStmt(s, "all", payload.params);
-			if (!rows || rows.length === 0) {
-				return [];
-			}
-			const k = Object.keys(rows[0])[0];
-			return rows.map((r) => r[k]);
+			return rows ? rows.map((r) => r[0]) : [];
 		}
 		case "exec": {
 			ensureOpen(entry);
@@ -398,37 +412,24 @@ async function handleAction(action, entry, payload, dbId) {
 			try {
 				for (const item of items) {
 					const mode = item.mode || "run";
-					const named = isNamedParams(item.params);
 					if (mode === "run") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const s = prepareStmt(entry, item.sql, item.readBigInts, false);
 						const r = execStmt(s, "run", item.params);
 						results.push({ changes: r.changes, lastInsertRowid: r.lastInsertRowid });
 					} else if (mode === "get") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
-						const r = execStmt(s, "get", item.params);
-						results.push(r ? { ...r } : undefined);
+						const s = prepareStmt(entry, item.sql, item.readBigInts, false);
+						results.push(execStmt(s, "get", item.params));
 					} else if (mode === "all") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
-						const r = execStmt(s, "all", item.params);
-						results.push(r.map((x) => ({ ...x })));
+						const s = prepareStmt(entry, item.sql, item.readBigInts, false);
+						results.push(execStmt(s, "all", item.params));
 					} else if (mode === "pluck") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const s = prepareStmt(entry, item.sql, item.readBigInts, true);
 						const r = execStmt(s, "get", item.params);
-						if (!r) {
-							results.push(undefined);
-						} else {
-							const keys = Object.keys(r);
-							results.push(keys.length > 0 ? r[keys[0]] : undefined);
-						}
+						results.push(r ? r[0] : undefined);
 					} else if (mode === "pluckAll") {
-						const s = prepareStmt(entry, item.sql, item.readBigInts, named);
+						const s = prepareStmt(entry, item.sql, item.readBigInts, true);
 						const r = execStmt(s, "all", item.params);
-						if (!r || r.length === 0) {
-							results.push([]);
-						} else {
-							const k = Object.keys(r[0])[0];
-							results.push(r.map((row) => row[k]));
-						}
+						results.push(r ? r.map((row) => row[0]) : []);
 					} else if (mode === "exec") {
 						clearStmts(entry);
 						entry.db.exec(item.sql);
@@ -455,17 +456,24 @@ async function handleAction(action, entry, payload, dbId) {
 			const { sql, params, limit, readBigInts, readOnlyConnection, setupSql } = payload;
 			let targetDb = entry.db;
 			let tempDb = null;
+			let resetQueryOnlyOnMain = false;
 			if (readOnlyConnection && entry.path !== ":memory:") {
 				tempDb = new sqlite.DatabaseSync(entry.path, { readOnly: true });
 				tempDb.exec("PRAGMA busy_timeout = 5000;");
 				registerFunctionsOnDb(tempDb, entry.options && entry.options.functions);
 				if (typeof setupSql === "string" && setupSql.trim().length > 0) {
 					tempDb.exec(setupSql);
-					tempDb.exec("PRAGMA query_only = ON;");
 				}
+				tempDb.exec("PRAGMA query_only = ON;");
 				targetDb = tempDb;
-			} else if (typeof setupSql === "string" && setupSql.trim().length > 0) {
-				targetDb.exec(setupSql);
+			} else {
+				if (typeof setupSql === "string" && setupSql.trim().length > 0) {
+					targetDb.exec(setupSql);
+				}
+				if (readOnlyConnection) {
+					targetDb.exec("PRAGMA query_only = ON;");
+					resetQueryOnlyOnMain = true;
+				}
 			}
 
 			let stmt = null;
@@ -487,7 +495,7 @@ async function handleAction(action, entry, payload, dbId) {
 				const iterator = named ? stmt.iterate(params) : stmt.iterate(...(params || []));
 				for (const row of iterator) {
 					if (rows.length < maxLimit) {
-						rows.push({ ...row });
+						rows.push(row);
 					} else {
 						truncated = true;
 						break;
@@ -500,6 +508,9 @@ async function handleAction(action, entry, payload, dbId) {
 			} finally {
 				if (stmt && typeof stmt.close === "function") {
 					try { stmt.close(); } catch (_) {}
+				}
+				if (resetQueryOnlyOnMain) {
+					try { targetDb.exec("PRAGMA query_only = OFF;"); } catch (_) {}
 				}
 				if (tempDb) {
 					try { tempDb.close(); } catch (_) {}
@@ -528,6 +539,9 @@ async function handleAction(action, entry, payload, dbId) {
 		case "txBegin": {
 			ensureOpen(entry);
 			const mode = payload.mode || "IMMEDIATE";
+			if (mode !== "IMMEDIATE" && mode !== "DEFERRED" && mode !== "EXCLUSIVE") {
+				throw new Error("Invalid transaction mode: " + String(mode));
+			}
 			entry.db.exec("BEGIN " + mode);
 			entry.txDepth = 1;
 			return;
@@ -549,22 +563,34 @@ async function handleAction(action, entry, payload, dbId) {
 		}
 		case "txSavepoint": {
 			ensureOpen(entry);
-			entry.txDepth = payload.depth;
-			entry.db.exec("SAVEPOINT sp_" + payload.depth);
+			const depth = Number(payload.depth);
+			if (!Number.isSafeInteger(depth) || depth < 1) {
+				throw new Error("Invalid savepoint depth");
+			}
+			entry.txDepth = depth;
+			entry.db.exec("SAVEPOINT sp_" + depth);
 			return;
 		}
 		case "txRelease": {
 			ensureOpen(entry);
-			entry.db.exec("RELEASE SAVEPOINT sp_" + payload.depth);
-			entry.txDepth = payload.depth - 1;
+			const depth = Number(payload.depth);
+			if (!Number.isSafeInteger(depth) || depth < 1) {
+				throw new Error("Invalid savepoint depth");
+			}
+			entry.db.exec("RELEASE SAVEPOINT sp_" + depth);
+			entry.txDepth = depth - 1;
 			return;
 		}
 		case "txRollbackTo": {
 			ensureOpen(entry);
+			const depth = Number(payload.depth);
+			if (!Number.isSafeInteger(depth) || depth < 1) {
+				throw new Error("Invalid savepoint depth");
+			}
 			try {
-				entry.db.exec("ROLLBACK TO SAVEPOINT sp_" + payload.depth);
+				entry.db.exec("ROLLBACK TO SAVEPOINT sp_" + depth);
 			} finally {
-				entry.txDepth = payload.depth - 1;
+				entry.txDepth = depth - 1;
 			}
 			return;
 		}
@@ -1021,6 +1047,7 @@ export class SqliteDb implements SqliteQueryable {
 		this.path = path
 		this.options = Object.freeze({ ...options })
 		this.dbId = `${path}:${nextDbSequence++}`
+		this.isInitialized = !options.init
 		this.manager = options.dedicated
 			? new WorkerManager(options.idleTimeoutMs, true)
 			: getSharedManager(options.idleTimeoutMs)

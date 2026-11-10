@@ -405,6 +405,21 @@ describe("@slimr/sqlite", () => {
 				}),
 			).rejects.toThrow(/readonly/i)
 		})
+
+		it("enforces PRAGMA query_only on :memory: DB when readOnlyConnection is true and restores write access afterwards", async () => {
+			const db = trackDb(openSqlite(":memory:"))
+			await db.exec("CREATE TABLE secrets (id INT); INSERT INTO secrets VALUES (100);")
+
+			await expect(
+				db.iterateLimited("INSERT INTO secrets VALUES (200);", [], {
+					readOnlyConnection: true,
+				}),
+			).rejects.toThrow(/readonly|write/i)
+
+			// Subsequent write on the main :memory: connection still succeeds
+			await db.run("INSERT INTO secrets VALUES (300);")
+			expect(await db.pluckAll<number>("SELECT id FROM secrets ORDER BY id;")).toEqual([100, 300])
+		})
 	})
 
 	describe("transactions", () => {
@@ -723,6 +738,10 @@ describe("@slimr/sqlite", () => {
 
 			const entries = await db.pluckAll<string>("SELECT entry FROM ledger ORDER BY rowid ASC;")
 			expect(entries).toEqual(["deferred entry", "exclusive entry"])
+
+			await expect(
+				db.transaction(async () => {}, { mode: "IMMEDIATE; DROP TABLE ledger;--" as never }),
+			).rejects.toThrow(/Invalid transaction mode/)
 		})
 	})
 

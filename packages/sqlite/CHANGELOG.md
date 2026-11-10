@@ -2,6 +2,17 @@
 
 ## UNRELEASED
 
+## 0.3.2
+
+### Changed
+
+- Avoid redundant row cloning in the worker thread before `postMessage` (V8 structured clone already normalizes null-prototype rows to `Object.prototype` on the main thread).
+- Use `stmt.setReturnArrays(true)` for `pluck` and `pluckAll` to avoid per-row object and key-array allocations in C++/JS.
+- Bounded LRU statement cache (`256` statements per database) with in-place toggling of `setReadBigInts` and `setReturnArrays`.
+- Fast-path query initialization when `options.init` is not set.
+- Validate `TransactionMode` and savepoint depth at runtime, and enforce `PRAGMA query_only = ON` on `readOnlyConnection` queries even for `:memory:` databases.
+- Added `keywords` and `engines` (`node >= 22.5.0`) to `package.json`.
+
 ## 0.3.1
 
 ### Changed
